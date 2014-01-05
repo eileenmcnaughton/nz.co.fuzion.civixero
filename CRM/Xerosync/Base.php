@@ -36,15 +36,15 @@ class CRM_Xerosync_Base {
    * @return CRM_Extension_System
    */
   protected function singleton($civixero_key, $civixero_secret, $publicCertificate, $privateKey, $force = FALSE) {
-    if (!$this->singleton || $force) {
+    if (!self::$singleton || $force) {
       require_once 'packages/Xero/Xero.php';
-      $this->singleton = new Xero($civixero_key, $civixero_secret, $publicCertificate, $privateKey);
+      self::$singleton = new Xero($civixero_key, $civixero_secret, $publicCertificate, $privateKey);
     }
     return self::$singleton;
   }
 
   function getSingleton() {
-    return $this->singleton;
+    return self::$singleton;
   }
   /**
    */
