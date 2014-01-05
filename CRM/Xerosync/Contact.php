@@ -14,7 +14,7 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
     if(!is_array($result)){
       throw new API_Exception('Sync Failed', 'xero_retrieve_failure', $result);
     }
-    if ($result['Contacts']){
+    if (!empty($result['Contacts'])){
       CRM_Core_Session::setStatus(count($result['Contacts'] . ts(' retrieved')), ts('Contact Pull'));
       foreach($result['Contacts']['Contact'] as $contact){
         $save = TRUE;
@@ -64,7 +64,6 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
     $records = civicrm_api3('account_contact', 'get', array(
       'accounts_needs_update' => 1,
       'api.contact.get' => 1,
-      'error_data' => array('<>' => ''),// hopefully this will drop out the NULLs too
       )
     );
     //@todo pass limit through from params to get call
