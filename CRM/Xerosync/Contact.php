@@ -3,9 +3,6 @@
 class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
 
   function pull($params) {
-    echo "<pre>";
-    print_r($this->getSingleton());
-    print_r($this);
     $result = $this->getSingleton()->Contacts(false, $this->formatDateForXero($params['start_date']));
     if(!is_array($result)){
       throw new API_Exception('Sync Failed', 'xero_retrieve_failure', $result);
