@@ -11,11 +11,18 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
       CRM_Core_Session::setStatus(count($result['Contacts'] . ts(' retrieved')), ts('Contact Pull'));
       foreach($result['Contacts']['Contact'] as $contact){
         $save = TRUE;
-        CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save);
+        $params = array(
+          'accounts_display_name' => $contact['Name'],
+          'contact_id' => CRM_Utils_Array::value('ContactNumber', $contact),
+          'accounts_modified_date' => $contact['UpdatedDateUTC'],
+          'plugin' => 'xero',
+          'accounts_contact_id' => $contact['ContactID'],
+          'accounts_data' => json_encode($contact),
+        );
+        CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save, $params);
         if(!$save) {
           continue;
         }
-        $params = array();
         try {
           $params['id'] = civicrm_api3('account_contact', 'getvalue', array(
             'return' => 'id',
@@ -26,12 +33,6 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
         catch (CiviCRM_API3_Exception $e) {
           // this is an update
         }
-        $params['accounts_display_name'] = $contact['Name'];
-        $params['contact_id'] = $contact['ContactNumber'];
-        $params['accounts_modified_date'] = $contact['UpdatedDateUTC'];
-        $params['plugin'] = 'xero';
-        $params['accounts_contact_id'] = $contact['ContactID'];
-        $params['accounts_data'] = json_encode($contact);
         try {
           $result = civicrm_api3('account_contact', 'create', $params);
         }
