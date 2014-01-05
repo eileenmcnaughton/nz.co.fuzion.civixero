@@ -140,3 +140,51 @@ function xerosync_civicrm_navigationMenu(&$menu) {
         )))
   );
 }
+/**
+ * Implementation of hook_civicrm_managed
+ *
+ * Generate a list of entities to create/deactivate/delete when this module
+ * is installed, disabled, uninstalled.
+ */
+function xerosync_civicrm_pageRun(&$page) {
+  $pageName = get_class($page);
+  if($pageName != 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
+    return;
+  }
+  if(($contactID = $page->getVar('_contactId')) != FALSE) {
+    try{
+      $xeroID = civicrm_api3('account_contact', 'getvalue', array('contact_id' => $contactID, 'return' => 'accounts_contact_id'));
+    }
+    catch(Exception $e) {
+      //no record
+      return;
+    }
+  }
+  else {
+    return;
+  }
+  // link =
+  $xeroLinks = array(
+    'view_transactions' => array(
+      'link' => 'https://go.xero.com/Reports/report.aspx?reportId=be392447-762b-444d-9cde-87c6bd185d00&report=TransactionsByContact&invoiceType=INVOICETYPE%2fACCREC&addToReportId=cf6fedeb-2188-493c-96e2-b862198f9b46&addToReportTitle=Income+by+Contact&reportClass=TransactionsByContact&contact=',
+      'link_label' => 'Xero Transactions',
+    ),
+    'view_contact' => array(
+      'link' => 'https://go.xero.com/Contacts/View.aspx?contactID=',
+      'link_label' => 'Xero Contact',
+    )
+  );
+
+  $xeroBlock = "<div class='crm-summary-row'>";
+  foreach ($xeroLinks as $link) {
+    $xeroBlock .= "<div class='crm-content'><a href='{$link['link']}{$xeroID}'>{$link['link_label']}</a></div>";
+  }
+
+  $xeroBlock .= "</div>";
+
+
+  CRM_Core_Region::instance('contact-basic-info-left')->add(array(
+  'markup' => $xeroBlock
+  ));
+}
+//
