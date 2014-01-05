@@ -6,7 +6,7 @@ class CRM_Xerosync_Base {
   private $_xero_secret;
   private $_xero_public_certificate;
   private $_xero_private_key;
-  private $_plugin = 'xero';
+  protected $_plugin = 'xero';
 
   public function __construct($parameters = array()) {
     $force = FALSE;

@@ -12,6 +12,9 @@ function _civicrm_api3_xerosync_contactpull_spec(&$spec) {
   $spec['start_date'] = array(
     'api.default' => 'yesterday',
     'type' => CRM_Utils_Type::T_DATE,
+    'name' => 'start_date',
+    'title' => 'Sync Start Date',
+    'description' => 'date to start pulling from',
   );
 }
 
