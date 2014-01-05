@@ -13,6 +13,11 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
     if ($result['Contacts']){
       CRM_Core_Session::setStatus(count($result['Contacts'] . ts(' retrieved')), ts('Contact Pull'));
       foreach($result['Contacts']['Contact'] as $contact){
+        $save = TRUE;
+        CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save);
+        if(!$save) {
+          continue;
+        }
         $params = array();
         try {
           $params['id'] = civicrm_api3('account_contact', 'getvalue', array(
