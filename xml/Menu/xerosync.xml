@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/xero/settings</path>
+    <page_callback>CRM_Xerosync_Form_XeroSettings</page_callback>
+    <title>Xero Settings</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>
