@@ -1,337 +1,278 @@
 <?php
-// $Id$
-
 
 /**
-    From the README file:
+	From the README file:
 
-    Project Name: PHP Xero
-    Class Name: Xero
-    Author: David Pitman (dependent on the work of others - see below)
-    Date: April 2010
+	Project Name: PHP Xero
+	Class Name: Xero
+	Author: Ronan Quirke, Xero (dependent on the work of others, mainly David Pitman - see below)
+	Date: May 2012
 
-    Description:
-    A class for interacting with the xero (xero.com) private application API.  It could also be used for the public application API too, but it hasn't been tested with that.  More documentation for Xero can be found at http://blog.xero.com/developer/api-overview/  It is suggested you become familiar with the API before using this class, otherwise it may not make much sense to you - http://blog.xero.com/developer/api/
+	Description:
+	A class for interacting with the xero (xero.com) private application API.  It could also be used for the public application API too, but it hasn't been tested with that.  More documentation for Xero can be found at http://blog.xero.com/developer/api-overview/  It is suggested you become familiar with the API before using this class, otherwise it may not make much sense to you - http://blog.xero.com/developer/api/
 
-    Thanks for the Oauth* classes provided by Andy Smith, find more about them at http://oauth.googlecode.com/.  The
-    OAuthSignatureMethod_Xero class was written by me, as required by the Oauth classes.  The ArrayToXML classes were sourced from wwwzealdcom's work as shown on the comment dated August 30, 2009 on this page: http://snipplr.com/view/3491/convert-php-array-to-xml-or-simple-xml-object-if-you-wish/  I made a few minor changes to that code to overcome some bugs.
+	Thanks for the Oauth* classes provided by Andy Smith, find more about them at http://oauth.googlecode.com/.  The
+	OAuthSignatureMethod_Xero class was written by me, as required by the Oauth classes.  The ArrayToXML classes were sourced from wwwzealdcom's work as shown on the comment dated August 30, 2009 on this page: http://snipplr.com/view/3491/convert-php-array-to-xml-or-simple-xml-object-if-you-wish/  I made a few minor changes to that code to overcome some bugs.
 
-    ---
+	---
 
-    License (applies to Xero and Oauth* classes):
-    The MIT License
+	License (applies to Xero and Oauth* classes):
+	The MIT License
 
-    Copyright (c) 2007 Andy Smith (Oauth*)
-    Copyright (c) 2010 David Pitman (Xero)
+	Copyright (c) 2007 Andy Smith (Oauth*)
+	Copyright (c) 2010 David Pitman (Xero)
+	Copyright (c) 2012 Ronan Quirke, Xero (Xero)
 
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
 
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
 
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
-
-    ---
-
-    Usage Summary:
-
-    Basically instantiate the Xero class with your credentials and desired output format.  Then call any of the methods as outlined in the API.  Calling an API method name as a property is the same as calling that API method with no options. Calling the API method as a method with an array as the only input param with like calling the corresponding POST or PUT API method.  You can make more complex GET requests using up to four params on the method.  If you have read the xero api documentation, it should be clear.
-
-    Example Usage:
-
-//include the class files
-include_once "Xero.php";
-
-//define your application key and secret (find these at https://api.xero.com/Application)
-define('XERO_KEY','[APPLICATION KEY]');
-define('XERO_SECRET','[APPLICATION SECRET]');
-
-//instantiate the Xero class with your key, secret and paths to your RSA cert and key
-//the last argument is optional and may be either "xml" or "json" (default)
-//"xml" will give you the result as a SimpleXMLElement object, while 'json' will give you a plain array object
-$xero = new Xero(XERO_KEY, XERO_SECRET, [path to public certificate], [path to private key] ), 'xml' );
-
-//the input format for creating a new contact see http://blog.xero.com/developer/api/contacts/ to understand more
-$new_contact = array(
-    array(
-        "Name" => "API TEST Contact",
-        "FirstName" => "TEST",
-        "LastName" => "Contact",
-        "Addresses" => array(
-            "Address" => array(
-                array(
-                    "AddressType" => "POSTAL",
-                    "AddressLine1" => "PO Box 100",
-                    "City" => "Someville",
-                    "PostalCode" => "3890"
-                ),
-                array(
-                    "AddressType" => "STREET",
-                    "AddressLine1" => "1 Some Street",
-                    "City" => "Someville",
-                    "PostalCode" => "3890"
-                )
-            )
-        )
-    )
-);
-
-//the input format for creating a new invoice (or credit note) see http://blog.xero.com/developer/api/invoices/
-$new_invoice = array(
-    array(
-        "Type"=>"ACCREC",
-        "Contact" => array(
-            "ContactID" => "[contact id]"
-        ),
-        "Date" => "2010-04-08",
-        "DueDate" => "2010-04-30",
-        "Status" => "SUBMITTED",
-        "LineAmountTypes" => "Exclusive",
-        "LineItems"=> array(
-            "LineItem" => array(
-                array(
-                    "Description" => "Just another test invoice",
-                    "Quantity" => "2.0000",
-                    "UnitAmount" => "250.00",
-                    "AccountCode" => "200"
-                )
-            )
-        )
-    )
-);
-
-//the input format for creating a new payment see http://blog.xero.com/developer/api/payments/ to understand more
-$new_payment = array(
-    array(
-        "Invoice" => array(
-            "InvoiceNumber" => "INV-0002"
-        ),
-        "Account" => array(
-            "Code" => "[account code]"
-        ),
-        "Date" => "2010-04-09",
-        "Amount"=>"100.00",
-    )
-);
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
 
 
-//raise an invoice
-$invoice_result = $xero->Invoices( $new_invoice );
-
-//apply a payment to an invoice - the invoice must be first approved via the human interface as at April 2010
-//see http://xero.uservoice.com/forums/5528-xero-api/suggestions/72870-be-able-to-approve-and-send-invoices-via-the-api
-$payment_result = $xero->Payments( $new_payment );
-
-//get details of an account, with the name "Test Account"
-$result = $xero->Accounts(false, false, array("Name"=>"Test Account") );
-//the params above correspond to the "Optional params for GET Accounts" on http://blog.xero.com/developer/api/accounts/
-//to do a GET request, all params are optional
-//first param should be a boolean "false" or a string AccountID,
-//second param  should be a date/time, in any format
-//third param can be an array of filters, with array keys being filter fields (left of operand), and array values
-//being the right of operand values.  The array value can be a string or an array(operand, value), or a boolean
-//the whole third param can also be a string using the format described at
-// http://blog.xero.com/developer/api-overview/http-methods-and-filters/ in the Filters section
-//the fourth param (optional) is a string field name to order by
-//to do a POST request, the first and only param must be a multidimensional array as shown above in $new_contact etc.
-
-//get details of all accounts
-$all_accounts = $xero->Accounts;
-
-//echo the results back
-if ( is_object($result) ) {
-    //use this to see the source code if the $format option is "xml"
-    echo htmlentities($result->asXML()) . "<hr />";
-} else {
-    //use this to see the source code if the $format option is "json" or not specified
-    echo json_encode($result) . "<hr />";
-}
 
 */
 
-class CRM_Xerosync_Xero {
-    const ENDPOINT = 'https://api.xero.com/api.xro/2.0/';
+class Xero {
+	const ENDPOINT = 'https://api.xero.com/api.xro/2.0/';
 
-    private $key;
-    private $secret;
-    private $public_cert;
-    private $private_key;
-    private $consumer;
-    private $token;
-    private $signature_method;
-    private $format;
+	private $key;
+	private $secret;
+	private $public_cert;
+	private $private_key;
+	private $consumer;
+	private $token;
+	private $signature_method;
+	private $format;
 
-    public function __construct($key = false, $secret = false, $public_cert = false, $private_key = false, $format = 'json') {
-        $this->key = $key;
-        $this->secret = $secret;
-        $this->public_cert = $public_cert;
-        $this->private_key = $private_key;
-        if ( !($this->key) || !($this->secret) || !($this->public_cert) || !($this->private_key) ) {
-            return false;
-        }
-        if ( !file_exists($this->public_cert) || !file_exists($this->private_key) ) {
-            return false;
-        }
-        $this->consumer = new OAuthConsumer($this->key, $this->secret);
-        $this->token = new OAuthToken($this->key, $this->secret);
-        $this->signature_method  = new OAuthSignatureMethod_Xero($this->public_cert, $this->private_key);
-        $this->format = ( in_array($format, array('xml','json') ) ) ? $format : 'json' ;
-    }
+	public function __construct($key = false, $secret = false, $public_cert = false, $private_key = false, $format = 'json') {
+		$this->key = $key;
+		$this->secret = $secret;
+		$this->public_cert = $public_cert;
+		$this->private_key = $private_key;
+		if ( !($this->key) || !($this->secret) || !($this->public_cert) || !($this->private_key) ) {
+			error_log('Stuff missing ');
+			return false;
+		}
+		if(!file_exists($this->public_cert))
+		throw new XeroException('Public cert does not exist: ' . $this->public_cert);
+		if(!file_exists($this->private_key))
+		throw new XeroException('Private key does not exist: ' . $this->private_key);
 
-    public function __call($name, $arguments) {
-        $name = strtolower($name);
-        $valid_methods = array('accounts','contacts','creditnotes','currencies','invoices','organisation','payments','taxrates','trackingcategories', 'banktransactions');
-        $valid_post_methods = array('contacts','creditnotes','invoices','banktransactions');
-        $valid_put_methods = array('payments');
-        $valid_get_methods = array('banktransactions', 'contacts','creditnotes','invoices','accounts','currencies','organisation','taxrates','trackingcategories');
-        $methods_map = array(
-            'accounts' => 'Accounts',
-            'contacts' => 'Contacts',
-            'creditnotes' => 'CreditNotes',
-            'currencies' => 'Currencies',
-            'invoices' => 'Invoices',
-            'organisation' => 'Organisation',
-            'payments' => 'Payments',
-            'taxrates' => 'TaxRates',
-            'trackingcategories' => 'TrackingCategories',
-            'banktransactions' => 'BankTransactions',
-        );
-        if ( !in_array($name,$valid_methods) ) {
-            return false;
-        }
-        if ( (count($arguments) == 0) || ( is_string($arguments[0]) ) || ( is_numeric($arguments[0]) ) || ( $arguments[0] === false ) ) {
-            //it's a GET request
-            if ( !in_array($name, $valid_get_methods) ) {
-                return false;
-            }
-            $filterid = ( count($arguments) > 0 ) ? strip_tags(strval($arguments[0])) : false;
-            $modified_after = ( count($arguments) > 1 ) ? str_replace( 'X','T', date( 'Y-m-dXH:i:s', strtotime($arguments[1])) ) : false;
-            $where = ( count($arguments) > 2 ) ? $arguments[2] : false;
-            if ( is_array($where) && (count($where) > 0) ) {
-                $temp_where = '';
-                foreach ( $where as $wf => $wv ) {
-                    if ( is_bool($wv) ) {
-                        $wv = ( $wv ) ? "%3d%3dtrue" : "%3d%3dfalse";
-                    } else if ( is_array($wv) ) {
-                        if ( is_bool($wv[1]) ) {
-                            $wv = ($wv[1]) ? rawurlencode($wv[0]) . "true" : rawurlencode($wv[0]) . "false" ;
-                        } else {
-                            $wv = rawurlencode($wv[0]) . "%22{$wv[1]}%22" ;
-                        }
-                    } else {
-                        $wv = "%3d%3d%22$wv%22";
-                    }
-                    $temp_where .= "%26%26$wf$wv";
-                }
-                $where = strip_tags(substr($temp_where, 6));
-            } else {
-                $where = strip_tags(strval($where));
-            }
-            $order = ( count($arguments) > 3 ) ? strip_tags(strval($arguments[3])) : false;
-            $method = $methods_map[$name];
-            $xero_url = self::ENDPOINT . $method;
-            if ( $filterid ) {
-                $xero_url .= "/$filterid";
-            }
-            if ( $where ) {
-                $xero_url .= "?where=$where";
-            }
-            if ( $order ) {
-                $xero_url .= "&order=$order";
-            }
-            $req  = OAuthRequest::from_consumer_and_token( $this->consumer, $this->token, 'GET',$xero_url);
-            $req->sign_request($this->signature_method , $this->consumer, $this->token);
-            $ch = curl_init();
-            curl_setopt($ch,CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_URL, $req->to_url());
-            if ( $modified_after ) {
-                curl_setopt($ch, CURLOPT_HTTPHEADER, array("If-Modified-Since: $modified_after"));
-            //    curl_setopt($ch, CURLOPT_HEADER, 1);
-            }
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            $temp_xero_response = curl_exec($ch);
-            $xero_xml = simplexml_load_string( $temp_xero_response );
-            curl_close($ch);
-            if ( !$xero_xml ) {
-                return $temp_xero_response;
-            }
-            if ( $this->format == 'xml' ) {
-                return $xero_xml;
-            } else {
-                return ArrayToXML::toArray( $xero_xml );
-            }
-        } elseif ( (count($arguments) == 1) || ( is_array($arguments[0]) ) || ( is_a( $arguments[0], 'SimpleXMLElement' ) ) ) {
-            //it's a POST or PUT request
-            if ( !(in_array($name, $valid_post_methods) || in_array($name, $valid_put_methods)) ) {
-                return false;
-            }
-            $method = $methods_map[$name];
-            if ( is_a( $arguments[0], 'SimpleXMLElement' ) ) {
-                $post_body = $arguments[0]->asXML();
-            } elseif ( is_array( $arguments[0] ) ) {
-                $post_body = ArrayToXML::toXML( $arguments[0], $rootNodeName = $method );
-            }
-            $post_body = trim(substr($post_body, (stripos($post_body, ">")+1) ));
-            if ( in_array( $name, $valid_post_methods ) ) {
-                $xero_url = self::ENDPOINT . $method;
-                $req  = OAuthRequest::from_consumer_and_token( $this->consumer, $this->token, 'POST',$xero_url, array('xml'=>$post_body) );
-                $req->sign_request($this->signature_method , $this->consumer, $this->token);
-                $ch = curl_init();
-                curl_setopt($ch,CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($ch, CURLOPT_URL, $xero_url);
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $req->to_postdata() );
-                curl_setopt($ch, CURLOPT_HEADER, $req->to_header());
-            } else {
-                $xero_url = self::ENDPOINT . $method;
-                $req  = OAuthRequest::from_consumer_and_token( $this->consumer, $this->token, 'PUT',$xero_url );
-                $req->sign_request($this->signature_method , $this->consumer, $this->token);
-                $xml = $post_body;
-                $fh  = fopen('php://memory', 'w+');
-                fwrite($fh, $xml);
-                rewind($fh);
-                $ch = curl_init($req->to_url());
-                curl_setopt($ch,CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($ch, CURLOPT_PUT, true);
-                curl_setopt($ch, CURLOPT_INFILE, $fh);
-                curl_setopt($ch, CURLOPT_INFILESIZE, strlen($xml));
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                fclose($fh);
-            }
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            $xero_response = curl_exec($ch);
-            $xero_xml = simplexml_load_string( $xero_response );
-            if (!$xero_xml) {
-                return $xero_response;
-            }
-            curl_close($ch);
-            if ( !$xero_xml ) {
-                return false;
-            }
-            if ( $this->format == 'xml' ) {
-                return $xero_xml;
-            } else {
-                return ArrayToXML::toArray( $xero_xml );
-            }
-        } else {
-            return false;
-        }
-    }
+		$this->consumer = new OAuthConsumer($this->key, $this->secret);
+		$this->token = new OAuthToken($this->key, $this->secret);
+		$this->signature_method  = new OAuthSignatureMethod_Xero($this->public_cert, $this->private_key);
+		$this->format = ( in_array($format, array('xml','json') ) ) ? $format : 'json' ;
+	}
 
-    public function __get($name) {
-        return $this->$name();
-    }
+	public function __call($name, $arguments) {
+		$name = strtolower($name);
+		$valid_methods = array('accounts','banktransactions','brandingthemes','contacts','creditnotes','currencies','employees','expenseclaims','invoices','items','journals','manualjournals','organisation','payments','receipts','taxrates','trackingcategories','users');
+		$valid_post_methods = array('banktransactions','contacts','creditnotes','employees','expenseclaims','invoices','items','manualjournals','receipts','banktransactions');
+		$valid_put_methods = array('banktransactions','contacts','creditnotes','employees','expenseclaims','invoices','items','manualjournals','payments','receipts');
+		$valid_get_methods = array('accounts','banktransactions','brandingthemes','contacts','creditnotes','currencies','employees','expenseclaims','invoices','items','journals','manualjournals','organisation','payments','receipts','taxrates','trackingcategories','users');
+		$methods_map = array(
+			'accounts' => 'Accounts',
+			'banktransactions' => 'BankTransactions',
+			'brandingthemes' => 'BrandingThemes',
+			'contacts' => 'Contacts',
+			'creditnotes' => 'CreditNotes',
+			'currencies' => 'Currencies',
+			'employees' => 'Employees',
+			'expenseclaims' => 'ExpenseClaims',
+			'invoices' => 'Invoices',
+			'items' => 'Items',
+			'journals' => 'Journals',
+			'manualjournals' => 'ManualJournals',
+			'organisation' => 'Organisation',
+			'payments' => 'Payments',
+			'receipts' => 'Receipts',
+			'taxrates' => 'TaxRates',
+			'trackingcategories' => 'TrackingCategories',
+			'users' => 'Users'
+
+		);
+		if ( !in_array($name,$valid_methods) ) {
+			throw new XeroException('The selected method does not exist. Please use one of the following methods: '.implode(', ',$methods_map));
+		}
+		if ( (count($arguments) == 0) || ( is_string($arguments[0]) ) || ( is_numeric($arguments[0]) ) || ( $arguments[0] === false ) ) {
+			$where = false;
+			//it's a GET request
+			if ( !in_array($name, $valid_get_methods) ) {
+				return false;
+			}
+			$filterid = ( count($arguments) > 0 ) ? strip_tags(strval($arguments[0])) : false;
+			if(isset($arguments[1])) $modified_after = ( count($arguments) > 1 ) ? str_replace( 'X','T', date( 'Y-m-dXH:i:s', strtotime($arguments[1])) ) : false;
+			if(isset($arguments[2])) $where = ( count($arguments) > 2 ) ? $arguments[2] : false;
+			if ( is_array($where) && (count($where) > 0) ) {
+				$temp_where = '';
+				foreach ( $where as $wf => $wv ) {
+					if ( is_bool($wv) ) {
+						$wv = ( $wv ) ? "%3d%3dtrue" : "%3d%3dfalse";
+					} else if ( is_array($wv) ) {
+						if ( is_bool($wv[1]) ) {
+							$wv = ($wv[1]) ? rawurlencode($wv[0]) . "true" : rawurlencode($wv[0]) . "false" ;
+						} else {
+							$wv = rawurlencode($wv[0]) . "%22{$wv[1]}%22" ;
+						}
+					} else {
+						$wv = "%3d%3d%22$wv%22";
+					}
+					$temp_where .= "%26%26$wf$wv";
+				}
+				$where = strip_tags(substr($temp_where, 6));
+			} else {
+				$where = strip_tags(strval($where));
+			}
+			$order = ( count($arguments) > 3 ) ? strip_tags(strval($arguments[3])) : false;
+			$acceptHeader = ( !empty( $arguments[4] ) ) ? $arguments[4] : '';
+			$method = $methods_map[$name];
+			$xero_url = self::ENDPOINT . $method;
+			if ( $filterid ) {
+				$xero_url .= "/$filterid";
+			}
+			if ( isset($where) ) {
+				$xero_url .= "?where=$where";
+			}
+			if ( $order ) {
+				$xero_url .= "&order=$order";
+			}
+			$req  = OAuthRequest::from_consumer_and_token( $this->consumer, $this->token, 'GET',$xero_url);
+			$req->sign_request($this->signature_method , $this->consumer, $this->token);
+			$ch = curl_init();
+			if ( $acceptHeader=='pdf' ) {
+				curl_setopt($ch,CURLOPT_HTTPHEADER,
+						array (
+							"Accept: application/".$acceptHeader
+						)
+					);
+				}
+			curl_setopt($ch,CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_URL, $req->to_url());
+			if ( isset($modified_after) && $modified_after != false) {
+				curl_setopt($ch, CURLOPT_HTTPHEADER, array("If-Modified-Since: $modified_after"));
+			}
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			$temp_xero_response = curl_exec($ch);
+			curl_close($ch);
+			if ( $acceptHeader=='pdf' ) {
+				return $temp_xero_response;
+
+			}
+
+			try {
+			if(@simplexml_load_string( $temp_xero_response )==false){
+				throw new XeroException($temp_xero_response);
+				$xero_xml = false;
+				}else{
+				$xero_xml = simplexml_load_string( $temp_xero_response );
+				}
+				}
+
+			catch (XeroException $e)
+				  {
+				  return $e->getMessage() . "<br/>";
+				  }
+
+
+			if ( $this->format == 'xml' && isset($xero_xml) ) {
+				return $xero_xml;
+			} elseif(isset($xero_xml)) {
+				return ArrayToXML::toArray( $xero_xml );
+			}
+		} elseif ( (count($arguments) == 1) || ( is_array($arguments[0]) ) || ( is_a( $arguments[0], 'SimpleXMLElement' ) ) ) {
+			//it's a POST or PUT request
+			if ( !(in_array($name, $valid_post_methods) || in_array($name, $valid_put_methods)) ) {
+				return false;
+			}
+			$method = $methods_map[$name];
+			if ( is_a( $arguments[0], 'SimpleXMLElement' ) ) {
+				$post_body = $arguments[0]->asXML();
+			} elseif ( is_array( $arguments[0] ) ) {
+				$post_body = ArrayToXML::toXML( $arguments[0], $rootNodeName = $method );
+			}
+			$post_body = trim(substr($post_body, (stripos($post_body, ">")+1) ));
+			if ( in_array( $name, $valid_post_methods ) ) {
+				$xero_url = self::ENDPOINT . $method;
+				$req  = OAuthRequest::from_consumer_and_token( $this->consumer, $this->token, 'POST',$xero_url, array('xml'=>$post_body) );
+				$req->sign_request($this->signature_method , $this->consumer, $this->token);
+				$ch = curl_init();
+				curl_setopt($ch,CURLOPT_SSL_VERIFYPEER, false);
+				curl_setopt($ch, CURLOPT_URL, $xero_url);
+				curl_setopt($ch, CURLOPT_POST, true);
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $req->to_postdata() );
+				curl_setopt($ch, CURLOPT_HEADER, $req->to_header());
+			} else {
+				$xero_url = self::ENDPOINT . $method;
+				$req  = OAuthRequest::from_consumer_and_token( $this->consumer, $this->token, 'PUT',$xero_url );
+				$req->sign_request($this->signature_method , $this->consumer, $this->token);
+				$xml = $post_body;
+				$fh  = fopen('php://memory', 'w+');
+				fwrite($fh, $xml);
+				rewind($fh);
+				$ch = curl_init($req->to_url());
+				curl_setopt($ch,CURLOPT_SSL_VERIFYPEER, false);
+				curl_setopt($ch, CURLOPT_PUT, true);
+				curl_setopt($ch, CURLOPT_INFILE, $fh);
+				curl_setopt($ch, CURLOPT_INFILESIZE, strlen($xml));
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			}
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			$xero_response = curl_exec($ch);
+			if (isset($fh)) fclose($fh);
+			try {
+			if(@simplexml_load_string( $xero_response )==false){
+				throw new XeroException($xero_response);
+
+				}else{
+				$xero_xml = simplexml_load_string( $xero_response );
+				}
+				}
+
+			catch (XeroException $e)
+				  {
+				  //display custom message
+				  return $e->getMessage() . "<br/>";
+				  }
+
+			curl_close($ch);
+			if (!isset($xero_xml) ) {
+				return false;
+			}
+			if ( $this->format == 'xml' && isset($xero_xml)) {
+				return $xero_xml;
+			} elseif(isset($xero_xml)) {
+				return ArrayToXML::toArray( $xero_xml );
+			}
+		} else {
+			return false;
+		}
+
+
+	}
+
+	public function __get($name) {
+		return $this->$name();
+	}
+
+	public function verify() {
+		if (!isset($this->consumer) || !isset($this->token) || !isset($this->signature_method)) {
+			return false;
+		}
+		return true;
+	}
 
 }
 
@@ -755,7 +696,7 @@ class OAuthRequest {
    */
   public function to_header($realm=null) {
     $first = true;
-    if($realm) {
+	if($realm) {
       $out = 'Authorization: OAuth realm="' . OAuthUtil::urlencode_rfc3986($realm) . '"';
       $first = false;
     } else
@@ -1210,21 +1151,21 @@ class OAuthUtil {
 
 //Xero specific signature class
 class OAuthSignatureMethod_Xero extends OAuthSignatureMethod_RSA_SHA1 {
-    protected $public_cert;
-    protected $private_key;
+	protected $public_cert;
+	protected $private_key;
 
-    public function __construct($public_cert, $private_key) {
-        $this->public_cert = $public_cert;
-        $this->private_key = $private_key;
-    }
+	public function __construct($public_cert, $private_key) {
+		$this->public_cert = $public_cert;
+		$this->private_key = $private_key;
+	}
 
-    protected function fetch_public_cert(&$request) {
-        return file_get_contents( $this->public_cert );
-    }
+	protected function fetch_public_cert(&$request) {
+		return file_get_contents( $this->public_cert );
+	}
 
-    protected function fetch_private_cert(&$request) {
-        return file_get_contents( $this->private_key );
-    }
+	protected function fetch_private_cert(&$request) {
+		return file_get_contents( $this->private_key );
+	}
 }
 
 //END Oauth classes
@@ -1245,14 +1186,14 @@ class ArrayToXML
         // turn off compatibility mode as simple xml throws a wobbly if you don't.
         if ( ini_get('zend.ze1_compatibility_mode') == 1 ) ini_set ( 'zend.ze1_compatibility_mode', 0 );
         if ( is_null( $xml ) ) {
-        $xml = simplexml_load_string( "<$rootNodeName />" );
-        $rootNodeName = rtrim($rootNodeName, 's');
-    }
-    // loop through the data passed in.
+		$xml = simplexml_load_string( "<$rootNodeName />" );
+		$rootNodeName = rtrim($rootNodeName, 's');
+	}
+	// loop through the data passed in.
         foreach( $data as $key => $value ) {
 
             // no numeric keys in our xml please!
-        $numeric = 0;
+	    $numeric = 0;
             if ( is_numeric( $key ) ) {
                 $numeric = 1;
                 $key = $rootNodeName;
@@ -1271,7 +1212,7 @@ class ArrayToXML
             } else {
 
                 // add single node.
-                $value = htmlentities( $value );
+                $value = htmlentities( $value, ENT_NOQUOTES, 'UTF-8', FALSE );
                 $xml->addChild( $key, $value );
             }
         }
@@ -1321,4 +1262,36 @@ class ArrayToXML
     public static function isAssoc( $array ) {
         return (is_array($array) && 0 !== count(array_diff_key($array, array_keys(array_keys($array)))));
     }
+}
+
+class XeroException extends Exception { }
+
+class XeroApiException extends XeroException {
+	private $xml;
+
+	public function __construct($xml_exception)
+	{
+		$this->xml = $xml_exception;
+		$xml = new SimpleXMLElement($xml_exception);
+
+		list($message) = $xml->xpath('/ApiException/Message');
+		list($errorNumber) = $xml->xpath('/ApiException/ErrorNumber');
+		list($type) = $xml->xpath('/ApiException/Type');
+
+		parent::__construct((string)$type . ': ' . (string)$message, (int)$errorNumber);
+
+		$this->type = (string)$type;
+	}
+
+	public function getXML()
+	{
+		return $this->xml;
+	}
+
+	public static function isException($xml)
+	{
+		return preg_match('/^<ApiException.*>/', $xml);
+	}
+
+
 }

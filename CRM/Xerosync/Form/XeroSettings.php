@@ -90,9 +90,11 @@ class CRM_Xerosync_Form_XeroSettings extends CRM_Core_Form {
    */
   function setDefaultValues() {
     $existing = civicrm_api3('setting', 'get', array('return' => array_keys($this->getFormSettings())));
-    foreach ($existing['values'] as $name => $value) {
-      $this->_defaults[$name] = $value;
+    $defaults = array();
+    $domainID = CRM_Core_Config::domainID();
+    foreach ($existing['values'][$domainID] as $name => $value) {
+      $defaults[$name] = $value;
     }
-    return $this->_defaults;
+    return $defaults;
   }
 }
