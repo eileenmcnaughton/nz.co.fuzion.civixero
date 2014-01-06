@@ -96,7 +96,7 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
         // that would allow us to continue with others
         $errors = $this->validateResponse($result);
         $record['error_data'] = $errors ? json_encode($errors) : NULL;
-        //this will update the last sync date & anything hook-modified
+        //this will update the last sync date
         $record['accounts_needs_update'] = 0;
         unset($record['last_sync_date']);
         civicrm_api3('account_contact', 'create', $record);

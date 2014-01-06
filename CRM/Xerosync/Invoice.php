@@ -14,7 +14,6 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
     if(!is_array($result)){
       throw new API_Exception('Sync Failed', 'xero_retrieve_failure', $result);
     }
-
     if (!empty($result['Invoices'])){
       CRM_Core_Session::setStatus(count($result['Invoices']) . ts(' retrieved'), ts('Invoice Pull'));
       foreach($result['Invoices']['Invoice'] as $invoice){
@@ -26,6 +25,7 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
           'accounts_invoice_id' => $invoice['InvoiceID'],
           'accounts_data' => json_encode($invoice),
           'accounts_status_id' => $this->mapStatus($invoice['Status']),
+          'accounts_needs_update' => 0,
         );
         CRM_Accountsync_Hook::accountPullPreSave('invoice', $invoice, $save, $params);
         if(!$save) {
@@ -39,10 +39,26 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
           ));
         }
         catch (CiviCRM_API3_Exception $e) {
-          // this is an update
-
+          // this is an update - but lets just check the contact id doesn't exist in the account_contact table first
+          // e.g if a list has been generated but not yet pushed
+          try {
+            $existing = civicrm_api3('account_invoice', 'getsingle', array(
+              'return' => 'id',
+              'contribution_id' => $invoice['InvoiceNumber'],
+              'plugin' => $this->_plugin,
+            ));
+            $params['id'] = $existing['id'];
+            if(!empty($existing['accounts_invoice_id']) && $existing['accounts_invoice_id'] != $invoice['InvoiceID']) {
+              // no idea how this happened or what it means - calling function can catch & deal with it
+              throw new CRM_Core_Exception(ts('Cannot update invoice'), 'data_error', $invoice);
+            }
+          }
+          catch (CiviCRM_API3_Exception $e) {
+            // ok - it IS an update
+          }
         }
         try {
+          //@todo - remove try catch here - this layer should throw exceptions
           $result = civicrm_api3('account_invoice', 'create', $params);
         }
         catch (CiviCRM_API3_Exception $e) {
@@ -65,7 +81,8 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
   function push($params) {
     $records = civicrm_api3('account_invoice', 'get', array(
       'accounts_needs_update' => 1,
-      'api.contrtibution.get' => 1,
+      'api.account_invoice.getderived' => array('id' => '$value.contribution_id'),
+      'plugin' => $this->_plugin,
       )
     );
     //@todo pass limit through from params to get call
@@ -135,6 +152,7 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
     if (!$proceed) {
       return FALSE;
     }
+    $this->validatePrerequisites($new_invoice);
     $new_invoice = array (
       $new_invoice
     );
@@ -156,27 +174,32 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
     );
     return $statuses[$status];
   }
+
   /**
-   * Pre process an invoice - this was part of the old CiviXero - for now we will just store it & re-use later
-   * in a prePushHook
+   * Validate an invoice by checking the tracking category exists (if set)
+   * @param array $invoice array ready for Xero
    */
   function validatePrerequisites($invoice){
     static $trackingOptions = array();
     if(empty($trackingOptions)){
-      $tc = $xero->TrackingCategories;
-      foreach($tc['TrackingCategories']['TrackingCategory'] as $trackingCategory){
-        foreach ($trackingCategory['Options']['Option'] as $key =>$value){
-          $trackingOptions[] = $value['Name'];
+      $trackingOptions = civicrm_api3('xerosync', 'trackingcategorypull', array());
+      $trackingOptions = $trackingOptions['values'];
+    }
+    if(empty($invoice['LineItems'])) {
+      return;
+    }
+    foreach ($invoice['LineItems']['LineItem'] as $lineItems) {
+      foreach ($lineItems as $lineItem) {
+        if(empty($lineItem['TrackingCategory'])) {
+          continue;
+        }
+        foreach ($lineItem['TrackingCategory'] as $tracking) {
+          if(!array_key_exists($tracking['Name'], $trackingOptions)
+            || !in_array($tracking['Option'], $trackingOptions[$tracking['Name']])) {
+            throw new CRM_Core_Exception(ts('Tracking Category Does Not Exist ') . $tracking['Name'] . ' ' . $tracking['Option'],'invalid_tracking', $tracking);
+          }
         }
       }
     }
-    if(!in_array($invoice['block'],$trackingOptions)){
-      $errors[] = "Tracking Category " . $invoice['block'] ." needs to be created in Xero before the invoice syncronisation can be completed";
-    }
-    if(!in_array($invoice['event_code'],$trackingOptions)){
-      $errors[] = "Tracking Category " . $invoice['event_code'] ." needs to be created in Xero before the invoice syncronisation can be completed";
-    }
-
-    return $errors;
   }
 }
