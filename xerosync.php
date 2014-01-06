@@ -148,12 +148,16 @@ function xerosync_civicrm_navigationMenu(&$menu) {
  */
 function xerosync_civicrm_pageRun(&$page) {
   $pageName = get_class($page);
-  if($pageName != 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
+   if($pageName != 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
     return;
   }
   if(($contactID = $page->getVar('_contactId')) != FALSE) {
     try{
-      $xeroID = civicrm_api3('account_contact', 'getvalue', array('contact_id' => $contactID, 'return' => 'accounts_contact_id'));
+      $xeroID = civicrm_api3('account_contact', 'getvalue', array(
+        'contact_id' => $contactID,
+        'return' => 'accounts_contact_id',
+        'plugin' => 'xero',
+      ));
     }
     catch(Exception $e) {
       //no record
@@ -186,5 +190,24 @@ function xerosync_civicrm_pageRun(&$page) {
   CRM_Core_Region::instance('contact-basic-info-left')->add(array(
   'markup' => $xeroBlock
   ));
+
+  //https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=
 }
-//
+
+function xerosync_civicrm_searchColumns( $objectName, &$headers,  &$values, &$selector ) {
+  if ($objectName == 'contribution') {
+    foreach ($values as &$value) {
+      try {
+        $invoiceID = civicrm_api3('account_invoice', 'getvalue', array(
+          'plugin' => 'xero',
+          'contribution_id' => $value['contribution_id'],
+          'return' => 'accounts_invoice_id',
+        ));
+        $value['contribution_status'] .= "<a href='https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=" . $invoiceID . "'> <p>Xero</p></a>";
+      }
+      catch (Exception $e) {
+        continue;
+      }
+    }
+  }
+}

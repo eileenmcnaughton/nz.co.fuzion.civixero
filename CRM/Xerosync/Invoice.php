@@ -74,7 +74,7 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
         $accountsContactID = $record['accounts_contact_id'];
         $civiCRMcontact  = $record['api.contact.get'];
         $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
-        $result = $this->getSingleton()->Contacts($accountsContact);
+        $result = $this->getSingleton()->Invoices($accountsContact);
         // we will expect the caller to deal with errors
         //@todo - not sure we should throw on first
         // perhaps we should save error data & it needs to be removed before we try again for this contact
@@ -95,12 +95,50 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
   /**
    * Map civicrm Array to Accounts package field names
    *
-   * @param array $invoice Array as returned from API
-   * @param
-   *          string accountsID ID from Accounting system
+   * @param array $invoiceData  - require
+   *  contribution fields
+   *   - line items
+   *   - receive date
+   *   - source
+   *   - contact_id
+   * @param string accountsID ID from Accounting system
    * @return $accountsContact Contact Object/ array as expected by accounts package
    */
-  function mapToAccounts($invoice, $accountsID) {
+  function mapToAccounts($invoiceData, $accountsID) {
+    $lineItems = array();
+    foreach ($invoiceData['line_items'] as $lineitem) {
+      $lineItems[] = array(
+        "Description" => $lineitem['display_name'] . $lineitem['label'],
+        "Quantity"    => $lineitem['qty'],
+        "UnitAmount"  => $lineitem['unit_price'],
+        "AccountCode" => $lineitem['accounting_code'],
+      );
+    }
+
+    $new_invoice = array(
+      "Type" => "ACCREC",
+      "Contact" => array(
+        "ContactNumber" => $invoiceData['contact_id'],
+      ),
+      "Date"            => substr($invoiceData['receive_date'], 0, 10),
+      "DueDate"         => substr($invoiceData['receive_date'], 0, 10),
+      "Status"          => "SUBMITTED",
+      "InvoiceNumber"   => $invoiceData['id'],
+      "CurrencyCode"    => CRM_Core_Config::singleton()->defaultCurrency,
+      "Reference"       => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
+      "LineAmountTypes" => "Inclusive",
+      'LineItems' => array('LineItem' => $lineItems),
+    );
+
+    $proceed = TRUE;
+    CRM_Accountsync_Hook::accountPushAlterMapped('invoice', $invoiceData, $proceed, $new_invoice);
+    if (!$proceed) {
+      return FALSE;
+    }
+    $new_invoice = array (
+      $new_invoice
+    );
+    return $new_invoice;
   }
 
   /**
@@ -118,5 +156,27 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
     );
     return $statuses[$status];
   }
+  /**
+   * Pre process an invoice - this was part of the old CiviXero - for now we will just store it & re-use later
+   * in a prePushHook
+   */
+  function validatePrerequisites($invoice){
+    static $trackingOptions = array();
+    if(empty($trackingOptions)){
+      $tc = $xero->TrackingCategories;
+      foreach($tc['TrackingCategories']['TrackingCategory'] as $trackingCategory){
+        foreach ($trackingCategory['Options']['Option'] as $key =>$value){
+          $trackingOptions[] = $value['Name'];
+        }
+      }
+    }
+    if(!in_array($invoice['block'],$trackingOptions)){
+      $errors[] = "Tracking Category " . $invoice['block'] ." needs to be created in Xero before the invoice syncronisation can be completed";
+    }
+    if(!in_array($invoice['event_code'],$trackingOptions)){
+      $errors[] = "Tracking Category " . $invoice['event_code'] ." needs to be created in Xero before the invoice syncronisation can be completed";
+    }
 
+    return $errors;
+  }
 }
