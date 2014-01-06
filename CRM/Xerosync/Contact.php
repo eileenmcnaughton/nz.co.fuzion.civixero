@@ -15,7 +15,7 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
       throw new API_Exception('Sync Failed', 'xero_retrieve_failure', $result);
     }
     if (!empty($result['Contacts'])){
-      CRM_Core_Session::setStatus(count($result['Contacts'] . ts(' retrieved')), ts('Contact Pull'));
+      CRM_Core_Session::setStatus(count($result['Contacts']) . ts(' retrieved'), ts('Contact Pull'));
       foreach($result['Contacts']['Contact'] as $contact){
         $save = TRUE;
         $params = array(
@@ -38,10 +38,25 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
           ));
         }
         catch (CiviCRM_API3_Exception $e) {
-          // this is an update
+          // this is an update - but lets just check the contact id doesn't exist in the account_contact table first
+          // e.g if a list has been generated but not yet pushed
+          try {
+            $existing = civicrm_api3('account_contact', 'getsingle', array(
+              'return' => 'id',
+              'contact_id' => $contact['ContactNumber'],
+              'plugin' => $this->_plugin,
+            ));
+            if(!empty($existing['accounts_contact_id']) && $existing['accounts_contact_id'] != $contact['ContactID']) {
+              // no idea how this happened or what it means - calling function can catch & deal with it
+              throw new CRM_Core_Exception(ts('Cannot update contact'), 'data_error', $contact);
+            }
+          }
+          catch (CiviCRM_API3_Exception $e) {
+            // ok - it IS an update
+          }
         }
         try {
-          $result = civicrm_api3('account_contact', 'create', $params);
+          civicrm_api3('account_contact', 'create', $params);
         }
         catch (CiviCRM_API3_Exception $e) {
           CRM_Core_Session::setStatus(ts('Failed to store ') . $params['accounts_display_name']
@@ -64,8 +79,10 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
     $records = civicrm_api3('account_contact', 'get', array(
       'accounts_needs_update' => 1,
       'api.contact.get' => 1,
+      'plugin' => $this->_plugin,
       )
     );
+
     //@todo pass limit through from params to get call
     foreach ($records['values'] as $record) {
       try {
