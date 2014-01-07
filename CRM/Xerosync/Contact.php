@@ -15,7 +15,6 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
       throw new API_Exception('Sync Failed', 'xero_retrieve_failure', $result);
     }
     if (!empty($result['Contacts'])){
-      CRM_Core_Session::setStatus(count($result['Contacts']) . ts(' retrieved'), ts('Contact Pull'));
       foreach($result['Contacts']['Contact'] as $contact){
         $save = TRUE;
         $params = array(
@@ -82,7 +81,7 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
       'plugin' => $this->_plugin,
       )
     );
-
+    $errors = array();
     //@todo pass limit through from params to get call
     foreach ($records['values'] as $record) {
       try {
@@ -90,21 +89,35 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
         $civiCRMcontact  = $record['api.contact.get'];
         $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
         $result = $this->getSingleton()->Contacts($accountsContact);
-        // we will expect the caller to deal with errors
-        //@todo - not sure we should throw on first
-        // perhaps we should save error data & it needs to be removed before we try again for this contact
-        // that would allow us to continue with others
-        $errors = $this->validateResponse($result);
-        $record['error_data'] = $errors ? json_encode($errors) : NULL;
+        $responseErrors = $this->validateResponse($result);
+        if($responseErrors) {
+          $record['error_data'] = $responseErrors;
+        }
+        else {
+          $record['error_data'] = 'null';
+          if(empty($record['accounts_contact_id'])) {
+            $record['accounts_contact_id'] = $result['Contacts']['Contact']['ContactID'];
+          }
+          $record['accounts_modified_date'] = $result['Contacts']['Contact']['UpdatedDateUTC'];
+          $record['accounts_data'] = json_encode($result['Contacts']['Contact']);
+          $record['accounts_display_name'] = $result['Contacts']['Contact']['Name'];
+        }
         //this will update the last sync date
         $record['accounts_needs_update'] = 0;
         unset($record['last_sync_date']);
         civicrm_api3('account_contact', 'create', $record);
       }
-      catch (Exception $e) {
-        // what do we need here? - or should we remove try catch as api will catch?
+      catch (CiviCRM_API3_Exception $e) {
+        $errors[] = ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
+          . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
+          . ts('Contact Push failed');
       }
     }
+    if($errors) {
+      // since we expect this to wind up in the job log we'll print the errors
+      throw new CRM_Core_Exception(ts('Not all invoices were saved') . print_r($errors, TRUE), 'incomplete', $errors);
+    }
+    return TRUE;
   }
 
   /**
