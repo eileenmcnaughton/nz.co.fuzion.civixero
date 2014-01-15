@@ -85,8 +85,7 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
   function push($params) {
     $records = civicrm_api3('account_invoice', 'get', array(
       'accounts_needs_update' => 1,
-      'api.account_invoice.getderived' => array('id' => '$value.contribution_id'),
-      'plugin' => $this->_plugin,
+      'plugin' => 'xero',
       )
     );
 
@@ -95,12 +94,15 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
       try {
         $accountsInvoiceID = $record['accounts_invoice_id'];
         $contributionID = $record['contribution_id'];
-        $civiCRMInvoice  = $record['api.account_invoice.getderived']['values'][$contributionID];
+        $civiCRMInvoice  = civicrm_api3('account_invoice', 'getderived', array(
+          'id' => $contributionID
+        ));
+        $civiCRMInvoice  = $civiCRMInvoice['values'][$contributionID];
         $accountsInvoice = $this->mapToAccounts($civiCRMInvoice, $accountsInvoiceID);
         $result = $this->getSingleton()->Invoices($accountsInvoice);
         $responseErrors = $this->validateResponse($result);
         if($responseErrors) {
-          $record['error_data'] = $responseErrors;
+          $record['error_data'] = json_encode($responseErrors);
         }
         else {
           $record['error_data'] = 'null';
