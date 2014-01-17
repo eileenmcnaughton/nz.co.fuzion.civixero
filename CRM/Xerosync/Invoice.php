@@ -112,9 +112,9 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
           $record['accounts_modified_date'] = $result['Invoices']['Invoice']['UpdatedDateUTC'];
           $record['accounts_data'] = json_encode($result['Invoices']['Invoice']);
           $record['accounts_status_id'] = $this->mapStatus($result['Invoices']['Invoice']['Status']);
+          $record['accounts_needs_update'] = 0;
         }
         //this will update the last sync date & anything hook-modified
-        $record['accounts_needs_update'] = 0;
         unset($record['last_sync_date']);
         civicrm_api3('account_invoice', 'create', $record);
       }

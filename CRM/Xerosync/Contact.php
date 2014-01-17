@@ -82,6 +82,7 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
       )
     );
     $errors = array();
+
     //@todo pass limit through from params to get call
     foreach ($records['values'] as $record) {
       try {
@@ -91,7 +92,7 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
         $result = $this->getSingleton()->Contacts($accountsContact);
         $responseErrors = $this->validateResponse($result);
         if($responseErrors) {
-          $record['error_data'] = $responseErrors;
+          $record['error_data'] = json_encode($responseErrors);
         }
         else {
           $record['error_data'] = 'null';
@@ -115,7 +116,7 @@ class CRM_Xerosync_Contact extends CRM_Xerosync_Base {
     }
     if($errors) {
       // since we expect this to wind up in the job log we'll print the errors
-      throw new CRM_Core_Exception(ts('Not all invoices were saved') . print_r($errors, TRUE), 'incomplete', $errors);
+      throw new CRM_Core_Exception(ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
     return TRUE;
   }
