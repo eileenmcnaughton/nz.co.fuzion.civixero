@@ -88,11 +88,12 @@ class CRM_Xerosync_Invoice extends CRM_Xerosync_Base {
       'plugin' => 'xero',
       )
     );
+    $errors = array();
 
     //@todo pass limit through from params to get call
     foreach ($records['values'] as $record) {
       try {
-        $accountsInvoiceID = $record['accounts_invoice_id'];
+        $accountsInvoiceID = isset($record['accounts_invoice_id']) ? $record['accounts_invoice_id'] : NULL;
         $contributionID = $record['contribution_id'];
         $civiCRMInvoice  = civicrm_api3('account_invoice', 'getderived', array(
           'id' => $contributionID
