@@ -8,6 +8,7 @@
 class CRM_Xerosync_Form_XeroSettings extends CRM_Core_Form {
   private $_settingFilter = array('group' => 'xero');
   //everything from this line down is generic & can be re-used for a setting form in another extension
+  //actually - I lied - I added a specific call in getFormSettings
   private $_submittedValues = array();
   private $_settings = array();
   function buildQuickForm() {
@@ -71,7 +72,9 @@ class CRM_Xerosync_Form_XeroSettings extends CRM_Core_Form {
     if(empty($this->_settings)) {
       $settings = civicrm_api3('setting', 'getfields', array ('filters' => $this->_settingFilter));
     }
-    return $settings['values'];
+    $extraSettings = civicrm_api3('setting', 'getfields', array ('filters' => array('group' => 'accountsync')));
+    $settings = $settings['values'] + $extraSettings['values'];
+    return $settings;
   }
   /**
    * Get the settings we are going to allow to be set on this form
