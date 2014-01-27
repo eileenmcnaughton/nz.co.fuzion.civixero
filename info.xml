@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <extension key="nz.co.fuzion.xerosync" type="module">
-  <file>xerosync</file>
+  <file>Civixero</file>
   <name>CiviXero</name>
   <description>CiviCRM Xero Integration</description>
   <license>AGPL</license>
@@ -17,6 +17,6 @@
   </compatibility>
   <comments>This module requires nz.co.fuzion.accountsync</comments>
   <civix>
-    <namespace>CRM/Xerosync</namespace>
+    <namespace>CRM/Civixero</namespace>
   </civix>
 </extension>

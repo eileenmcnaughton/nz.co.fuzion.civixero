@@ -1,12 +1,12 @@
 <?php
 
-require_once 'xerosync.civix.php';
+require_once 'civixero.civix.php';
 
 /**
  * Implementation of hook_civicrm_config
  */
-function xerosync_civicrm_config(&$config) {
-  _xerosync_civix_civicrm_config($config);
+function civixero_civicrm_config(&$config) {
+  _civixero_civix_civicrm_config($config);
 }
 
 /**
@@ -14,36 +14,36 @@ function xerosync_civicrm_config(&$config) {
  *
  * @param $files array(string)
  */
-function xerosync_civicrm_xmlMenu(&$files) {
-  _xerosync_civix_civicrm_xmlMenu($files);
+function civixero_civicrm_xmlMenu(&$files) {
+  _civixero_civix_civicrm_xmlMenu($files);
 }
 
 /**
  * Implementation of hook_civicrm_install
  */
-function xerosync_civicrm_install() {
-  return _xerosync_civix_civicrm_install();
+function civixero_civicrm_install() {
+  return _civixero_civix_civicrm_install();
 }
 
 /**
  * Implementation of hook_civicrm_uninstall
  */
-function xerosync_civicrm_uninstall() {
-  return _xerosync_civix_civicrm_uninstall();
+function civixero_civicrm_uninstall() {
+  return _civixero_civix_civicrm_uninstall();
 }
 
 /**
  * Implementation of hook_civicrm_enable
  */
-function xerosync_civicrm_enable() {
-  return _xerosync_civix_civicrm_enable();
+function civixero_civicrm_enable() {
+  return _civixero_civix_civicrm_enable();
 }
 
 /**
  * Implementation of hook_civicrm_disable
  */
-function xerosync_civicrm_disable() {
-  return _xerosync_civix_civicrm_disable();
+function civixero_civicrm_disable() {
+  return _civixero_civix_civicrm_disable();
 }
 
 /**
@@ -55,8 +55,8 @@ function xerosync_civicrm_disable() {
  * @return mixed  based on op. for 'check', returns array(boolean) (TRUE if upgrades are pending)
  *                for 'enqueue', returns void
  */
-function xerosync_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _xerosync_civix_civicrm_upgrade($op, $queue);
+function civixero_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+  return _civixero_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -65,8 +65,8 @@ function xerosync_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * Generate a list of entities to create/deactivate/delete when this module
  * is installed, disabled, uninstalled.
  */
-function xerosync_civicrm_managed(&$entities) {
-  return _xerosync_civix_civicrm_managed($entities);
+function civixero_civicrm_managed(&$entities) {
+  return _civixero_civix_civicrm_managed($entities);
 }
 
 /**
@@ -76,14 +76,14 @@ function xerosync_civicrm_managed(&$entities) {
  *
  * Note: This hook only runs in CiviCRM 4.4+.
  */
-function xerosync_civicrm_caseTypes(&$caseTypes) {
-  _xerosync_civix_civicrm_caseTypes($caseTypes);
+function civixero_civicrm_caseTypes(&$caseTypes) {
+  _civixero_civix_civicrm_caseTypes($caseTypes);
 }
 
 /**
  * Implementation of hook_civicrm_config
  */
-function xerosync_civicrm_alterSettingsFolders(&$metaDataFolders){
+function civixero_civicrm_alterSettingsFolders(&$metaDataFolders){
   static $configured = FALSE;
   if ($configured) return;
   $configured = TRUE;
@@ -101,7 +101,7 @@ function xerosync_civicrm_alterSettingsFolders(&$metaDataFolders){
  * Adds entries to the navigation menu
  * @param unknown $menu
  */
-function xerosync_civicrm_navigationMenu(&$menu) {
+function civixero_civicrm_navigationMenu(&$menu) {
   $maxID = CRM_Core_DAO::singleValueQuery("SELECT max(id) FROM civicrm_navigation");
   $navId = $maxID + 1;
   $menu[$navId] = array (
@@ -146,7 +146,7 @@ function xerosync_civicrm_navigationMenu(&$menu) {
  * Generate a list of entities to create/deactivate/delete when this module
  * is installed, disabled, uninstalled.
  */
-function xerosync_civicrm_pageRun(&$page) {
+function civixero_civicrm_pageRun(&$page) {
   $pageName = get_class($page);
    if($pageName != 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
     return;
@@ -194,7 +194,7 @@ function xerosync_civicrm_pageRun(&$page) {
   //https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=
 }
 
-function xerosync_civicrm_searchColumns( $objectName, &$headers,  &$values, &$selector ) {
+function civixero_civicrm_searchColumns( $objectName, &$headers,  &$values, &$selector ) {
   if ($objectName == 'contribution') {
     foreach ($values as &$value) {
       try {
