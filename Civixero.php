@@ -1,6 +1,6 @@
 <?php
 
-require_once 'civixero.civix.php';
+require_once 'Civixero.civix.php';
 
 /**
  * Implementation of hook_civicrm_config
