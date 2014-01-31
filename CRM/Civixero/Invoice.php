@@ -99,7 +99,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           'id' => $contributionID
         ));
         $civiCRMInvoice  = $civiCRMInvoice['values'][$contributionID];
-        $accountsInvoice = $this->mapToAccounts($civiCRMInvoice, $accountsInvoiceID);
+        if(empty($civiCRMInvoice)) {
+          $accountsInvoice = $this->mapCancelled($contributionID, $accountsInvoiceID);
+        }
+        else {
+          $accountsInvoice = $this->mapToAccounts($civiCRMInvoice, $accountsInvoiceID);
+        }
         $result = $this->getSingleton()->Invoices($accountsInvoice);
         $responseErrors = $this->validateResponse($result);
         if($responseErrors) {
@@ -180,6 +185,29 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $new_invoice
     );
     return $new_invoice;
+  }
+
+  function mapCancelled($contributionID, $accounts_invoice_id) {
+    $newInvoice = array(
+      'Invoice' => array(
+        'InvoiceID'     => $accounts_invoice_id,
+        'InvoiceNumber' => $contributionID,
+        'Type'          => 'ACCREC',
+        'Reference' =>  'Cancelled',
+        'Date'  => date('Y-m-d',strtotime(now)),
+        'DueDate'  => date('Y-m-d',strtotime(now)),
+        'Status'  => 'DRAFT',
+        'LineAmountTypes' =>'Exclusive',
+        'LineItems' => array(
+          'LineItem' => array(
+            'Description' => 'Cancelled',
+            'Quantity' => 0,
+            'UnitAmount'=> 0,
+            'AccountCode'=> 200,
+          )
+        ),
+      )
+    );
   }
 
   /**
