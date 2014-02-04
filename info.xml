@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<extension key="nz.co.fuzion.xerosync" type="module">
+<extension key="nz.co.fuzion.civixero" type="module">
   <file>Civixero</file>
   <name>CiviXero</name>
   <description>CiviCRM Xero Integration</description>
