@@ -23,11 +23,11 @@ http://blog.xero.com/developer/api-overview/setup-an-application/#private-apps
 
 You will then be able to access the Xero credentials you need for CiviCRM
 
-<img src='https://raw2.github.com/eileenmcnaughton/nz.co.fuzion.civixero/tree/master/docs/images/credentials.png'>
+<img src='https://raw2.github.com/eileenmcnaughton/nz.co.fuzion.civixero/master/docs/images/credentials.png'>
 
 You then need to enter these keys into the Xero Settings page per Xero Settings
 
-<img src='https://raw2.github.com/eileenmcnaughton/nz.co.fuzion.civixero/tree/master/docs/images/xero_settings.png'>
+<img src='https://raw2.github.com/eileenmcnaughton/nz.co.fuzion.civixero/master/docs/images/xero_settings.png'>
 
 On this page you should also define which edit and create actions should trigger contacts / invoices to be created / edited in Xero
 
