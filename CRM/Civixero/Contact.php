@@ -12,7 +12,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   function pull($params) {
     $result = $this->getSingleton()->Contacts(false, $this->formatDateForXero($params['start_date']));
     if(!is_array($result)){
-      throw new API_Exception('Sync Failed', 'xero_retrieve_failure', $result);
+      throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
     }
     if (!empty($result['Contacts'])){
       foreach($result['Contacts']['Contact'] as $contact){
