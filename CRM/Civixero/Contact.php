@@ -15,7 +15,13 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
     }
     if (!empty($result['Contacts'])){
-      foreach($result['Contacts']['Contact'] as $contact){
+      $contacts = $result['Contacts']['Contact'];
+      if(isset($contacts['ContactID'])) {
+        // the return syntax puts the contact only level higher up when only one contact is involved
+        $contacts = array($contacts);
+      }
+      foreach($contacts as $contact){
+
         $save = TRUE;
         $params = array(
           'accounts_display_name' => $contact['Name'],

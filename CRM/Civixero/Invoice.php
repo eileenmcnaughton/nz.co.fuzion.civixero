@@ -16,7 +16,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     $errors = array();
     if (!empty($result['Invoices'])){
-      foreach($result['Invoices']['Invoice'] as $invoice){
+      $invoices = $result['Invoices']['Invoice'];
+      if(isset($invoices['InvoiceID'])) {
+        // the return syntax puts the contact only level higher up when only one contact is involved
+        $invoices  = array($invoices );
+      }
+      foreach($invoices as $invoice){
         $save = TRUE;
         $params = array(
           'contribution_id' => CRM_Utils_Array::value('InvoiceNumber', $invoice),
