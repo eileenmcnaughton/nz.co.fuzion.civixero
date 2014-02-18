@@ -48,4 +48,6 @@ You then need to enter these keys into the Xero Settings page per Xero Settings
 
 On this page you should also define which edit and create actions should trigger contacts / invoices to be created / edited in Xero
 
+Once installed you interact with CiviXero via the scheduled jobs page and the api. Matched contacts should show links on their contact summary screen and matched contributions should show links on the invoices
+
 
