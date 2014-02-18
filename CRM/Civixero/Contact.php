@@ -138,7 +138,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    */
   function mapToAccounts($contact, $accountsID) {
     $new_contact = array (
-      "Name" => $contact['display_name'],
+      "Name" => $contact['display_name'] . " - " . $contact['contact_id'],
       "FirstName" => $contact['first_name'],
       "LastName" => $contact['last_name'],
       "EmailAddress" => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
