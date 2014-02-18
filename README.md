@@ -10,7 +10,18 @@ It sets up scheduled jobs that synchronize Xero contacts and invoices with CiviC
 Interaction with this module is primarily by API and it creates scheduled jobs to run those API. These jobs may not auto-create in CiviCRM versions prior to 4.4 or 4.2.16.
 
 SETUP
-You need a Xero api key
+
+In the server in the sites, extensions folder in a terminal window you can run the command 
+git clone https://github.com/eileenmcnaughton/nz.co.fuzion.civixero.git 
+and the same for account sync
+git clone https://github.com/eileenmcnaughton/nz.co.fuzion.accountsync.git
+then you will have the extensions added to the site.
+
+To use these extensions on the site, on the Civi menu on the site go to administer - customise data and screens - manage extensions. There you should install CiviXero and Account Sync.
+
+You should now have a Xero tab in the civi menu. From here you can edit the xero settings. To do this 
+
+You need a Xero api key. 
 
 Log into https://api.xero.com/Application?redirectCount=0
 
@@ -20,6 +31,12 @@ Choose My Applications
 Follow the Xero instructions to set up a .cer and public key
 
 http://blog.xero.com/developer/api-overview/setup-an-application/#private-apps
+
+involves running the following commands in terminal if you are a mac user
+openssl genrsa -out privatekey.pem 1024
+openssl req -new -x509 -key privatekey.pem -out publickey.cer -days 1825
+openssl pkcs12 -export -out public_privatekey.pfx -inkey privatekey.pem -in publickey.cer
+from http://developer.xero.com/documentation/advanced-docs/public-private-keypair/
 
 You will then be able to access the Xero credentials you need for CiviCRM
 
