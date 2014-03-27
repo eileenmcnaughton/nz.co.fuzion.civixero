@@ -104,7 +104,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           'id' => $contributionID
         ));
         $civiCRMInvoice  = $civiCRMInvoice['values'][$contributionID];
-        if(empty($civiCRMInvoice)) {
+        if(empty($civiCRMInvoice) || $civiCRMInvoice['contribution_status_id'] == 3) {
           $accountsInvoice = $this->mapCancelled($contributionID, $accountsInvoiceID);
         }
         else {
@@ -220,6 +220,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         ),
       )
     );
+    return $newInvoice;
   }
 
   /**
