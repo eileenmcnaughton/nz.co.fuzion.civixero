@@ -118,7 +118,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             $record['accounts_needs_update'] = 0;
           }
           $record['error_data'] = json_encode($responseErrors);
-
         }
         else {
           $record['error_data'] = 'null';
@@ -132,6 +131,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         }
         //this will update the last sync date & anything hook-modified
         unset($record['last_sync_date']);
+        if(empty($record['accounts_modified_date'])) {
+          unset($record['accounts_modified_date']);
+        }
         civicrm_api3('account_invoice', 'create', $record);
       }
       catch (CiviCRM_API3_Exception $e) {
