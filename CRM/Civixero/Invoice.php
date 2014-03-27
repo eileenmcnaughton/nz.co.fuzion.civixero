@@ -113,7 +113,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         $result = $this->getSingleton()->Invoices($accountsInvoice);
         $responseErrors = $this->validateResponse($result);
         if($responseErrors) {
+          if(in_array('Invoice not of valid status for modification', $responseErrors)) {
+            // we can't update in Xero as it is approved or voided so let's not keep trying
+            $record['accounts_needs_update'] = 0;
+          }
           $record['error_data'] = json_encode($responseErrors);
+
         }
         else {
           $record['error_data'] = 'null';
