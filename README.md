@@ -30,7 +30,7 @@ Choose My Applications
 
 Follow the Xero instructions to set up a .cer and public key
 
-http://blog.xero.com/developer/api-overview/setup-an-application/#private-apps
+http://developer.xero.com/documentation/getting-started/private-applications/
 
 involves running the following commands in terminal if you are a mac user
 openssl genrsa -out privatekey.pem 1024
