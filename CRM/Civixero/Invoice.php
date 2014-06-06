@@ -162,13 +162,20 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return $accountsContact Contact Object/ array as expected by accounts package
    */
   function mapToAccounts($invoiceData, $accountsID) {
+
+    $defaultAccountCode = civicrm_api('setting', 'getvalue', array(
+      'group' => 'Xero Settings',
+      'name' => 'xero_default_revenue_account',
+      'version' => 3,
+    ));
+
     $lineItems = array();
     foreach ($invoiceData['line_items'] as $lineitem) {
       $lineItems[] = array(
         "Description" => $lineitem['display_name'] . $lineitem['label'],
         "Quantity"    => $lineitem['qty'],
         "UnitAmount"  => $lineitem['unit_price'],
-        "AccountCode" => $lineitem['accounting_code'],
+        "AccountCode" => !empty($lineitem['accounting_code']) ? $lineitem['accounting_code'] : $defaultAccountCode,
       );
     }
 
@@ -192,6 +199,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     if (!$proceed) {
       return FALSE;
     }
+
     $this->validatePrerequisites($new_invoice);
     $new_invoice = array (
       $new_invoice
