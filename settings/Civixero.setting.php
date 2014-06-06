@@ -13,6 +13,9 @@ return array(
     'title' =>  'Xero Key',
     'help_text' => '',
     'html_type' => 'Text',
+    'html_attributes' => array(
+      'size' => 50,
+    ),
     'quick_form_type' => 'Element',
   ),
   'xero_secret' => array(
@@ -27,6 +30,9 @@ return array(
     'title' => 'Xero Secret',
     'help_text' => '',
     'html_type' => 'Text',
+    'html_attributes' => array(
+      'size' => 50,
+    ),
     'quick_form_type' => 'Element',
   ),
   'xero_public_certificate' => array(
@@ -58,6 +64,27 @@ return array(
     'description' => 'Enter the full path to your private Key',
     'help_text' => '',
     'html_type' => 'Text',
+    'html_attributes' => array(
+      'size' => 50,
+    ),
+    'quick_form_type' => 'Element',
+  ),
+  'xero_default_revenue_account' => array(
+    'group_name' => 'Xero Settings',
+    'group' => 'xero',
+    'name' => 'xero_default_revenue_account',
+    'type' => 'String',
+    'add' => '4.4',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'default' => 200,
+    'title' => 'Xero Default Revenue Account',
+    'description' => 'Account to code contributions to',
+    'help_text' => 'For more complex rules you will need to add a custom extension',
+    'html_type' => 'Text',
+    'html_attributes' => array(
+      'size' => 50,
+    ),
     'quick_form_type' => 'Element',
   ),
  );
