@@ -194,6 +194,12 @@ function civixero_civicrm_pageRun(&$page) {
   //https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=
 }
 
+/**
+ * @param $objectName
+ * @param $headers
+ * @param $values
+ * @param $selector
+ */
 function civixero_civicrm_searchColumns( $objectName, &$headers,  &$values, &$selector ) {
   if ($objectName == 'contribution') {
     foreach ($values as &$value) {

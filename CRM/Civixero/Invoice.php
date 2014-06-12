@@ -2,12 +2,16 @@
 
 class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   protected $_plugin = 'xero';
+
   /**
    * pull contacts from Xero and store them into civicrm_account_contact
    * We call the civicrm_accountPullPreSave hook so other modules can alter if required
    *
    * @param array $params
+   *
+   * @return bool
    * @throws API_Exception
+   * @throws CRM_Core_Exception
    */
   function pull($params) {
     $result = $this->getSingleton()->Invoices(false, $this->formatDateForXero($params['start_date']), array ("Type" => "ACCREC" ));
@@ -85,7 +89,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $params
    *  - start_date
-   * @throws API_Exception
+   *
+   * @return bool
+   * @throws CRM_Core_Exception
+   * @throws CiviCRM_API3_Exception
    */
   function push($params) {
     $records = civicrm_api3('account_invoice', 'get', array(
@@ -152,14 +159,16 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   /**
    * Map civicrm Array to Accounts package field names
    *
-   * @param array $invoiceData  - require
+   * @param array $invoiceData - require
    *  contribution fields
    *   - line items
    *   - receive date
    *   - source
    *   - contact_id
-   * @param string accountsID ID from Accounting system
-   * @return $accountsContact Contact Object/ array as expected by accounts package
+   * @param $accountsID
+   *
+   * @internal param \accountsID $string ID from Accounting system
+   * @return array|bool $accountsContact Contact Object/ array as expected by accounts package
    */
   function mapToAccounts($invoiceData, $accountsID) {
 

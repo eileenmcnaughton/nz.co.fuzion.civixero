@@ -31,3 +31,4 @@ function civicrm_api3_civixero_trackingcategorypull($params) {
   $xero = new CRM_Civixero_TrackingCategory();
   return civicrm_api3_create_success($xero->pull($params));
 }
+

@@ -87,10 +87,10 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
   }
 
   /**
-   *
-    * @see CRM_Core_Form::setDefaultValues()
-    *
-   */
+  *
+  * @see CRM_Core_Form::setDefaultValues()
+  *
+  */
   function setDefaultValues() {
     $existing = civicrm_api3('setting', 'get', array('return' => array_keys($this->getFormSettings())));
     $defaults = array();

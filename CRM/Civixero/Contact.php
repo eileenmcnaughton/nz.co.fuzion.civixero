@@ -7,7 +7,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * We call the civicrm_accountPullPreSave hook so other modules can alter if required
    *
    * @param array $params
+   *
    * @throws API_Exception
+   * @throws CRM_Core_Exception
    */
   function pull($params) {
     $result = $this->getSingleton()->Contacts(false, $this->formatDateForXero($params['start_date']));
@@ -78,7 +80,10 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $params
    *  - start_date
-   * @throws API_Exception
+   *
+   * @return bool
+   * @throws CRM_Core_Exception
+   * @throws CiviCRM_API3_Exception
    */
   function push($params) {
     $records = civicrm_api3('account_contact', 'get', array(
@@ -132,9 +137,10 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $contact
    *          Contact Array as returned from API
-   * @param
-   *          string accountsID ID from Accounting system
-   * @return $accountsContact Contact Object/ array as expected by accounts package
+   * @param $accountsID
+   *
+   * @internal param $ string accountsID ID from Accounting system*          string accountsID ID from Accounting system
+   * @return array|bool $accountsContact Contact Object/ array as expected by accounts package
    */
   function mapToAccounts($contact, $accountsID) {
     $new_contact = array (

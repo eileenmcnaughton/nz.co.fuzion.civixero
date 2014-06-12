@@ -33,6 +33,12 @@ class CRM_Civixero_Base {
   }
 
   /**
+   * @param $civixero_key
+   * @param $civixero_secret
+   * @param $publicCertificate
+   * @param $privateKey
+   * @param bool $force
+   *
    * @return CRM_Extension_System
    */
   protected function singleton($civixero_key, $civixero_secret, $publicCertificate, $privateKey, $force = FALSE) {
@@ -46,13 +52,12 @@ class CRM_Civixero_Base {
   function getSingleton() {
     return self::$singleton;
   }
+
   /**
-   */
-   /**
-    * Get Xero Setting
-    * @param String $var
-    * @return Ambigous <multitype:, number, unknown>
-    */
+  * Get Xero Setting
+  * @param String $var
+  * @return Ambigous <multitype:, number, unknown>
+  */
   function getSetting($var) {
     return civicrm_api3('setting', 'getvalue', array('name' => $var, 'group' => 'Xero Settings'));
   }
