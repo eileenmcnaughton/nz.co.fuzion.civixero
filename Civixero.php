@@ -140,11 +140,11 @@ function civixero_civicrm_navigationMenu(&$menu) {
         )))
   );
 }
+
 /**
- * Implementation of hook_civicrm_managed
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
+ * Implementation of hook pageRun
+ * Add Xero links to contact summary
+ * @param $page
  */
 function civixero_civicrm_pageRun(&$page) {
   $pageName = get_class($page);

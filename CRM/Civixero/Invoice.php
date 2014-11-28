@@ -179,12 +179,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     ));
 
     $lineItems = array();
-    foreach ($invoiceData['line_items'] as $lineitem) {
+    foreach ($invoiceData['line_items'] as $lineItem) {
       $lineItems[] = array(
-        "Description" => $lineitem['display_name'] . $lineitem['label'],
-        "Quantity"    => $lineitem['qty'],
-        "UnitAmount"  => $lineitem['unit_price'],
-        "AccountCode" => !empty($lineitem['accounting_code']) ? $lineitem['accounting_code'] : $defaultAccountCode,
+        "Description" => $lineItem['display_name'] . ' ' . str_replace(array('&nbsp;'), ' ', $lineItem['label']),
+        "Quantity"    => $lineItem['qty'],
+        "UnitAmount"  => $lineItem['unit_price'],
+        "AccountCode" => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $defaultAccountCode,
       );
     }
 

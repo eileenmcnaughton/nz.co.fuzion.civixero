@@ -56,7 +56,7 @@ class CRM_Civixero_Base {
   /**
   * Get Xero Setting
   * @param String $var
-  * @return Ambigous <multitype:, number, unknown>
+  * @return mixed
   */
   function getSetting($var) {
     return civicrm_api3('setting', 'getvalue', array('name' => $var, 'group' => 'Xero Settings'));
@@ -78,7 +78,7 @@ class CRM_Civixero_Base {
    *
    * http://developer.xero.com/documentation/getting-started/http-requests-and-responses/#post-put-creating-many
    * @param array $response Response From Xero
-   * @return multitype:string |Ambigous <boolean, multitype:string >
+   * @return array|boolean
    */
   function validateResponse($response) {
     $message = '';
