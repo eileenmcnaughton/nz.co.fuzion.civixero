@@ -33,18 +33,20 @@ Follow the Xero instructions to set up a .cer and public key
 http://developer.xero.com/documentation/getting-started/private-applications/
 
 involves running the following commands in terminal if you are a mac user
+
 openssl genrsa -out privatekey.pem 1024
 openssl req -new -x509 -key privatekey.pem -out publickey.cer -days 1825
 openssl pkcs12 -export -out public_privatekey.pfx -inkey privatekey.pem -in publickey.cer
+
 from http://developer.xero.com/documentation/advanced-docs/public-private-keypair/
 
 You will then be able to access the Xero credentials you need for CiviCRM
 
-<img src='https://raw2.github.com/eileenmcnaughton/nz.co.fuzion.civixero/master/docs/images/credentials.png'>
+<img src='https://raw.githubusercontent.com//eileenmcnaughton/nz.co.fuzion.civixero/master/docs/images/credentials.png'>
 
 You then need to enter these keys into the Xero Settings page per Xero Settings
 
-<img src='https://raw2.github.com/eileenmcnaughton/nz.co.fuzion.civixero/master/docs/images/xero_settings.png'>
+<img src='https://raw.githubusercontent.com//eileenmcnaughton/nz.co.fuzion.civixero/master/docs/images/xero_settings.png'>
 
 On this page you should also define which edit and create actions should trigger contacts / invoices to be created / edited in Xero
 
