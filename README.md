@@ -32,10 +32,12 @@ Follow the Xero instructions to set up a .cer and public key
 
 http://developer.xero.com/documentation/getting-started/private-applications/
 
-involves running the following commands in terminal if you are a mac user
+involves running the following 3 commands in terminal if you are a mac user
 
 openssl genrsa -out privatekey.pem 1024
+
 openssl req -new -x509 -key privatekey.pem -out publickey.cer -days 1825
+
 openssl pkcs12 -export -out public_privatekey.pfx -inkey privatekey.pem -in publickey.cer
 
 from http://developer.xero.com/documentation/advanced-docs/public-private-keypair/
