@@ -57,3 +57,7 @@ On this page you should also define which edit and create actions should trigger
 Once installed you interact with CiviXero via the scheduled jobs page and the api. Matched contacts should show links on their contact summary screen and matched contributions should show links on the invoices
 
 
+CiviCRM tracks synchronisation in the civicrm_account_contact table - to populate this from xero run the api command civixero contactpull with a start_date - e.g '1 year ago'
+
+e.g
+drush cvapi civixero.contactpull start_date=0
