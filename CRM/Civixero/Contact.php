@@ -92,13 +92,13 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       'plugin' => $this->_plugin,
       )
     );
+
     $errors = array();
 
     //@todo pass limit through from params to get call
     foreach ($records['values'] as $record) {
       try {
         $accountsContactID = $record['accounts_contact_id'];
-        $civiCRMcontact  = $record['api.contact.get'];
         $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
         $result = $this->getSingleton()->Contacts($accountsContact);
         $responseErrors = $this->validateResponse($result);

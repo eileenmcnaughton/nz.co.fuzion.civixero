@@ -95,11 +95,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws CiviCRM_API3_Exception
    */
   function push($params) {
-    $records = civicrm_api3('account_invoice', 'get', array(
+    $criteria = array(
       'accounts_needs_update' => 1,
       'plugin' => 'xero',
-      )
     );
+    if (!empty($params['contribution_id'])) {
+      $criteria['contribution_id'] = $params['contribution_id'];
+      unset($criteria['accounts_needs_update']);
+    }
+    $records = civicrm_api3('account_invoice', 'get', $criteria);
     $errors = array();
 
     //@todo pass limit through from params to get call

@@ -8,12 +8,13 @@
  * @return void
  * @see http://wiki.civicrm.org/confluence/display/CRM/API+Architecture+Standards
  */
-function _civicrm_api3_civixero_invoicepush_spec(&$spec) {
-  $spec['contribution_id'] = array(
-    'type' => CRM_Utils_Type::T_INT,
-    'name' => 'contribution_id',
-    'title' => 'Contribution ID',
-    'description' => 'contribution id (optional, overrides needs_update flag)',
+function _civicrm_api3_civixero_itempull_spec(&$spec) {
+  $spec['start_date'] = array(
+    'api.default' => 'yesterday',
+    'type' => CRM_Utils_Type::T_DATE,
+    'name' => 'start_date',
+    'title' => 'Sync Start Date',
+    'description' => 'date to start pulling from',
   );
 }
 
@@ -26,8 +27,8 @@ function _civicrm_api3_civixero_invoicepush_spec(&$spec) {
  * @see civicrm_api3_create_error
  * @throws API_Exception
  */
-function civicrm_api3_civixero_invoicepush($params) {
-  $xero = new CRM_Civixero_Invoice();
-  $xero->push($params);
+function civicrm_api3_civixero_itempull($params) {
+  $xero = new CRM_Civixero_Item();
+  return civicrm_api3_create_success($xero->pull($params));
 }
 

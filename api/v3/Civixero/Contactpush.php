@@ -30,5 +30,6 @@ function _civicrm_api3_civixero_contactpush_spec(&$spec) {
 function civicrm_api3_civixero_contactpush($params) {
   $xero = new CRM_Civixero_Contact();
   $xero->push($params);
+  return civicrm_api3_create_success($params, $params);
 }
 
