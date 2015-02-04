@@ -137,7 +137,8 @@ function civixero_civicrm_navigationMenu(&$menu) {
           'separator' => 1,
           'active' => 1,
           'parentID'   => $navId,
-        )))
+        ))),
+
   );
 }
 
@@ -160,7 +161,25 @@ function civixero_civicrm_pageRun(&$page) {
       ));
     }
     catch(Exception $e) {
-      //no record
+      $xeroBlock = "<div class='crm-summary-row'>" .
+        "<a href='#' id='xero-sync' data-contact-id=$contactID>
+        Queue Sync to Xero</a></div>";
+
+      CRM_Core_Region::instance('contact-basic-info-left')->add(array(
+        'markup' => $xeroBlock
+      ));
+      $script = "cj('#xero-sync').click(function( event) {
+        event.preventDefault();
+        CRM.api('account_contact', 'create',
+         {'contact_id' : cj(this).data('contact-id'),
+           'plugin' : 'xero',
+           'accounts_needs_update' : 1
+         });
+        cj(this).replaceWith('Xero sync is queued');
+      });";
+      CRM_Core_Region::instance('contact-basic-info-left')->add(array(
+        'script' => $script
+      ));
       return;
     }
   }
