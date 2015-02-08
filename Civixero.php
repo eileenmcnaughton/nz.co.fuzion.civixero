@@ -154,11 +154,22 @@ function civixero_civicrm_pageRun(&$page) {
   }
   if(($contactID = $page->getVar('_contactId')) != FALSE) {
     try{
-      $xeroID = civicrm_api3('account_contact', 'getvalue', array(
+      $account_contact = civicrm_api3('account_contact', 'getsingle', array(
         'contact_id' => $contactID,
-        'return' => 'accounts_contact_id',
+        'return' => 'accounts_contact_id, accounts_needs_update',
         'plugin' => 'xero',
       ));
+
+      if (!empty($account_contact['accounts_contact_id'])) {
+        $xeroBlock = _civixero_get_xero_links_block($account_contact['accounts_contact_id']);
+      }
+      elseif (!empty($account_contact['accounts_needs_update'])) {
+        $xeroBlock = _civicrm_get_xero_block_header();
+        $xeroBlock .= "<p> Contact is queued for sync with Xero</p></div>";
+      }
+      else {
+        throw new Exception('Contact needs syncing');
+      }
     }
     catch(Exception $e) {
       $xeroBlock = "<div class='crm-summary-row'>" .
@@ -168,11 +179,16 @@ function civixero_civicrm_pageRun(&$page) {
       CRM_Core_Region::instance('contact-basic-info-left')->add(array(
         'markup' => $xeroBlock
       ));
+      $createString = '';
+      if (!empty($account_contact) && !empty($account_contact['id'])) {
+        $createString = "'id' : '" . $account_contact['id'] . "',";
+      }
       $script = "cj('#xero-sync').click(function( event) {
         event.preventDefault();
         CRM.api('account_contact', 'create',
          {'contact_id' : cj(this).data('contact-id'),
            'plugin' : 'xero',
+           $createString
            'accounts_needs_update' : 1
          });
         cj(this).replaceWith('Xero sync is queued');
@@ -186,7 +202,21 @@ function civixero_civicrm_pageRun(&$page) {
   else {
     return;
   }
-  // link =
+
+
+  CRM_Core_Region::instance('contact-basic-info-left')->add(array(
+  'markup' => $xeroBlock
+  ));
+
+  //https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=
+}
+
+/**
+ * @param $xeroID
+ *
+ * @return string
+ */
+function _civixero_get_xero_links_block($xeroID) {
   $xeroLinks = array(
     'view_transactions' => array(
       'link' => 'https://go.xero.com/Reports/report.aspx?reportId=be392447-762b-444d-9cde-87c6bd185d00&report=TransactionsByContact&invoiceType=INVOICETYPE%2fACCREC&addToReportId=cf6fedeb-2188-493c-96e2-b862198f9b46&addToReportTitle=Income+by+Contact&reportClass=TransactionsByContact&contact=',
@@ -198,19 +228,22 @@ function civixero_civicrm_pageRun(&$page) {
     )
   );
 
-  $xeroBlock = "<div class='crm-summary-row'>";
+  $xeroBlock = _civicrm_get_xero_block_header();
   foreach ($xeroLinks as $link) {
     $xeroBlock .= "<div class='crm-content'><a href='{$link['link']}{$xeroID}'>{$link['link_label']}</a></div>";
   }
 
   $xeroBlock .= "</div>";
+  return $xeroBlock;
+}
 
-
-  CRM_Core_Region::instance('contact-basic-info-left')->add(array(
-  'markup' => $xeroBlock
-  ));
-
-  //https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=
+/**
+ * Get header for Xero block added to summary screen.
+ *
+ * @return string
+ */
+function _civicrm_get_xero_block_header() {
+  return "<div class='crm-summary-row'>";
 }
 
 /**
