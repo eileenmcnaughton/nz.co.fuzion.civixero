@@ -86,8 +86,7 @@ class CRM_Civixero_Base {
   protected function validateResponse($response) {
     $message = '';
     $errors  = array();
-
-    // comes back as a string for oauth errors
+    // Comes back as a string for oauth errors.
     if (is_string($response)) {
       throw new CRM_Civixero_Exception_XeroThrottle($response);
     }

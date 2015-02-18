@@ -171,12 +171,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       return TRUE;
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
-      throw new CRM_Core_Exception('Invoice Pull aborted due to throttling by Xero');
+      throw new CRM_Core_Exception('Invoice Push aborted due to throttling by Xero');
     }
   }
 
   /**
-   * Map civicrm Array to Accounts package field names
+   * Map civicrm Array to Accounts package field names.
    *
    * @param array $invoiceData - require
    *  contribution fields
@@ -186,8 +186,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   - contact_id
    * @param $accountsID
    *
-   * @internal param \accountsID $string ID from Accounting system
-   * @return array|bool $accountsContact Contact Object/ array as expected by accounts package
+   * @return array|bool
+   *   Contact Object/ array as expected by accounts package
    */
   function mapToAccounts($invoiceData, $accountsID) {
 
