@@ -107,6 +107,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $criteria = array(
         'accounts_needs_update' => 1,
         'plugin' => 'xero',
+        // Sort by error data to try untried ones first.
+        'options' => array('sort' => 'error_data'),
       );
       if (!empty($params['contribution_id'])) {
         $criteria['contribution_id'] = $params['contribution_id'];
