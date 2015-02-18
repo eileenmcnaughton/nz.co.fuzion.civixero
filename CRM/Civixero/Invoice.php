@@ -4,7 +4,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   protected $_plugin = 'xero';
 
   /**
-   * pull contacts from Xero and store them into civicrm_account_contact
+   * Pull contacts from Xero and store them into civicrm_account_contact.
+   *
    * We call the civicrm_accountPullPreSave hook so other modules can alter if required
    *
    * @param array $params
@@ -13,78 +14,85 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws API_Exception
    * @throws CRM_Core_Exception
    */
-  function pull($params) {
-    $result = $this->getSingleton()->Invoices(false, $this->formatDateForXero($params['start_date']), array ("Type" => "ACCREC" ));
-    if(!is_array($result)){
-      throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
-    }
-    $errors = array();
-    if (!empty($result['Invoices'])){
-      $invoices = $result['Invoices']['Invoice'];
-      if(isset($invoices['InvoiceID'])) {
-        // the return syntax puts the contact only level higher up when only one contact is involved
-        $invoices  = array($invoices );
+  public function pull($params) {
+    try {
+      $result = $this->getSingleton()
+        ->Invoices(FALSE, $this->formatDateForXero($params['start_date']), array("Type" => "ACCREC"));
+      if (!is_array($result)) {
+        throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
       }
-      foreach($invoices as $invoice){
-        $save = TRUE;
-        $params = array(
-          'contribution_id' => CRM_Utils_Array::value('InvoiceNumber', $invoice),
-          'accounts_modified_date' => $invoice['UpdatedDateUTC'],
-          'plugin' => 'xero',
-          'accounts_invoice_id' => $invoice['InvoiceID'],
-          'accounts_data' => json_encode($invoice),
-          'accounts_status_id' => $this->mapStatus($invoice['Status']),
-          'accounts_needs_update' => 0,
-        );
-        CRM_Accountsync_Hook::accountPullPreSave('invoice', $invoice, $save, $params);
-        if(!$save) {
-          continue;
+      $errors = array();
+      if (!empty($result['Invoices'])) {
+        $invoices = $result['Invoices']['Invoice'];
+        if (isset($invoices['InvoiceID'])) {
+          // the return syntax puts the contact only level higher up when only one contact is involved
+          $invoices = array($invoices);
         }
-        try {
-          $params['id'] = civicrm_api3('account_invoice', 'getvalue', array(
-            'return' => 'id',
+        foreach ($invoices as $invoice) {
+          $save = TRUE;
+          $params = array(
+            'contribution_id' => CRM_Utils_Array::value('InvoiceNumber', $invoice),
+            'accounts_modified_date' => $invoice['UpdatedDateUTC'],
+            'plugin' => 'xero',
             'accounts_invoice_id' => $invoice['InvoiceID'],
-            'plugin' => $this->_plugin,
-          ));
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          // this is an update - but lets just check the contact id doesn't exist in the account_contact table first
-          // e.g if a list has been generated but not yet pushed
+            'accounts_data' => json_encode($invoice),
+            'accounts_status_id' => $this->mapStatus($invoice['Status']),
+            'accounts_needs_update' => 0,
+          );
+          CRM_Accountsync_Hook::accountPullPreSave('invoice', $invoice, $save, $params);
+          if (!$save) {
+            continue;
+          }
           try {
-            $existing = civicrm_api3('account_invoice', 'getsingle', array(
+            $params['id'] = civicrm_api3('account_invoice', 'getvalue', array(
               'return' => 'id',
-              'contribution_id' => $invoice['InvoiceNumber'],
+              'accounts_invoice_id' => $invoice['InvoiceID'],
               'plugin' => $this->_plugin,
             ));
-            $params['id'] = $existing['id'];
-            if(!empty($existing['accounts_invoice_id']) && $existing['accounts_invoice_id'] != $invoice['InvoiceID']) {
-              // no idea how this happened or what it means - calling function can catch & deal with it
-              throw new CRM_Core_Exception(ts('Cannot update invoice'), 'data_error', $invoice);
-            }
           }
           catch (CiviCRM_API3_Exception $e) {
-            // ok - it IS an update
+            // this is an update - but lets just check the contact id doesn't exist in the account_contact table first
+            // e.g if a list has been generated but not yet pushed
+            try {
+              $existing = civicrm_api3('account_invoice', 'getsingle', array(
+                'return' => 'id',
+                'contribution_id' => $invoice['InvoiceNumber'],
+                'plugin' => $this->_plugin,
+              ));
+              $params['id'] = $existing['id'];
+              if (!empty($existing['accounts_invoice_id']) && $existing['accounts_invoice_id'] != $invoice['InvoiceID']) {
+                // no idea how this happened or what it means - calling function can catch & deal with it
+                throw new CRM_Core_Exception(ts('Cannot update invoice'), 'data_error', $invoice);
+              }
+            }
+            catch (CiviCRM_API3_Exception $e) {
+              // ok - it IS an update
+            }
+          }
+          try {
+            civicrm_api3('account_invoice', 'create', $params);
+          }
+          catch (CiviCRM_API3_Exception $e) {
+            $errors[] = ts('Failed to store ') . $invoice['InvoiceNumber'] . ' (' . $invoice['InvoiceID'] . ' )'
+              . ts(' with error ') . $e->getMessage()
+              . ts('Invoice Pull failed');
           }
         }
-        try {
-          $result = civicrm_api3('account_invoice', 'create', $params);
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          $errors[] = ts('Failed to store ') . $invoice['InvoiceNumber'] . ' (' . $invoice['InvoiceID'] . ' )'
-          . ts(' with error ') . $e->getMessage()
-          . ts('Invoice Pull failed');
-        }
       }
+      if ($errors) {
+        // Since we expect this to wind up in the job log we'll print the errors
+        throw new CRM_Core_Exception(ts('Not all invoices were saved') . print_r($errors, TRUE), 'incomplete', $errors);
+      }
+      return TRUE;
     }
-    if($errors) {
-      // since we expect this to wind up in the job log we'll print the errors
-      throw new CRM_Core_Exception(ts('Not all invoices were saved') . print_r($errors, TRUE), 'incomplete', $errors);
+    catch (CRM_Civixero_Exception_XeroThrottle $e) {
+      throw new CRM_Core_Exception('Invoice Pull aborted due to throttling by Xero');
     }
-    return TRUE;
   }
 
   /**
-   * push contacts to Xero from the civicrm_account_contact with 'needs_update' = 1
+   * Push contacts to Xero from the civicrm_account_contact with 'needs_update' = 1.
+   *
    * We call the civicrm_accountPullPreSave hook so other modules can alter if required
    *
    * @param array $params
@@ -94,70 +102,75 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws CRM_Core_Exception
    * @throws CiviCRM_API3_Exception
    */
-  function push($params) {
-    $criteria = array(
-      'accounts_needs_update' => 1,
-      'plugin' => 'xero',
-    );
-    if (!empty($params['contribution_id'])) {
-      $criteria['contribution_id'] = $params['contribution_id'];
-      unset($criteria['accounts_needs_update']);
-    }
-    $records = civicrm_api3('account_invoice', 'get', $criteria);
-    $errors = array();
+  public function push($params) {
+    try {
+      $criteria = array(
+        'accounts_needs_update' => 1,
+        'plugin' => 'xero',
+      );
+      if (!empty($params['contribution_id'])) {
+        $criteria['contribution_id'] = $params['contribution_id'];
+        unset($criteria['accounts_needs_update']);
+      }
+      $records = civicrm_api3('account_invoice', 'get', $criteria);
+      $errors = array();
 
-    //@todo pass limit through from params to get call
-    foreach ($records['values'] as $record) {
-      try {
-        $accountsInvoiceID = isset($record['accounts_invoice_id']) ? $record['accounts_invoice_id'] : NULL;
-        $contributionID = $record['contribution_id'];
-        $civiCRMInvoice  = civicrm_api3('account_invoice', 'getderived', array(
-          'id' => $contributionID
-        ));
-        $civiCRMInvoice  = $civiCRMInvoice['values'][$contributionID];
-        if(empty($civiCRMInvoice) || $civiCRMInvoice['contribution_status_id'] == 3) {
-          $accountsInvoice = $this->mapCancelled($contributionID, $accountsInvoiceID);
-        }
-        else {
-          $accountsInvoice = $this->mapToAccounts($civiCRMInvoice, $accountsInvoiceID);
-        }
-        $result = $this->getSingleton()->Invoices($accountsInvoice);
-        $responseErrors = $this->validateResponse($result);
-        if($responseErrors) {
-          if(in_array('Invoice not of valid status for modification', $responseErrors)) {
-            // we can't update in Xero as it is approved or voided so let's not keep trying
+      //@todo pass limit through from params to get call
+      foreach ($records['values'] as $record) {
+        try {
+          $accountsInvoiceID = isset($record['accounts_invoice_id']) ? $record['accounts_invoice_id'] : NULL;
+          $contributionID = $record['contribution_id'];
+          $civiCRMInvoice = civicrm_api3('account_invoice', 'getderived', array(
+            'id' => $contributionID
+          ));
+          $civiCRMInvoice = $civiCRMInvoice['values'][$contributionID];
+          if (empty($civiCRMInvoice) || $civiCRMInvoice['contribution_status_id'] == 3) {
+            $accountsInvoice = $this->mapCancelled($contributionID, $accountsInvoiceID);
+          }
+          else {
+            $accountsInvoice = $this->mapToAccounts($civiCRMInvoice, $accountsInvoiceID);
+          }
+          $result = $this->getSingleton()->Invoices($accountsInvoice);
+          $responseErrors = $this->validateResponse($result);
+          if ($responseErrors) {
+            if (in_array('Invoice not of valid status for modification', $responseErrors)) {
+              // we can't update in Xero as it is approved or voided so let's not keep trying
+              $record['accounts_needs_update'] = 0;
+            }
+            $record['error_data'] = json_encode($responseErrors);
+          }
+          else {
+            $record['error_data'] = 'null';
+            if (empty($record['accounts_invoice_id'])) {
+              $record['accounts_invoice_id'] = $result['Invoices']['Invoice']['InvoiceID'];
+            }
+            $record['accounts_modified_date'] = $result['Invoices']['Invoice']['UpdatedDateUTC'];
+            $record['accounts_data'] = json_encode($result['Invoices']['Invoice']);
+            $record['accounts_status_id'] = $this->mapStatus($result['Invoices']['Invoice']['Status']);
             $record['accounts_needs_update'] = 0;
           }
-          $record['error_data'] = json_encode($responseErrors);
-        }
-        else {
-          $record['error_data'] = 'null';
-          if(empty($record['accounts_invoice_id'])) {
-            $record['accounts_invoice_id'] = $result['Invoices']['Invoice']['InvoiceID'];
+          //this will update the last sync date & anything hook-modified
+          unset($record['last_sync_date']);
+          if (empty($record['accounts_modified_date'])) {
+            unset($record['accounts_modified_date']);
           }
-          $record['accounts_modified_date'] = $result['Invoices']['Invoice']['UpdatedDateUTC'];
-          $record['accounts_data'] = json_encode($result['Invoices']['Invoice']);
-          $record['accounts_status_id'] = $this->mapStatus($result['Invoices']['Invoice']['Status']);
-          $record['accounts_needs_update'] = 0;
+          civicrm_api3('account_invoice', 'create', $record);
         }
-        //this will update the last sync date & anything hook-modified
-        unset($record['last_sync_date']);
-        if(empty($record['accounts_modified_date'])) {
-          unset($record['accounts_modified_date']);
+        catch (CiviCRM_API3_Exception $e) {
+          $errors[] = ts('Failed to store ') . $record['contribution_id'] . ' (' . $record['accounts_contact_id'] . ' )'
+            . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
+            . ts('Invoice Push failed');
         }
-        civicrm_api3('account_invoice', 'create', $record);
       }
-      catch (CiviCRM_API3_Exception $e) {
-        $errors[] = ts('Failed to store ') . $record['contribution_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-          . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
-          . ts('Invoice Push failed');
+      if ($errors) {
+        // since we expect this to wind up in the job log we'll print the errors
+        throw new CRM_Core_Exception(ts('Not all invoices were saved') . print_r($errors, TRUE), 'incomplete', $errors);
       }
+      return TRUE;
     }
-    if($errors) {
-      // since we expect this to wind up in the job log we'll print the errors
-      throw new CRM_Core_Exception(ts('Not all invoices were saved') . print_r($errors, TRUE), 'incomplete', $errors);
+    catch (CRM_Civixero_Exception_XeroThrottle $e) {
+      throw new CRM_Core_Exception('Invoice Pull aborted due to throttling by Xero');
     }
-    return TRUE;
   }
 
   /**

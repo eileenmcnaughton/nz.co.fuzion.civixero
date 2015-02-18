@@ -72,25 +72,24 @@ class CRM_Civixero_Base {
   }
 
   /**
-   * Validate Response from Xero
+   * Validate Response from Xero.
    *
    * Unfortunately our Xero class doesn't pass summariseErrors so we don't have that to use :-(
    *
    * http://developer.xero.com/documentation/getting-started/http-requests-and-responses/#post-put-creating-many
+   *
    * @param array $response Response From Xero
-   * @return array|boolean
+   *
+   * @return array|bool
+   * @throws \CRM_Civixero_Exception_XeroThrottle
    */
-  function validateResponse($response) {
+  protected function validateResponse($response) {
     $message = '';
     $errors  = array();
 
     // comes back as a string for oauth errors
     if (is_string($response)) {
-      foreach (explode('&', $response) as $response_item) {
-        $keyval   = explode('=', $response_item);
-        $errors[$keyval[0]] = urldecode($keyval[1]);
-      }
-      return $errors;
+      throw new CRM_Civixero_Exception_XeroThrottle($response);
     }
 
     if (!empty($response['Elements']) && is_array($response['Elements']['DataContractBase']['ValidationErrors'])) {
@@ -108,7 +107,8 @@ class CRM_Civixero_Base {
             $message .= " " . $errorMessage['Message'];
           }
         }
-        else { // single message - string
+        else {
+        // Single message - string
           $message = $value['Message'];
         }
         switch (trim($message)) {
