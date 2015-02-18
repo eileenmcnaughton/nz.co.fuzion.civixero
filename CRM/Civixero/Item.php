@@ -22,7 +22,7 @@ class CRM_Civixero_Item extends CRM_Civixero_Base {
     if (empty($items)) {
       $items = $this->getSingleton()->Items();
       if (!is_array($items) || !is_array($items['Items'])) {
-        throw new CRM_Core_Exception('Items is not a valid array');
+        throw new CRM_Core_Exception('Items is not a valid array' . print_r($items, TRUE));
       }
       $items = $items['Items']['Item'];
     }
