@@ -98,17 +98,23 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param array $params
    *  - start_date
    *
+   * @param int $limit
+   *   Number of invoices to process
+   *
    * @return bool
-   * @throws CRM_Core_Exception
-   * @throws CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
-  public function push($params) {
+  public function push($params, $limit = 25) {
     try {
       $criteria = array(
         'accounts_needs_update' => 1,
         'plugin' => 'xero',
         // Sort by error data to try untried ones first.
-        'options' => array('sort' => 'error_data'),
+        'options' => array(
+          'sort' => 'error_data',
+          'limit' => $limit,
+        ),
       );
       if (!empty($params['contribution_id'])) {
         $criteria['contribution_id'] = $params['contribution_id'];
