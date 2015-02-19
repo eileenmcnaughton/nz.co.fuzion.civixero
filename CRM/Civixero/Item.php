@@ -20,11 +20,11 @@ class CRM_Civixero_Item extends CRM_Civixero_Base {
   public function pull($params) {
     static $items = array();
     if (empty($items)) {
-      $items = $this->getSingleton()->Items();
-      if ($this->validateResponse($items)) {
+      $retrieved = $this->getSingleton()->Items();
+      if ($this->validateResponse($retrieved)) {
         throw new CRM_Core_Exception('Failed to get items');
       }
-      $items = $items['Items']['Item'];
+      $items = $retrieved['Items']['Item'];
     }
     return $items;
   }
