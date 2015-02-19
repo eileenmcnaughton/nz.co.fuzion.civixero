@@ -88,7 +88,8 @@ class CRM_Civixero_Base {
     $errors  = array();
     // Comes back as a string for oauth errors.
     if (is_string($response)) {
-      throw new CRM_Civixero_Exception_XeroThrottle($response);
+      $responseParts = explode('&', urldecode($response));
+      throw new CRM_Civixero_Exception_XeroThrottle($responseParts['oauth_problem']);
     }
 
     if (!empty($response['Elements']) && is_array($response['Elements']['DataContractBase']['ValidationErrors'])) {
