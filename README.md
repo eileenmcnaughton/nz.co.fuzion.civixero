@@ -61,3 +61,9 @@ CiviCRM tracks synchronisation in the civicrm_account_contact table - to populat
 
 e.g
 drush cvapi civixero.contactpull start_date=0
+
+
+
+  You can create a link from Xero back to your site by going to settings/ Custom links and adding a link pointing to
+  
+  https://YOURSITE/civicrm/contact/view?reset=1&cid={!CONTACTCODE}
