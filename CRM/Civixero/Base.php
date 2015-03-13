@@ -46,6 +46,7 @@ class CRM_Civixero_Base {
       require_once 'packages/Xero/Xero.php';
       self::$singleton = new Xero($civixero_key, $civixero_secret, $publicCertificate, $privateKey);
     }
+
     return self::$singleton;
   }
 
