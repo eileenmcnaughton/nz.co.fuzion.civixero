@@ -119,6 +119,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
       'separator' => NULL,
       'parentID' => $parentID,
       'active' => 1,
+      'navID' => $navId,
     ),
     'child' => array(
       $navId + 1 => array(
@@ -131,6 +132,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
           'separator' => 1,
           'active' => 1,
           'parentID' => $navId,
+          'navID' => $navId + 1,
         ),
       ),
       /*
