@@ -60,28 +60,34 @@ function civixero_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * Implementation of hook_civicrm_managed
+ * Implements hook_civicrm_managed().
  *
  * Generate a list of entities to create/deactivate/delete when this module
  * is installed, disabled, uninstalled.
+ *
+ * @param $entities
  */
 function civixero_civicrm_managed(&$entities) {
   return _civixero_civix_civicrm_managed($entities);
 }
 
 /**
- * Implementation of hook_civicrm_caseTypes
+ * Implements hook_civicrm_caseTypes().
  *
  * Generate a list of case-types
  *
  * Note: This hook only runs in CiviCRM 4.4+.
+ *
+ * @param array $caseTypes
  */
 function civixero_civicrm_caseTypes(&$caseTypes) {
   _civixero_civix_civicrm_caseTypes($caseTypes);
 }
 
 /**
- * Implementation of hook_civicrm_config
+ * Implements hook_civicrm_config().
+ *
+ * @param $metaDataFolders
  */
 function civixero_civicrm_alterSettingsFolders(&$metaDataFolders){
   static $configured = FALSE;
@@ -96,10 +102,11 @@ function civixero_civicrm_alterSettingsFolders(&$metaDataFolders){
 }
 
 /**
- * Implementation of hook_civicrm_navigationMenu
+ * Implements hook_civicrm_navigationMenu().
  *
- * Adds entries to the navigation menu
- * @param unknown $menu
+ * Adds entries to the navigation menu.
+ *
+ * @param array $menu
  */
 function civixero_civicrm_navigationMenu(&$menu) {
   $maxID = CRM_Core_DAO::singleValueQuery("SELECT max(id) FROM civicrm_navigation");
@@ -161,6 +168,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
 /**
  * Implementation of hook pageRun
  * Add Xero links to contact summary
+ *
  * @param $page
  */
 function civixero_civicrm_pageRun(&$page) {
@@ -264,7 +272,7 @@ function _civicrm_get_xero_block_header() {
 
 /**
  * @param $objectName
- * @param $headers
+ * @param array $headers
  * @param $values
  * @param $selector
  */
