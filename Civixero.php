@@ -103,32 +103,34 @@ function civixero_civicrm_alterSettingsFolders(&$metaDataFolders){
  */
 function civixero_civicrm_navigationMenu(&$menu) {
   $maxID = CRM_Core_DAO::singleValueQuery("SELECT max(id) FROM civicrm_navigation");
-  $navId = $maxID + 1;
+  $navId = $maxID + 287;
+
   // Get the id of System Settings Menu
-  $administerMenuId = CRM_Core_DAO::getFieldValue('CRM_Core_BAO_Navigation', 'System Settings', 'id', 'name');
-  $menu[$navId] = array (
-    'attributes' => array (
+  $administerMenuId = CRM_Core_DAO::getFieldValue('CRM_Core_BAO_Navigation', 'Administer', 'id', 'name');
+  $parentID = !empty($administerMenuId) ? $administerMenuId : NULL;
+
+  $navigationMenu =  array(
+    'attributes' => array(
       'label' => 'Xero',
       'name' => 'Xero',
-      'url' => null,
+      'url' => NULL,
       'permission' => 'administer CiviCRM',
-      'operator' => null,
-      'separator' => null,
-      'parentID' => !empty($administerMenuId) ? $administerMenuId : NULL,
+      'operator' => NULL,
+      'separator' => NULL,
+      'parentID' => $parentID,
       'active' => 1,
-      'navID' => $navId,
     ),
-    'child' => array (
-      $navId+1 => array(
+    'child' => array(
+      $navId + 1 => array(
         'attributes' => array(
           'label' => 'Xero Settings',
           'name' => 'Xero Settings',
           'url' => 'civicrm/xero/settings',
           'permission' => 'administer CiviCRM',
-          'operator' => null,
+          'operator' => NULL,
           'separator' => 1,
           'active' => 1,
-          'parentID'   => $navId,
+          'parentID' => $navId,
         ),
       ),
       /*
@@ -146,6 +148,12 @@ function civixero_civicrm_navigationMenu(&$menu) {
       */
     ),
   );
+  if ($parentID) {
+    $menu[$parentID]['child'][$navId] = $navigationMenu;
+  }
+  else {
+    $menu[$navId] = $navigationMenu;
+  }
 }
 
 /**
