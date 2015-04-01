@@ -116,7 +116,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
   $administerMenuId = CRM_Core_DAO::getFieldValue('CRM_Core_BAO_Navigation', 'Administer', 'id', 'name');
   $parentID = !empty($administerMenuId) ? $administerMenuId : NULL;
 
-  $navigationMenu =  array(
+  $navigationMenu = array(
     'attributes' => array(
       'label' => 'Xero',
       'name' => 'Xero',
