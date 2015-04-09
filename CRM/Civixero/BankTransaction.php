@@ -39,7 +39,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
           'id' => $contributionID
         ));
         $civiCRMInvoice  = $civiCRMInvoice['values'][$contributionID];
-        if(empty($civiCRMInvoice) || $civiCRMInvoice['contribution_status_id'] == 3) {
+        if (empty($civiCRMInvoice) || $civiCRMInvoice['contribution_status_id'] == 3) {
           $accountsTransaction = $this->mapCancelled($contributionID, $accountsInvoiceID);
         }
         else {
@@ -47,8 +47,8 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
         }
         $result = $this->getSingleton()->BankTransactions($accountsTransaction);
         $responseErrors = $this->validateResponse($result);
-        if($responseErrors) {
-          if(in_array('Invoice not of valid status for modification', $responseErrors)) {
+        if ($responseErrors) {
+          if (in_array('Invoice not of valid status for modification', $responseErrors)) {
             // we can't update in Xero as it is approved or voided so let's not keep trying
             $record['accounts_needs_update'] = 0;
           }
@@ -56,7 +56,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
         }
         else {
           $record['error_data'] = 'null';
-          if(empty($record['accounts_invoice_id'])) {
+          if (empty($record['accounts_invoice_id'])) {
             $record['accounts_invoice_id'] = $result['Invoices']['Invoice']['InvoiceID'];
           }
           $record['accounts_modified_date'] = $result['Invoices']['Invoice']['UpdatedDateUTC'];
@@ -66,7 +66,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
         }
         //this will update the last sync date & anything hook-modified
         unset($record['last_sync_date']);
-        if(empty($record['accounts_modified_date'])) {
+        if (empty($record['accounts_modified_date'])) {
           unset($record['accounts_modified_date']);
         }
         civicrm_api3('account_invoice', 'create', $record);
@@ -77,7 +77,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
           . ts('Invoice Push failed');
       }
     }
-    if($errors) {
+    if ($errors) {
       // since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(ts('Not all invoices were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
@@ -157,26 +157,25 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
         'InvoiceNumber' => $contributionID,
         'Type'          => 'ACCREC',
         'Reference' =>  'Cancelled',
-        'Date'  => date('Y-m-d',strtotime(now)),
-        'DueDate'  => date('Y-m-d',strtotime(now)),
+        'Date' => date('Y-m-d', strtotime(now)),
+        'DueDate'  => date('Y-m-d', strtotime(now)),
         'Status'  => 'DRAFT',
-        'LineAmountTypes' =>'Exclusive',
+        'LineAmountTypes' => 'Exclusive',
         'LineItems' => array(
           'LineItem' => array(
             'Description' => 'Cancelled',
             'Quantity' => 0,
-            'UnitAmount'=> 0,
-            'AccountCode'=> 200,
-          )
+            'UnitAmount' => 0,
+            'AccountCode' => 200,
+          ),
         ),
-      )
+      ),
     );
     return $newInvoice;
   }
 
   /**
-   * Map Xero Status values against CiviCRM status values
-   *
+   * Map Xero Status values against CiviCRM status values.
    */
   function mapStatus($status) {
     $statuses = array(
@@ -191,15 +190,16 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
   }
 
   /**
-   * Validate an invoice by checking the tracking category exists (if set)
+   * Validate an invoice by checking the tracking category exists (if set).
+   *
    * @param array $invoice array ready for Xero
    */
-  function validatePrerequisites($invoice){
-    if(empty($invoice['LineItems'])) {
+  function validatePrerequisites($invoice) {
+    if (empty($invoice['LineItems'])) {
       return;
     }
     foreach ($invoice['LineItems']['LineItem'] as $lineItems) {
-      if(array_key_exists('LineItem', $lineItems)) {
+      if (array_key_exists('LineItem', $lineItems)) {
         // multiple line items  - need to go one deeper
         foreach ($lineItems as $lineItem) {
           $this->validateTrackingCategory($lineItem);
@@ -212,23 +212,25 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
   }
 
   /**
-   * Check values in Line Item against retrieved list of Tracking Categories
-   * @param unknown $lineItem
+   * Check values in Line Item against retrieved list of Tracking Categories.
+   *
+   * @param array $lineItem
+   *
    * @throws CRM_Core_Exception
    */
   function validateTrackingCategory($lineItem) {
-    if(empty($lineItem['TrackingCategory'])) {
+    if (empty($lineItem['TrackingCategory'])) {
       return;
     }
     static $trackingOptions = array();
-    if(empty($trackingOptions)){
+    if (empty($trackingOptions)){
       $trackingOptions = civicrm_api3('xerosync', 'trackingcategorypull', array());
       $trackingOptions = $trackingOptions['values'];
     }
     foreach ($lineItem['TrackingCategory'] as $tracking) {
-      if(!array_key_exists($tracking['Name'], $trackingOptions)
+      if (!array_key_exists($tracking['Name'], $trackingOptions)
       || !in_array($tracking['Option'], $trackingOptions[$tracking['Name']])) {
-        throw new CRM_Core_Exception(ts('Tracking Category Does Not Exist ') . $tracking['Name'] . ' ' . $tracking['Option'],'invalid_tracking', $tracking);
+        throw new CRM_Core_Exception(ts('Tracking Category Does Not Exist ') . $tracking['Name'] . ' ' . $tracking['Option'], 'invalid_tracking', $tracking);
       }
     }
   }

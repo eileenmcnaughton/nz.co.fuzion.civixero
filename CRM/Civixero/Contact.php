@@ -167,9 +167,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             "AddressType" => 'POBOX', // described in documentation as the default mailing address for invoices http://blog.xero.com/developer/api/types/#Addresses
             "AddressLine1" => $contact['street_address'],
             "City" => $contact['city'],
-            "PostalCode" => $contact['postal_code']
-          )
-        )
+            "PostalCode" => $contact['postal_code'],
+          ),
+        ),
       ),
       "Phones" => array(
         "Phone" => array(

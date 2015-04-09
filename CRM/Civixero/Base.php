@@ -18,14 +18,14 @@ class CRM_Civixero_Base {
     );
     foreach ($variables as $var) {
       $value = CRM_Utils_Array::value($var, $parameters);
-      if(empty($value)) {
+      if (empty($value)) {
         $value = $this->getSetting($var);
       }
-      if($value != $this->{'_' .$var}) {
+      if ($value != $this->{'_' . $var}) {
         $force = TRUE;
-        $this->{'_' .$var} = $value;
+        $this->{'_' . $var} = $value;
       }
-      if(empty($value)) {
+      if (empty($value)) {
         throw new CRM_Core_Exception($var . ts(' has not been set'));
       }
     }
@@ -64,9 +64,12 @@ class CRM_Civixero_Base {
   }
 
   /**
-   * Convert date to form expected by Xero
+   * Convert date to form expected by Xero.
+   *
    * @param String $date date in mysql format (since it is coming through the api)
-   * @return string formatted date
+   *
+   * @return string
+   *   Formatted date
    */
   function formatDateForXero($date) {
     return date("Y-m-d H:m:s", strtotime(CRM_Utils_Date::mysqlToIso($date)));

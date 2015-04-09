@@ -47,7 +47,7 @@ function _civixero_civix_civicrm_install() {
 }
 
 /**
- * Implementation of hook_civicrm_uninstall
+ * Implements hook_civicrm_uninstall().
  */
 function _civixero_civix_civicrm_uninstall() {
   _civixero_civix_civicrm_config();

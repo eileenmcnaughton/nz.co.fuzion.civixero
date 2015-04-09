@@ -166,14 +166,15 @@ function civixero_civicrm_navigationMenu(&$menu) {
 }
 
 /**
- * Implementation of hook pageRun
+ * Implements hook pageRun().
+ *
  * Add Xero links to contact summary
  *
  * @param $page
  */
 function civixero_civicrm_pageRun(&$page) {
   $pageName = get_class($page);
-   if($pageName != 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
+  if ($pageName != 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
     return;
   }
   if(($contactID = $page->getVar('_contactId')) != FALSE) {

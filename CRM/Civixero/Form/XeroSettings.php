@@ -26,11 +26,11 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
       }
     }
 
-    $this->addButtons(array (
+    $this->addButtons(array(
       array (
         'type' => 'submit',
         'name' => ts('Submit'),
-        'isDefault' => TRUE
+        'isDefault' => TRUE,
       )
     ));
 
@@ -54,10 +54,10 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
     // auto-rendered in the loop -- such as "qfKey" and "buttons". These
     // items don't have labels. We'll identify renderable by filtering on
     // the 'label'.
-    $elementNames = array ();
+    $elementNames = array();
     foreach ($this->_elements as $element) {
       $label = $element->getLabel();
-      if (! empty($label)) {
+      if (!empty($label)) {
         $elementNames[] = $element->getName();
       }
     }
@@ -65,19 +65,22 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
   }
 
   /**
-   * Get the settings we are going to allow to be set on this form
+   * Get the settings we are going to allow to be set on this form.
+   *
    * @return array
    */
   function getFormSettings() {
-    if(empty($this->_settings)) {
-      $settings = civicrm_api3('setting', 'getfields', array ('filters' => $this->_settingFilter));
+    if (empty($this->_settings)) {
+      $settings = civicrm_api3('setting', 'getfields', array('filters' => $this->_settingFilter));
     }
-    $extraSettings = civicrm_api3('setting', 'getfields', array ('filters' => array('group' => 'accountsync')));
+    $extraSettings = civicrm_api3('setting', 'getfields', array('filters' => array('group' => 'accountsync')));
     $settings = $settings['values'] + $extraSettings['values'];
     return $settings;
   }
+
   /**
-   * Get the settings we are going to allow to be set on this form
+   * Get the settings we are going to allow to be set on this form.
+   *
    * @return array
    */
   function saveSettings() {
@@ -87,10 +90,10 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
   }
 
   /**
-  *
-  * @see CRM_Core_Form::setDefaultValues()
-  *
-  */
+   * Set defaults for form.
+   *
+   * @see CRM_Core_Form::setDefaultValues()
+   */
   function setDefaultValues() {
     $existing = civicrm_api3('setting', 'get', array('return' => array_keys($this->getFormSettings())));
     $defaults = array();
