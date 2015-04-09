@@ -36,7 +36,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
         $accountsInvoiceID = isset($record['accounts_invoice_id']) ? $record['accounts_invoice_id'] : NULL;
         $contributionID = $record['contribution_id'];
         $civiCRMInvoice  = civicrm_api3('account_invoice', 'getderived', array(
-          'id' => $contributionID
+          'id' => $contributionID,
         ));
         $civiCRMInvoice  = $civiCRMInvoice['values'][$contributionID];
         if (empty($civiCRMInvoice) || $civiCRMInvoice['contribution_status_id'] == 3) {
@@ -95,8 +95,8 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
    *   - contact_id
    * @param $accountsID
    *
-   * @return array|bool $accountsContact
-   *   BankTransaction Object/ array as expected by accounts package
+   * @return array|bool
+   *   BankTransaction Object/ array as expected by accounts package.
    */
   function mapToAccounts($invoiceData, $accountsID) {
 
@@ -144,8 +144,8 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
     }
 
     $this->validatePrerequisites($new_invoice);
-    $new_invoice = array (
-      $new_invoice
+    $new_invoice = array(
+      $new_invoice,
     );
     return $new_invoice;
   }
@@ -156,7 +156,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
         'InvoiceID'     => $accounts_invoice_id,
         'InvoiceNumber' => $contributionID,
         'Type'          => 'ACCREC',
-        'Reference' =>  'Cancelled',
+        'Reference' => 'Cancelled',
         'Date' => date('Y-m-d', strtotime(now)),
         'DueDate'  => date('Y-m-d', strtotime(now)),
         'Status'  => 'DRAFT',
@@ -223,7 +223,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Base {
       return;
     }
     static $trackingOptions = array();
-    if (empty($trackingOptions)){
+    if (empty($trackingOptions)) {
       $trackingOptions = civicrm_api3('xerosync', 'trackingcategorypull', array());
       $trackingOptions = $trackingOptions['values'];
     }
