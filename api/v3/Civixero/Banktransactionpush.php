@@ -34,4 +34,3 @@ function civicrm_api3_civixero_banktransactionpush($params) {
   $xero = new CRM_Civixero_BankTransaction();
   $xero->push($params);
 }
-

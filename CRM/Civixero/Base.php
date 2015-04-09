@@ -33,6 +33,8 @@ class CRM_Civixero_Base {
   }
 
   /**
+   * Singleton function.
+   *
    * @param $civixero_key
    * @param $civixero_secret
    * @param $publicCertificate
@@ -55,7 +57,8 @@ class CRM_Civixero_Base {
   }
 
   /**
-  * Get Xero Setting
+  * Get Xero Setting.
+   *
   * @param String $var
   * @return mixed
   */
@@ -66,7 +69,7 @@ class CRM_Civixero_Base {
   /**
    * Convert date to form expected by Xero.
    *
-   * @param String $date date in mysql format (since it is coming through the api)
+   * @param string $date date in mysql format (since it is coming through the api)
    *
    * @return string
    *   Formatted date
@@ -112,7 +115,7 @@ class CRM_Civixero_Base {
           }
         }
         else {
-        // Single message - string
+          // Single message - string
           $message = $value['Message'];
         }
         switch (trim($message)) {
@@ -122,12 +125,13 @@ class CRM_Civixero_Base {
             $message .= "<br>contact name is " . $contact['Name'];
             $message .= "<br>contact email is " . $contact['EmailAddress'];
             break;
+
           case "The TaxType field is mandatory Account code must be specified":
             $message = "Account code needs setting up";
         }
         $errors[] = $message;
       }
     }
-    return is_array($errors) ? $errors : false;
+    return is_array($errors) ? $errors : FALSE;
   }
 }
