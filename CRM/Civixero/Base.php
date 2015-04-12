@@ -15,6 +15,15 @@ class CRM_Civixero_Base {
   protected $accounts_contact;
 
   /**
+   * Connector ID.
+   *
+   * This will be 0 if nz.co.fuzion.connectors is not being used.
+   *
+   * @var int
+   */
+  protected $connector_id;
+
+  /**
    * Class constructor.
    *
    * @param array $parameters
@@ -23,6 +32,7 @@ class CRM_Civixero_Base {
    */
   public function __construct($parameters = array()) {
     $force = FALSE;
+    $this->connector_id = CRM_Utils_Array::value('connector_id', $parameters, 0);
     $variables = array(
       'xero_key',
       'xero_secret',
@@ -42,15 +52,14 @@ class CRM_Civixero_Base {
         throw new CRM_Core_Exception($var . ts(' has not been set'));
       }
     }
-    $contact_id = !empty($parameters['accounts_contact_id']) ? $parameters['accounts_contact_id'] : $this->getAccountsContact();
-    $this->singleton($this->_xero_key, $this->_xero_secret, $this->_xero_public_certificate, $this->_xero_private_key, $contact_id, $force);
+    $this->singleton($this->_xero_key, $this->_xero_secret, $this->_xero_public_certificate, $this->_xero_private_key, $this->connector_id, $force);
   }
 
   /**
    * Get the contact that the account is associated with. This is the domain contact by default.
    *
-   * We index the singleton instances by this in case we wish to load a different    * We index the singleton instances by this in case we wish to load a different
-   * Xero instance (with different credentials).
+   * Function is now unused - leaving for now but may remove ...
+   *
    * The nz.co.fuzion.connectors extension is required to use more than one account.
    *
    * @return array
@@ -58,7 +67,18 @@ class CRM_Civixero_Base {
    */
   protected function getAccountsContact() {
     if (empty($this->accounts_contact)) {
-      $this->accounts_contact = civicrm_api3('domain', 'getvalue', array('current_domain' => TRUE, 'return' => 'contact_id'));
+      if (empty($this->connector_id)) {
+        $this->accounts_contact = civicrm_api3('domain', 'getvalue', array(
+          'current_domain' => TRUE,
+          'return' => 'contact_id'
+        ));
+      }
+      else {
+        $this->accounts_contact = civicrm_api3('connector', 'getvalue', array(
+          'id' => $this->connector_id,
+          'return' => 'contact_id'
+        ));
+      }
     }
     return $this->accounts_contact;
   }
@@ -78,12 +98,12 @@ class CRM_Civixero_Base {
     $this->accounts_contact = $contact_id;
     if (empty(self::$singleton[$contact_id])) {
       try {
-        $connector = civicrm_api3('Connector', 'get', array(
+        $connector = civicrm_api3('Connector', 'getsingle', array(
           'connector_type_id' => 'CiviXero',
           'contact_id' => $contact_id,
+          'is_active' => 1,
+          'options' => array('limit' => 1),
         ));
-        echo "<pre>";
-        print_r($connector);
         $this->singleton(
           $connector['field1'],
           $connector['field2'],
@@ -93,8 +113,6 @@ class CRM_Civixero_Base {
         );
       }
       catch (CiviCRM_API3_Exception $e) {
-        echo "<pre>";
-        print_r($e);
         // What now? We'll just leave it untouched...
       }
     }
@@ -103,38 +121,36 @@ class CRM_Civixero_Base {
   /**
    * Singleton function.
    *
-   * @param $civixero_key
-   * @param $civixero_secret
-   * @param $publicCertificate
-   * @param $privateKey
-   * @param $contact_id
+   * @param string $civixero_key
+   * @param string $civixero_secret
+   * @param string $publicCertificate
+   * @param string $privateKey
+   * @param int $connector_id
    * @param bool $force
    *
    * @return \CRM_Extension_System
    */
-  protected function singleton($civixero_key, $civixero_secret, $publicCertificate, $privateKey, $contact_id, $force = FALSE) {
-    if (!self::$singleton[$contact_id] || $force) {
+  protected function singleton($civixero_key, $civixero_secret, $publicCertificate, $privateKey, $connector_id, $force = FALSE) {
+    if (!self::$singleton[$connector_id] || $force) {
       require_once 'packages/Xero/Xero.php';
-      self::$singleton[$contact_id] = new Xero($civixero_key, $civixero_secret, $publicCertificate, $privateKey);
+      self::$singleton[$connector_id] = new Xero($civixero_key, $civixero_secret, $publicCertificate, $privateKey);
     }
 
-    return self::$singleton[$contact_id];
+    return self::$singleton[$connector_id];
   }
 
   /**
    * Get instance of Xero object for connecting with Xero.
    *
-   * @param int $contact_id
-   *   The contact ID that 'owns' this account. This is only really relevant with the
-   *   nz.co.fuzion.connectors extension to store multiple credentials.
+   * @param int $connector_id
+   *   The connector ID that is being synced. Unless nz.co.fuzion.connectors is
+   *   in play this will be 0.
    *
    * @return Xero
    */
-  protected function getSingleton($contact_id = NULL) {
-    if (empty($contact_id)) {
-      $contact_id = $this->getAccountsContact();
-    }
-    return self::$singleton[$contact_id];
+  protected function getSingleton($connector_id) {
+    $this->connector_id = $connector_id;
+    return self::$singleton[$connector_id];
   }
 
   /**
@@ -145,7 +161,26 @@ class CRM_Civixero_Base {
    * @return mixed
    */
   protected function getSetting($var) {
-    return civicrm_api3('setting', 'getvalue', array('name' => $var, 'group' => 'Xero Settings'));
+
+    if ($this->connector_id > 0) {
+      static $connectors = array();
+      if (empty($connectors[$this->connector_id])) {
+        $connector = civicrm_api3('connector', 'getsingle', array('id' => $this->connector_id));
+        $connectors[$this->connector_id] = array(
+          'xero_key' => $connector['field1'],
+          'xero_secret' => $connector['field2'],
+          'xero_public_certificate' => $connector['field3'],
+          'xero_private_key' => $connector['field4'],
+        );
+      }
+      return $connectors[$this->connector_id][$var];
+    }
+    else {
+      return civicrm_api3('setting', 'getvalue', array(
+        'name' => $var,
+        'group' => 'Xero Settings'
+      ));
+    }
   }
 
   /**
@@ -171,6 +206,7 @@ class CRM_Civixero_Base {
    *
    * @return array|bool
    * @throws \CRM_Civixero_Exception_XeroThrottle
+   * @throws \Exception
    */
   protected function validateResponse($response) {
     $message = '';
@@ -178,6 +214,9 @@ class CRM_Civixero_Base {
     // Comes back as a string for oauth errors.
     if (is_string($response)) {
       $responseParts = explode('&', urldecode($response));
+      if (CRM_Utils_Array::value(0, $responseParts) == 'oauth_problem=token_rejected') {
+        throw new Exception('Invalid credentials');
+      }
       throw new CRM_Civixero_Exception_XeroThrottle($responseParts['oauth_problem']);
     }
 

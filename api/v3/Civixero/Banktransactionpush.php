@@ -31,6 +31,6 @@ function _civicrm_api3_civixero_banktransactionpush_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_civixero_banktransactionpush($params) {
-  $xero = new CRM_Civixero_BankTransaction();
+  $xero = new CRM_Civixero_BankTransaction($params);
   $xero->push($params);
 }

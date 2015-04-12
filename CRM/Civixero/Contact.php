@@ -14,7 +14,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    */
   public function pull($params) {
     try {
-      $result = $this->getSingleton()
+      $result = $this->getSingleton($params['connector_id'])
         ->Contacts(FALSE, $this->formatDateForXero($params['start_date']));
       if (!is_array($result)) {
         throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
@@ -99,6 +99,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           'accounts_needs_update' => 1,
           'api.contact.get' => 1,
           'plugin' => $this->_plugin,
+          'connector_id' => $params['connector_id'],
         )
       );
 
@@ -107,9 +108,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       //@todo pass limit through from params to get call
       foreach ($records['values'] as $record) {
         try {
-          $accountsContactID = $record['accounts_contact_id'];
+          $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
           $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
-          $result = $this->getSingleton()->Contacts($accountsContact);
+          $result = $this->getSingleton($params['connector_id'])->Contacts($accountsContact);
           $responseErrors = $this->validateResponse($result);
           if ($responseErrors) {
             $record['error_data'] = json_encode($responseErrors);

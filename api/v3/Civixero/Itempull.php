@@ -18,6 +18,13 @@ function _civicrm_api3_civixero_itempull_spec(&$spec) {
     'title' => 'Sync Start Date',
     'description' => 'date to start pulling from',
   );
+  $spec['connector_id'] = array(
+    'api.default' => 0,
+    'type' => CRM_Utils_Type::T_INT,
+    'name' => 'connector_id',
+    'title' => 'Connector ID',
+    'description' => 'Connector ID if using nz.co.fuzion.connectors, else 0',
+  );
 }
 
 /**
@@ -34,7 +41,7 @@ function _civicrm_api3_civixero_itempull_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_civixero_itempull($params) {
-  $xero = new CRM_Civixero_Item();
+  $xero = new CRM_Civixero_Item($params);
   return civicrm_api3_create_success($xero->pull($params));
 }
 

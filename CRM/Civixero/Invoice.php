@@ -133,8 +133,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       foreach ($records['values'] as $record) {
         try {
           $accountsInvoice = $this->getAccountsInvoice($record);
-          $result = $this->pushToXero($accountsInvoice);
-          $responseErrors = $this->handlePushResponse($result, $record);
+          $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
+          $responseErrors = $this->savePushResponse($result, $record);
         }
         catch (CiviCRM_API3_Exception $e) {
           $errors[] = ts('Failed to store ') . $record['contribution_id'] . ' (' . $record['accounts_contact_id'] . ' )'
@@ -426,10 +426,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $accountsInvoice
    *
+   * @param int $connector_id
+   *   ID of the connector (0 if nz.co.fuzion.connectors not installed.
+   *
    * @return array
    */
-  protected function pushToXero($accountsInvoice) {
-    $result = $this->getSingleton()->Invoices($accountsInvoice);
+  protected function pushToXero($accountsInvoice, $connector_id) {
+    $result = $this->getSingleton($connector_id)->Invoices($accountsInvoice);
     return $result;
   }
 

@@ -2,6 +2,7 @@
 
 /**
  * Civixero.ContactPull API specification.
+ *
  * This is used for documentation and validation.
  *
  * @param array $spec description of fields supported by this API call
@@ -15,6 +16,13 @@ function _civicrm_api3_civixero_contactpull_spec(&$spec) {
     'name' => 'start_date',
     'title' => 'Sync Start Date',
     'description' => 'date to start pulling from',
+  );
+  $spec['connector_id'] = array(
+    'api.default' => 0,
+    'type' => CRM_Utils_Type::T_INT,
+    'name' => 'connector_id',
+    'title' => 'Connector ID',
+    'description' => 'Connector ID if using nz.co.fuzion.connectors, else 0',
   );
 }
 
@@ -30,6 +38,6 @@ function _civicrm_api3_civixero_contactpull_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_civixero_contactpull($params) {
-  $xero = new CRM_Civixero_Contact();
+  $xero = new CRM_Civixero_Contact($params);
   $xero->pull($params);
 }

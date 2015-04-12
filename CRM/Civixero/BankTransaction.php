@@ -30,10 +30,13 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    *
    * @param array $accountsInvoice
    *
+   * @param int $connector_id
+   *   ID of the connector (0 if nz.co.fuzion.connectors not installed.
+   *
    * @return array
    */
-  protected function pushToXero($accountsInvoice) {
-    $result = $this->getSingleton()->BankTransactions($accountsInvoice);
+  protected function pushToXero($accountsInvoice, $connector_id) {
+    $result = $this->getSingleton($connector_id)->BankTransactions($accountsInvoice);
     return $result;
   }
 
@@ -46,7 +49,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    *   - receive date
    *   - source
    *   - contact_id
-   * @param $accountsID
+   * @param int $accountsID
    *
    * @return array|bool
    *   BankTransaction Object/ array as expected by accounts package.
