@@ -65,10 +65,53 @@ function civixero_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * Generate a list of entities to create/deactivate/delete when this module
  * is installed, disabled, uninstalled.
  *
- * @param $entities
+ * @param array $entities
+ *   Existing entity array
  */
 function civixero_civicrm_managed(&$entities) {
+  if (civixero_is_extension_installed('nz.co.fuzion.connectors')) {
+    $entities[] = array(
+      'name' => 'CiviXero connector Type',
+      'entity' => 'ConnectorType',
+      'module' => 'nz.co.fuzion.civixero',
+      'params' => array(
+        'name' => 'CiviXero',
+        'description' => 'CiviXero connector information',
+        'module' => 'accountsync',
+        'function' => 'credentials',
+        'plugin' => 'xero',
+        'field1_label' => 'Xero Key',
+        'field2_label' => 'Xero Secret',
+        'field3_label' => 'Xero Public Certificate Path',
+        'field4_label' => 'Xero Private Key Path',
+        'field5_label' => 'Settings',
+        'version' => 3,
+      ),
+    );
+  }
   return _civixero_civix_civicrm_managed($entities);
+}
+
+/**
+ * Is a given extension installed.
+ *
+ * Currently adding very roughly just to support checking if connectors is installed.
+ *
+ * I like to snaffle hacks into their own function for easy later fixing :-)
+ *
+ * @todo - test using CRM_Extension_System::singleton()->getManager()->getStatus($key)
+ *
+ * @param string $extension
+ *
+ * @return bool
+ */
+function civixero_is_extension_installed($extension) {
+  if ($extension == 'nz.co.fuzion.connectors') {
+    if (function_exists('connectors_civicrm_entityTypes')) {
+      return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 /**
