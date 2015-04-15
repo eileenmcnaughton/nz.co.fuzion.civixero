@@ -56,9 +56,9 @@ class CRM_Civixero_Base {
   }
 
   /**
-   * Get the contact that the account is associated with. This is the domain contact by default.
+   * Get the contact that the connector account is associated with.
    *
-   * Function is now unused - leaving for now but may remove ...
+   * This is the domain contact by default.
    *
    * The nz.co.fuzion.connectors extension is required to use more than one account.
    *
@@ -86,36 +86,14 @@ class CRM_Civixero_Base {
   /**
    * Set the accounts contact.
    *
-   * We index the singleton instances by this in case we wish to load a different
-   * Xero instance (with different credentials).
    * The nz.co.fuzion.connectors extension is required to use more than one account.
    *
-   * @param $contact_id
-   *
-   * @return array
+   * @param int $contact_id
+   *   Accounts contact ID. This is recorded in the civicrm_financial_type table
+   *   and in the civicrm_connector table.
    */
   protected function setAccountsContact($contact_id) {
     $this->accounts_contact = $contact_id;
-    if (empty(self::$singleton[$contact_id])) {
-      try {
-        $connector = civicrm_api3('Connector', 'getsingle', array(
-          'connector_type_id' => 'CiviXero',
-          'contact_id' => $contact_id,
-          'is_active' => 1,
-          'options' => array('limit' => 1),
-        ));
-        $this->singleton(
-          $connector['field1'],
-          $connector['field2'],
-          $connector['field3'],
-          $connector['field4'],
-          $contact_id
-        );
-      }
-      catch (CiviCRM_API3_Exception $e) {
-        // What now? We'll just leave it untouched...
-      }
-    }
   }
 
   /**

@@ -36,7 +36,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   public function pull($params) {
     try {
-      $result = $this->getSingleton()
+      $result = $this->getSingleton($params['connector_id'])
         ->Invoices(FALSE, $this->formatDateForXero($params['start_date']), array("Type" => "ACCREC"));
       if (!is_array($result)) {
         throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
@@ -58,6 +58,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             'accounts_data' => json_encode($invoice),
             'accounts_status_id' => $this->mapStatus($invoice['Status']),
             'accounts_needs_update' => 0,
+            'connector_id' => $params['connector_id'],
           );
           CRM_Accountsync_Hook::accountPullPreSave('invoice', $invoice, $save, $params);
           if (!$save) {
@@ -162,7 +163,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   - receive date
    *   - source
    *   - contact_id
-   * @param $accountsID
+   * @param int $accountsID
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
@@ -342,7 +343,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   /**
    * Get invoice formatted for Xero.
    *
-   * @param $record
+   * @param array $record
    *
    * @return array
    * @throws \CiviCRM_API3_Exception
@@ -405,7 +406,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     else {
       $record['error_data'] = 'null';
       if (empty($record['accounts_invoice_id'])) {
-        $record['accounts_invoice_id'] = $result['Invoices']['Invoice']['InvoiceID'];
+        // For bank transactions this would be
+        // $record['accounts_invoice_id'] = $result['Invoices']['Invoice']['InvoiceID'];
+        $record['accounts_invoice_id'] = $result['BankTransactions']['BankTransaction']['BankTransactionID'];
       }
       $record['accounts_modified_date'] = $result['Invoices']['Invoice']['UpdatedDateUTC'];
       $record['accounts_data'] = json_encode($result['Invoices']['Invoice']);

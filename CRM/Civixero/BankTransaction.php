@@ -55,14 +55,19 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    *   BankTransaction Object/ array as expected by accounts package.
    */
   protected function mapToAccounts($invoiceData, $accountsID) {
-    if (count($invoiceData['accounts_contact_id']) == 1) {
-      $this->setAccountsContact(reset($invoiceData['accounts_contact_id']));
-    }
-    elseif ($this->isSplitTransactions()) {
-      // Here we hit the guts of splitting this!
-    }
     $lineItems = array();
+
     foreach ($invoiceData['line_items'] as $lineItem) {
+      if ($this->connector_id != 0
+        && $this->getAccountsContact()
+        && $lineItem['accounts_contact_id'] != $this->getAccountsContact()) {
+        // We have configured the connect to be account specific and we are
+        // dealing with an account not related to this connector.
+        // This can result (intentionally) in some line items being pushed
+        // to one connector and some to another. To avoid this don't put a
+        // contact_id on the connector account.
+        continue;
+      }
       $lineItems[] = array(
         "Description" => $lineItem['display_name'] . ' ' . str_replace(array('&nbsp;'), ' ', $lineItem['label']),
         "Quantity"    => $lineItem['qty'],
