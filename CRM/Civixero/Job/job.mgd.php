@@ -3,13 +3,12 @@
 // The record will be automatically inserted, updated, or deleted from the
 // database as appropriate. For more details, see "hook_civicrm_managed" at:
 // http://wiki.civicrm.org/confluence/display/CRMDOC42/Hook+Reference
-return array (
-  0 =>
-  array (
+return array(
+  0 => array(
     'name' => 'CiviXero Contact Push Job',
     'entity' => 'Job',
-    'params' =>
-    array (
+    'update' => 'never',
+    'params' => array(
       'version' => 3,
       'name' => 'CiviXero Contact Push Job',
       'description' => 'Push updated contacts to Xero',
@@ -19,12 +18,11 @@ return array (
       'parameters' => 'plugin=xero',
     ),
   ),
-  1 =>
-  array (
+  1 => array(
     'name' => 'CiviXero Contact Pull Job',
     'entity' => 'Job',
-    'params' =>
-    array (
+    'update' => 'never',
+    'params' => array(
       'version' => 3,
       'name' => 'CiviXero Contact Pull Job',
       'description' => 'Pull updated contacts from Xero',
@@ -34,11 +32,11 @@ return array (
       'parameters' => 'plugin=xero, start_date=yesterday',
     ),
   ),
-  array (
+  2 => array(
     'name' => 'CiviXero Invoice Push Job',
     'entity' => 'Job',
-    'params' =>
-    array (
+    'update' => 'never',
+    'params' => array(
       'version' => 3,
       'name' => 'CiviXero Invoice Push Job',
       'description' => 'Push updated invoices from Xero',
@@ -48,11 +46,11 @@ return array (
       'parameters' => 'plugin=xero',
     ),
   ),
-  array (
+  3 => array(
     'name' => 'CiviXero Invoice Pull Job',
     'entity' => 'Job',
-    'params' =>
-    array (
+    'update' => 'never',
+    'params' => array(
       'version' => 3,
       'name' => 'CiviXero Invoice Pull Job',
       'description' => 'Pull updated invoices from Xero',
