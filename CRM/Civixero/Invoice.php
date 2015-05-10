@@ -327,6 +327,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $criteria = array(
       'accounts_needs_update' => 1,
       'plugin' => 'xero',
+      'connector_id' => $params['connector_id'],
       'options' => array(
         'sort' => 'error_data',
         'limit' => $limit,
@@ -336,6 +337,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $criteria['contribution_id'] = $params['contribution_id'];
       unset($criteria['accounts_needs_update']);
     }
+
     $records = civicrm_api3('account_invoice', 'get', $criteria);
     return $records;
   }

@@ -16,6 +16,10 @@ function _civicrm_api3_civixero_banktransactionpush_spec(&$spec) {
     'title' => 'Contribution ID',
     'description' => 'contribution id (optional, overrides needs_update flag)',
   );
+  $spec['connector_id'] = array(
+    'api.default' => 0,
+    'title' => 'Connector if defined or 0 for site wide',
+  );
 }
 
 /**
