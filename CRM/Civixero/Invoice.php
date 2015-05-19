@@ -126,7 +126,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function push($params, $limit = 1) {
+  public function push($params, $limit = 10) {
     try {
       $records = $this->getContributionsRequiringPushUpdate($params, $limit);
       $errors = array();

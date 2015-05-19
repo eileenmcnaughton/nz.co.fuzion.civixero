@@ -96,6 +96,9 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
         TRUE
       ),
     );
+    if ($accountsID) {
+      $new_invoice['BankTransactionID'] = $accountsID;
+    }
 
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('bank_transaction', $invoiceData, $proceed, $new_invoice);
