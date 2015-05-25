@@ -419,7 +419,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     //this will update the last sync date & anything hook-modified
     unset($record['last_sync_date']);
-    if (empty($record['accounts_modified_date'])) {
+    if (empty($record['accounts_modified_date']) || $record['accounts_modified_date'] == '0000-00-00 00:00:00') {
       unset($record['accounts_modified_date']);
     }
     civicrm_api3('account_invoice', 'create', $record);
