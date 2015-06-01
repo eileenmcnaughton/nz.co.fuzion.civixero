@@ -411,11 +411,16 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         // For bank transactions this would be
         // $record['accounts_invoice_id'] = $result['Invoices']['Invoice']['InvoiceID'];
         $record['accounts_invoice_id'] = $result['BankTransactions']['BankTransaction']['BankTransactionID'];
+        $record['accounts_modified_date'] = $result['BankTransactions']['BankTransaction']['UpdatedDateUTC'];
+        $record['accounts_data'] = json_encode($result['BankTransactions']['BankTransaction']);
+        $record['accounts_status_id'] = $this->mapStatus($result['BankTransactions']['BankTransaction']['Status']);
       }
-      $record['accounts_modified_date'] = $result['Invoices']['Invoice']['UpdatedDateUTC'];
-      $record['accounts_data'] = json_encode($result['Invoices']['Invoice']);
-      $record['accounts_status_id'] = $this->mapStatus($result['Invoices']['Invoice']['Status']);
-      $record['accounts_needs_update'] = 0;
+      else {
+        $record['accounts_modified_date'] = $result['Invoices']['Invoice']['UpdatedDateUTC'];
+        $record['accounts_data'] = json_encode($result['Invoices']['Invoice']);
+        $record['accounts_status_id'] = $this->mapStatus($result['Invoices']['Invoice']['Status']);
+        $record['accounts_needs_update'] = 0;
+      }
     }
     //this will update the last sync date & anything hook-modified
     unset($record['last_sync_date']);
