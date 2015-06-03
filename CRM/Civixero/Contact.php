@@ -110,9 +110,18 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         try {
           $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
           $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
-          $result = $this->getSingleton($params['connector_id'])->Contacts($accountsContact);
-          $responseErrors = $this->validateResponse($result);
-          if ($responseErrors) {
+          if ($accountsContact === FALSE) {
+            $result = FALSE;
+            $responseErrors = array();
+          }
+          else {
+            $result = $this->getSingleton($params['connector_id'])->Contacts($accountsContact);
+            $responseErrors = $this->validateResponse($result);
+          }
+          if ($result === FALSE) {
+            unset($record['accounts_modified_date']);
+          }
+          elseif ($responseErrors) {
             $record['error_data'] = json_encode($responseErrors);
           }
           else {

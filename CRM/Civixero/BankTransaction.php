@@ -36,6 +36,9 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    * @return array
    */
   protected function pushToXero($accountsInvoice, $connector_id) {
+    if ($accountsInvoice === FALSE) {
+      return FALSE;
+    }
     $result = $this->getSingleton($connector_id)->BankTransactions($accountsInvoice);
     return $result;
   }
