@@ -351,6 +351,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getAccountsInvoice($record) {
+    if ($record['accounts_status_id'] == 3) {
+      return FALSE;
+    }
+
     $accountsInvoiceID = isset($record['accounts_invoice_id']) ? $record['accounts_invoice_id'] : NULL;
     $contributionID = $record['contribution_id'];
     $civiCRMInvoice = civicrm_api3('account_invoice', 'getderived', array(
