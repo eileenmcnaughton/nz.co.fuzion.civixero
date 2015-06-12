@@ -25,7 +25,7 @@ You need a Xero api key.
 
 Log into https://api.xero.com/Application?redirectCount=0
 
-Choose My Applications
+Choose My Applications, Add application
 <img src='https://raw.githubusercontent.com/eileenmcnaughton/nz.co.fuzion.civixero/master/docs/images/create_application.png'>
 
 Follow the Xero instructions to set up a .cer and public key
