@@ -29,7 +29,7 @@ return array(
       'api_entity' => 'Civixero',
       'api_action' => 'contactpull',
       'run_frequency' => 'Always',
-      'parameters' => 'plugin=xero, start_date=yesterday',
+      'parameters' => "plugin=xero\nstart_date=yesterday",
     ),
   ),
   2 => array(
@@ -57,7 +57,7 @@ return array(
       'api_entity' => 'Civixero',
       'api_action' => 'invoicepull',
       'run_frequency' => 'Always',
-      'parameters' => 'plugin=xero, start_date=yesterday',
+      'parameters' => "plugin=xero\nstart_date=yesterday",
     ),
   ),
 );
