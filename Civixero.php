@@ -324,7 +324,7 @@ function civixero_civicrm_searchColumns( $objectName, &$headers,  &$values, &$se
   if ($objectName == 'contribution') {
     foreach ($values as &$value) {
       try {
-        $invoiceID = civicrm_api3('account_invoice', 'getvalue', array(
+        $invoiceID = civicrm_api3('AccountInvoice', 'getvalue', array(
           'plugin' => 'xero',
           'contribution_id' => $value['contribution_id'],
           'return' => 'accounts_invoice_id',
