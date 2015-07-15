@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<buildpath>
-	<buildpathentry kind="con" path="org.eclipse.php.core.LANGUAGE"/>
-	<buildpathentry kind="src" path=""/>
-	<buildpathentry external="true" kind="lib" path="C:/vagrant/wheezy64/drupal/sites/default/extensions/nz.co.fuzion.xerosync"/>
-	<buildpathentry kind="con" path="org.eclipse.dltk.USER_LIBRARY/org.eclipse.php.core.PHPNature#snippets"/>
-	<buildpathentry kind="con" path="org.eclipse.dltk.USER_LIBRARY/org.eclipse.php.core.PHPNature#civiaccountsync"/>
-	<buildpathentry kind="con" path="org.eclipse.dltk.USER_LIBRARY/org.eclipse.php.core.PHPNature#civicrm"/>
-</buildpath>
