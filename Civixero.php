@@ -221,22 +221,25 @@ function civixero_civicrm_pageRun(&$page) {
     return;
   }
   if(($contactID = $page->getVar('_contactId')) != FALSE) {
+
     try{
-      $account_contact = civicrm_api3('account_contact', 'getsingle', array(
+      $account_contacts = civicrm_api3('account_contact', 'get', array(
         'contact_id' => $contactID,
-        'return' => 'accounts_contact_id, accounts_needs_update',
+        'return' => 'accounts_contact_id, accounts_needs_update, connector_id',
         'plugin' => 'xero',
       ));
-
-      if (!empty($account_contact['accounts_contact_id'])) {
-        $xeroBlock = _civixero_get_xero_links_block($account_contact['accounts_contact_id']);
-      }
-      elseif (!empty($account_contact['accounts_needs_update'])) {
-        $xeroBlock = _civicrm_get_xero_block_header();
-        $xeroBlock .= "<p> Contact is queued for sync with Xero</p></div>";
-      }
-      else {
+      if (!$account_contacts['count']) {
         throw new Exception('Contact needs syncing');
+      }
+      foreach ($account_contacts['values'] as $account_contact) {
+        $prefix = '';
+        if (!empty($account_contact['accounts_contact_id'])) {
+          $xeroBlock = _civixero_get_xero_links_block($account_contact['accounts_contact_id'], $prefix);
+        }
+        elseif (!empty($account_contact['accounts_needs_update'])) {
+          $xeroBlock = _civicrm_get_xero_block_header();
+          $xeroBlock .= "<p> Contact is queued for sync with Xero</p></div>";
+        }
       }
     }
     catch(Exception $e) {
@@ -278,6 +281,40 @@ function civixero_civicrm_pageRun(&$page) {
 
   //https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=
 }
+
+/**
+ * Get prefix for the connector.
+ *
+ * @param int|null $connector_id
+ *
+ * @return string
+ */
+function _civixero_get_connector_prefix($connector_id) {
+  if (!$connector_id) {
+    return '';
+  }
+  $connectors = _civixero_get_connectors();
+  return $connectors[$connector_id]['name'];
+}
+
+/**
+ * Get available connectors.
+ *
+ * @return string
+ */
+function _civixero_get_connectors() {
+  static $connectors = array();
+  if (empty($connectors)) {
+    $connectors = civicrm_api3('connector', 'get', array('connector_type_id' => 'CiviXero'));
+    if ($connectors['count']) {
+      $connectors = $connectors['values'];
+    }
+    else {
+      $connectors = array(0 => 0);
+    }
+    return $connectors;
+  }
+  }
 
 /**
  * @param $xeroID
