@@ -185,19 +185,19 @@ function civixero_civicrm_navigationMenu(&$menu) {
           'navID' => $navId + 1,
         ),
       ),
-      /*
+
       $navId+2 => array (
         'attributes' => array(
-          'label' => 'Xero Dashboard',
-          'name' => 'Xero Dashboard',
-          'url' => 'civicrm/xero/dashboard',
+          'label' => 'Synchronize contacts',
+          'name' => 'Contact Sync',
+          'url' => 'civicrm/a/#/accounts/contact/sync',
           'permission' => 'administer CiviCRM',
           'operator' => null,
           'separator' => 1,
           'active' => 1,
           'parentID'   => $navId,
         ))
-      */
+
     ),
   );
   if ($parentID) {
@@ -388,7 +388,7 @@ function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
   }
   $accountsData['civicrm_formatted'] = array();
   $mappedFields = array(
-    'name' => 'display_name',
+    'Name' => 'display_name',
     'FirstName' => 'first_name',
     'LastName' => 'last_name',
     'EmailAddress' => 'email',
