@@ -374,3 +374,63 @@ function civixero_civicrm_searchColumns( $objectName, &$headers,  &$values, &$se
     }
   }
 }
+
+/**
+ * Map xero accounts data to generic data.
+ *
+ * @param array $accountsData
+ * @param string $entity
+ * @param string $plugin
+ */
+function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
+  if ($plugin != 'xero' || $entity != 'contact') {
+    return;
+  }
+  $accountsData['civicrm_formatted'] = array();
+  $mappedFields = array(
+    'name' => 'display_name',
+    'FirstName' => 'first_name',
+    'LastName' => 'last_name',
+    'EmailAddress' => 'email',
+  );
+  foreach ($mappedFields as $xeroField => $civicrmField) {
+    if (!empty($accountsData[$xeroField])) {
+      $accountsData['civicrm_formatted'][$civicrmField] = $accountsData[$xeroField];
+    }
+  }
+
+  if (is_array($accountsData['Addresses']) && is_array($accountsData['Addresses']['Address'])) {
+    foreach ($accountsData['Addresses']['Address'] as $address) {
+      if (count($address) > 1) {
+        $addressMappedFields = array(
+          'AddressLine1' => 'street_address',
+          'City' => 'city',
+          'PostalCode' => 'postal_code',
+        );
+        foreach ($addressMappedFields as $xeroField => $civicrmField) {
+          if (!empty($address[$xeroField])) {
+            $accountsData['civicrm_formatted'][$civicrmField] = $address[$xeroField];
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  if (is_array($accountsData['Phones']) && is_array($accountsData['Phones']['Phone'])) {
+    foreach ($accountsData['Phones']['Phone'] as $address) {
+      if (count($address) > 1) {
+        $addressMappedFields = array(
+          'PhoneNumber' => 'phone',
+        );
+        foreach ($addressMappedFields as $xeroField => $civicrmField) {
+          if (!empty($address[$xeroField])) {
+            $accountsData['civicrm_formatted'][$civicrmField] = $address[$xeroField];
+          }
+        }
+        break;
+      }
+    }
+  }
+
+}
