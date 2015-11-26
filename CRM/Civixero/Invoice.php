@@ -169,6 +169,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   Contact Object/ array as expected by accounts package
    */
   protected function mapToAccounts($invoiceData, $accountsID) {
+    // Initially Assume that tax is not set up, and all amounts are tax inclusive.
+    $line_amount_types = 'Inclusive';
 
     $lineItems = array();
     foreach ($invoiceData['line_items'] as $lineItem) {
@@ -178,6 +180,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         "UnitAmount"  => $lineItem['unit_price'],
         "AccountCode" => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
       );
+
+      if(!empty($lineItem['tax_amount'])) {
+        // If we discover a non-zero tax_amount, switch to tax exclusive amounts.
+        $line_amount_types = 'Exclusive';
+      }
     }
 
     $new_invoice = array(
@@ -191,7 +198,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       "InvoiceNumber"   => $invoiceData['id'],
       "CurrencyCode"    => CRM_Core_Config::singleton()->defaultCurrency,
       "Reference"       => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
-      "LineAmountTypes" => "Inclusive",
+      "LineAmountTypes" => $line_amount_types,
       'LineItems' => array('LineItem' => $lineItems),
     );
 
