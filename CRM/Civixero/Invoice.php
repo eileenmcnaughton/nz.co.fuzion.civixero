@@ -45,7 +45,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       if (!empty($result['Invoices'])) {
         $invoices = $result['Invoices']['Invoice'];
         if (isset($invoices['InvoiceID'])) {
-          // the return syntax puts the contact only level higher up when only one contact is involved
+          // The return syntax puts the contact only level higher up when only one contact is involved.
           $invoices = array($invoices);
         }
         foreach ($invoices as $invoice) {

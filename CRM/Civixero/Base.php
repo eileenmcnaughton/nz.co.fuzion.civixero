@@ -70,13 +70,13 @@ class CRM_Civixero_Base {
       if (empty($this->connector_id)) {
         $this->accounts_contact = civicrm_api3('domain', 'getvalue', array(
           'current_domain' => TRUE,
-          'return' => 'contact_id'
+          'return' => 'contact_id',
         ));
       }
       else {
         $this->accounts_contact = civicrm_api3('connector', 'getvalue', array(
           'id' => $this->connector_id,
-          'return' => 'contact_id'
+          'return' => 'contact_id',
         ));
       }
     }
@@ -156,7 +156,7 @@ class CRM_Civixero_Base {
     else {
       return civicrm_api3('setting', 'getvalue', array(
         'name' => $var,
-        'group' => 'Xero Settings'
+        'group' => 'Xero Settings',
       ));
     }
   }
@@ -207,7 +207,7 @@ class CRM_Civixero_Base {
           foreach ($value as $errorMessage) {
             if (trim($errorMessage['Message']) == 'Account code must be specified') {
               return array(
-                'You need to set up the account code'
+                'You need to set up the account code',
               );
             }
             $message .= " " . $errorMessage['Message'];
