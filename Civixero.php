@@ -248,7 +248,8 @@ function civixero_civicrm_pageRun(&$page) {
         Queue Sync to Xero</a></div>";
 
       CRM_Core_Region::instance('contact-basic-info-left')->add(array(
-        'markup' => $xeroBlock
+        'markup' => $xeroBlock,
+        'type' => 'markup',
       ));
       $createString = '';
       if (!empty($account_contact) && !empty($account_contact['id'])) {
@@ -274,9 +275,9 @@ function civixero_civicrm_pageRun(&$page) {
     return;
   }
 
-
   CRM_Core_Region::instance('contact-basic-info-left')->add(array(
-  'markup' => $xeroBlock
+    'markup' => $xeroBlock,
+    'type' => 'markup',
   ));
 
   //https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=
