@@ -35,6 +35,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             'plugin' => 'xero',
             'accounts_contact_id' => $contact['ContactID'],
             'accounts_data' => json_encode($contact),
+            'accounts_needs_update' => 0,
           );
           CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save, $params);
           if (!$save) {
