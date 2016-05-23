@@ -416,7 +416,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     else {
       $responseErrors = $this->validateResponse($result);
       if ($responseErrors) {
-        if (in_array('Invoice not of valid status for modification', $responseErrors)) {
+        if (in_array('Invoice not of valid status for modification', $responseErrors)
+        || in_array(' Invoice not of valid status for modification This document cannot be edited as it has a payment or credit note allocated to it.', $responseErrors)
+        ) {
           // we can't update in Xero as it is approved or voided so let's not keep trying
           $record['accounts_needs_update'] = 0;
         }
