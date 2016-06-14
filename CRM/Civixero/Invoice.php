@@ -444,6 +444,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $record['accounts_modified_date'] = $result['BankTransactions']['BankTransaction']['UpdatedDateUTC'];
           $record['accounts_data'] = json_encode($result['BankTransactions']['BankTransaction']);
           $record['accounts_status_id'] = $this->mapStatus($result['BankTransactions']['BankTransaction']['Status']);
+          $record['accounts_needs_update'] = 0;
         }
         else {
           if (empty($record['accounts_invoice_id']) && !empty($result['Invoices']['Invoice']['InvoiceID'])) {
