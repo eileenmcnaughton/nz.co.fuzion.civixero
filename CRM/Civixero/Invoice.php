@@ -377,7 +377,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     ));
 
     $civiCRMInvoice = $civiCRMInvoice['values'][$contributionID];
-    if (empty($civiCRMInvoice) || $civiCRMInvoice['contribution_status_id'] == 3) {
+    $statuses = civicrm_api3('Contribution', 'getoptions', array('field' => 'contribution_status_id'));
+    $contributionStatus = $statuses['values'][$civiCRMInvoice['contribution_status_id']];
+    $cancelledStatuses = array('Failed', 'Cancelled');
+
+    if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
       $accountsInvoice = $this->mapCancelled($contributionID, $accountsInvoiceID);
       return $accountsInvoice;
     }
