@@ -220,24 +220,28 @@ function civixero_civicrm_pageRun(&$page) {
   if ($pageName != 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
     return;
   }
-  if(($contactID = $page->getVar('_contactId')) != FALSE) {
 
+  if(($contactID = $page->getVar('_contactId')) != FALSE) {
+    $connectors = _civixero_get_connectors();
+    $xeroBlock = '';
     try{
       $account_contacts = civicrm_api3('account_contact', 'get', array(
         'contact_id' => $contactID,
         'return' => 'accounts_contact_id, accounts_needs_update, connector_id',
         'plugin' => 'xero',
+        'connector_id' => array('IN' => array_keys($connectors)),
       ));
+
       if (!$account_contacts['count']) {
         throw new Exception('Contact needs syncing');
       }
       foreach ($account_contacts['values'] as $account_contact) {
-        $prefix = '';
+        $prefix = _civixero_get_connector_prefix($account_contact['connector_id']);
         if (!empty($account_contact['accounts_contact_id'])) {
-          $xeroBlock = _civixero_get_xero_links_block($account_contact['accounts_contact_id'], $prefix);
+          $xeroBlock .= _civixero_get_xero_links_block($account_contact['accounts_contact_id'], $prefix);
         }
         elseif (!empty($account_contact['accounts_needs_update'])) {
-          $xeroBlock = _civicrm_get_xero_block_header();
+          $xeroBlock .= _civicrm_get_xero_block_header();
           $xeroBlock .= "<p> Contact is queued for sync with Xero</p></div>";
         }
       }
@@ -313,16 +317,16 @@ function _civixero_get_connectors() {
     else {
       $connectors = array(0 => 0);
     }
-    return $connectors;
   }
-  }
+  return $connectors;
+}
 
 /**
  * @param $xeroID
  *
  * @return string
  */
-function _civixero_get_xero_links_block($xeroID) {
+function _civixero_get_xero_links_block($xeroID, $connector_name) {
   $xeroLinks = array(
     'view_transactions' => array(
       'link' => 'https://go.xero.com/Reports/report.aspx?reportId=be392447-762b-444d-9cde-87c6bd185d00&report=TransactionsByContact&invoiceType=INVOICETYPE%2fACCREC&addToReportId=cf6fedeb-2188-493c-96e2-b862198f9b46&addToReportTitle=Income+by+Contact&reportClass=TransactionsByContact&contact=',
@@ -334,7 +338,7 @@ function _civixero_get_xero_links_block($xeroID) {
     )
   );
 
-  $xeroBlock = _civicrm_get_xero_block_header();
+  $xeroBlock = _civicrm_get_xero_block_header() . $connector_name;
   foreach ($xeroLinks as $link) {
     $xeroBlock .= "<div class='crm-content'><a href='{$link['link']}{$xeroID}'>{$link['link_label']}</a></div>";
   }
