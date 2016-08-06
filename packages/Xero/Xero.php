@@ -517,7 +517,7 @@ if (!class_exists('OAuthException')) {
       $this->http_url = $http_url;
     }
 
-  
+
     /**
      * attempt to build up a request from what was passed to the server
      */
@@ -727,7 +727,7 @@ if (!class_exists('OAuthException')) {
       return $this->to_url();
     }
 
-  
+
     public function sign_request($signature_method, $consumer, $token) {
       $this->set_parameter(
         "oauth_signature_method",
@@ -1013,7 +1013,7 @@ if (!class_exists('OAuthException')) {
     }
   }
 
-  
+
     // This decode function isn't taking into consideration the above
     // modifications to the encoding process. However, this method doesn't
     // seem to be used anywhere so leaving it as is.
