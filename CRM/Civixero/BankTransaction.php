@@ -131,4 +131,15 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
     return TRUE;
   }
 
+  /**
+   * Get a list of responses indicating the transaction cannot be updated.
+   *
+   * @return array
+   */
+  protected function getNotUpdateCandidateResponses() {
+    return array(
+      'This Bank Transaction cannot be edited as it has been reconciled with a Bank Statement.',
+    );
+  }
+
 }

@@ -197,6 +197,9 @@ class CRM_Civixero_Base {
       }
       throw new CRM_Civixero_Exception_XeroThrottle($responseParts['oauth_problem']);
     }
+    if (!empty($response['ErrorNumber'])) {
+      $errors[] = $response['Message'];
+    }
 
     if (!empty($response['Elements']) && is_array($response['Elements']['DataContractBase']['ValidationErrors'])) {
       foreach ($response['Elements']['DataContractBase']['ValidationErrors'] as $key => $value) {

@@ -310,11 +310,11 @@ function _civixero_get_connector_prefix($connector_id) {
 function _civixero_get_connectors() {
   static $connectors = array();
   if (empty($connectors)) {
-    $connectors = civicrm_api3('connector', 'get', array('connector_type_id' => 'CiviXero'));
-    if ($connectors['count']) {
+    try {
+      $connectors = civicrm_api3('connector', 'get', array('connector_type_id' => 'CiviXero'));
       $connectors = $connectors['values'];
     }
-    else {
+    catch (CiviCRM_API3_Exception $e) {
       $connectors = array(0 => 0);
     }
   }

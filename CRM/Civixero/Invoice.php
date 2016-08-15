@@ -437,9 +437,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     else {
       $responseErrors = $this->validateResponse($result);
       if ($responseErrors) {
-        if (in_array('Invoice not of valid status for modification', $responseErrors)
-        || in_array(' Invoice not of valid status for modification This document cannot be edited as it has a payment or credit note allocated to it.', $responseErrors)
-        ) {
+        if ($this->isNotUpdateCandidate($responseErrors)) {
           // we can't update in Xero as it is approved or voided so let's not keep trying
           $record['accounts_needs_update'] = 0;
         }
@@ -474,6 +472,28 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     civicrm_api3('AccountInvoice', 'create', $record);
     return $responseErrors;
+  }
+
+  /**
+   * Does this response denote updating is not possible.
+   *
+   * @param array $responseErrors
+   *
+   * @return bool
+   */
+  protected function isNotUpdateCandidate($responseErrors) {
+    return count(array_intersect($responseErrors, $this->getNotUpdateCandidateResponses()));
+  }
+
+  /**
+   * Get a list of responses indicating the transaction cannot be updated.
+   *
+   * @return array
+   */
+  protected function getNotUpdateCandidateResponses() {
+    return array(
+      'Invoice not of valid status for modification',
+      ' Invoice not of valid status for modification This document cannot be edited as it has a payment or credit note allocated to it.');
   }
 
   /**
