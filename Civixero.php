@@ -439,3 +439,10 @@ function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
   }
 
 }
+
+/**
+ * Implements hook_civicrm_accountsync_plugins().
+ */
+function civixero_civicrm_accountsync_plugins(&$plugins) {
+  $plugins[] = 'xero';
+}
