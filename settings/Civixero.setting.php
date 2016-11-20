@@ -87,4 +87,21 @@ return array(
     ),
     'quick_form_type' => 'Element',
   ),
+  'xero_invoice_number_prefix' => array(
+    'group_name' => 'Xero Settings',
+    'group' => 'xero',
+    'name' => 'xero_invoice_number_prefix',
+    'type' => 'String',
+    'add' => '4.6',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => 'Optionally define a string to prefix invoice numbers when pushing to Xero.',
+    'title' =>  'Xero invoice number prefix',
+    'help_text' => '',
+    'html_type' => 'Text',
+    'html_attributes' => array(
+      'size' => 50,
+    ),
+    'quick_form_type' => 'Element',
+  ),
  );

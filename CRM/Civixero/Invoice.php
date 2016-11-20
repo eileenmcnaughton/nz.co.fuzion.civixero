@@ -48,10 +48,16 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           // The return syntax puts the contact only level higher up when only one contact is involved.
           $invoices = array($invoices);
         }
+        $prefix = $this->getSetting('xero_invoice_number_prefix');
+        if(!isset($prefix)) {
+          $prefix = '';
+        }
         foreach ($invoices as $invoice) {
           $save = TRUE;
+          // Strip out the invoice number prefix if present.
+          $contributionId = preg_replace("/^\Q{$prefix}\E/", '', CRM_Utils_Array::value('InvoiceNumber', $invoice));
           $params = array(
-            'contribution_id' => CRM_Utils_Array::value('InvoiceNumber', $invoice),
+            'contribution_id' => $contributionId,
             'accounts_modified_date' => $invoice['UpdatedDateUTC'],
             'plugin' => 'xero',
             'accounts_invoice_id' => $invoice['InvoiceID'],
@@ -77,7 +83,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             try {
               $existing = civicrm_api3('AccountInvoice', 'getsingle', array(
                 'return' => 'id',
-                'contribution_id' => $invoice['InvoiceNumber'],
+                'contribution_id' => $contributionId,
                 'plugin' => $this->_plugin,
               ));
               $params['id'] = $existing['id'];
@@ -194,6 +200,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       }
     }
 
+    $prefix = $this->getSetting('xero_invoice_number_prefix');
+    if (empty($prefix)) {
+      $prefix = '';
+    }
     $new_invoice = array(
       "Type" => ($total_amount > 0) ? "ACCREC" : 'ACCPAY',
       "Contact" => array(
@@ -202,7 +212,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       "Date"            => substr($invoiceData['receive_date'], 0, 10),
       "DueDate"         => substr($invoiceData['receive_date'], 0, 10),
       "Status"          => "SUBMITTED",
-      "InvoiceNumber"   => $invoiceData['id'],
+      "InvoiceNumber"   => $prefix . $invoiceData['id'],
       "CurrencyCode"    => CRM_Core_Config::singleton()->defaultCurrency,
       "Reference"       => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
       "LineAmountTypes" => $line_amount_types,
