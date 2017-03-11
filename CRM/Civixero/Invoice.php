@@ -75,6 +75,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               'return' => 'id',
               'accounts_invoice_id' => $invoice['InvoiceID'],
               'plugin' => $this->_plugin,
+              'connector_id' => $params['connector_id'],
             ));
           }
           catch (CiviCRM_API3_Exception $e) {
@@ -89,7 +90,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               $params['id'] = $existing['id'];
               if (!empty($existing['accounts_invoice_id']) && $existing['accounts_invoice_id'] != $invoice['InvoiceID']) {
                 // no idea how this happened or what it means - calling function can catch & deal with it
-                throw new CRM_Core_Exception(ts('Cannot update invoice'), 'data_error', $invoice);
+                throw CRM_Core_Exception(ts('Cannot update invoice'), 'data_error', $invoice);
               }
             }
             catch (CiviCRM_API3_Exception $e) {
