@@ -220,6 +220,21 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'LineItems' => array('LineItem' => $lineItems),
     );
 
+    /* Use due date and period from the invoice settings when available. */
+    try {
+      $invoice_settings = civicrm_api3(
+        'Setting',
+        'getvalue',
+        array('name' => 'contribution_invoice_settings')
+      );
+
+      if (!empty($invoice_settings['due_date']) && $invoice_settings['due_date_period'] != 'select') {
+        $new_invoice['DueDate'] = strftime('%Y-%m-%d', strtotime($invoiceData['receive_date'] . ' + ' . $invoice_settings['due_date'] . ' ' . $invoice_settings['due_date_period']));
+      }
+    }
+    catch (Exception $e) {
+    }
+
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('invoice', $invoiceData, $proceed, $new_invoice);
     if (!$proceed) {
