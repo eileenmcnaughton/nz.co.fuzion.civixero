@@ -104,4 +104,23 @@ return array(
     ),
     'quick_form_type' => 'Element',
   ),
+  'xero_push_contribution_status' => array(
+    'group_name' => 'Xero Settings',
+    'group' => 'xero',
+    'name' => 'xero_push_contribution_status',
+    'type' => 'Array',
+    'add' => '4.7',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => 'Select contribution status that can be pushed to Xero.',
+    'title' =>  'Push Contribution Status',
+    'help_text' => '',
+    'html_type' => 'Select',
+    'options' => CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name'),
+    'html_attributes' => array(
+      'multiple' => 1,
+      'class' => 'crm-select2',
+    ),
+    'quick_form_type' => 'Select',
+  ),
  );

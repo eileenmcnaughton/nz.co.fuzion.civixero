@@ -139,6 +139,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $errors = array();
 
       foreach ($records['values'] as $record) {
+        $status = civicrm_api3('Contribution', 'getvalue', array(
+          'return' => "contribution_status_id",
+          'id' => $record['contribution_id'],
+        ));
+        //Skip contribution with status not enabled in xero settings.
+        $pushEnabledStatuses = Civi::settings()->get('xero_push_contribution_status');
+        if (!in_array($status, $pushEnabledStatuses)) {
+          continue;
+        }
         try {
           $accountsInvoice = $this->getAccountsInvoice($record);
           $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
