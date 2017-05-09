@@ -116,10 +116,12 @@ return array(
     'title' =>  'Push Contribution Status',
     'help_text' => '',
     'html_type' => 'Select',
-    'options' => CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name'),
     'html_attributes' => array(
       'multiple' => 1,
       'class' => 'crm-select2',
+    ),
+    'pseudoconstant' => array(
+      'optionGroupName' => 'contribution_status',
     ),
     'quick_form_type' => 'Select',
   ),
