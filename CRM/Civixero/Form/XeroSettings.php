@@ -108,12 +108,6 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
     foreach ($existing['values'][$domainID] as $name => $value) {
       $defaults[$name] = $value;
     }
-    if (empty($defaults['xero_push_contribution_status'])) {
-      $status = civicrm_api3('Contribution', 'getoptions', array(
-        'field' => 'contribution_status_id',
-      ));
-      $defaults['xero_push_contribution_status'] = array_keys(array_intersect($status['values'], array('Completed', 'Pending')));
-    }
     return $defaults;
   }
 }
