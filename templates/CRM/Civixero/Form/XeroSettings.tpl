@@ -10,6 +10,11 @@
   <div class="crm-section">
     <div class="label">{$form.$elementName.label}</div>
     <div class="content">{$form.$elementName.html}</div>
+    {if $remainingDays && $form.$elementName.name == 'xero_public_certificate'}
+    <span style="white-space: nowrap" class="crm-error">
+        {ts 1=$remainingDays}Your key is expiring in %1 days.{/ts}
+    </span>
+    {/if}
     <div class="clear"></div>
   </div>
 {/foreach}

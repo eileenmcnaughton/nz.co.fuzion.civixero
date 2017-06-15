@@ -33,6 +33,16 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
       }
     }
 
+    $xeroKeyExpiry = Civi::settings()->get('xero_key_expiry');
+    if ($xeroKeyExpiry) {
+      $validTo = new DateTime(date('Y-m-d H:i:s', $xeroKeyExpiry));
+      $current = new DateTime(date('Y-m-d H:i:s', time()));
+      $interval = $validTo->diff($current);
+      if ($interval->days < 30) {
+        $this->assign('remainingDays', $interval->days);
+      }
+    }
+
     $this->addButtons(array(
       array (
         'type' => 'submit',
