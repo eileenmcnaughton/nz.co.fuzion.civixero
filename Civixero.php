@@ -441,6 +441,24 @@ function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
 }
 
 /**
+ * Implementation of hook_civicrm_check
+ *
+ * Add a check for key expiry.
+ */
+function civixero_civicrm_check(&$messages) {
+  $keyExpiry = CRM_Civixero_Form_XeroSettings::checkKeyExpiry();
+  if ($keyExpiry) {
+    $messages[] = new CRM_Utils_Check_Message(
+      'civixero_keyexpiry',
+      ts('Your api key is expiring in %1 days. Please renew to let CiviCRM interact with Xero', array(1 => $keyExpiry)),
+      ts('Xero Api Key Expiry'),
+      \Psr\Log\LogLevel::WARNING,
+      'fa-flag'
+    );
+  }
+}
+
+/**
  * Implements hook_civicrm_accountsync_plugins().
  */
 function civixero_civicrm_accountsync_plugins(&$plugins) {
