@@ -13,19 +13,6 @@ class CRM_Civixero_Upgrader extends CRM_Civixero_Upgrader_Base {
    *
   public function install() {
     $this->executeSqlFile('sql/myinstall.sql');
-  }*/
-
-  /**
-   * Add key expiry date to settings
-   */
-  public function upgrade_1000() {
-    $this->ctx->log->info('Applying update 1000');
-    $xeroKeyPath = Civi::settings()->get('xero_public_certificate');
-    if ($xeroKeyPath) {
-      $certinfo = openssl_x509_parse(file_get_contents($xeroKeyPath));
-      Civi::settings()->set('xero_key_expiry', $certinfo['validTo_time_t']);
-    }
-    return TRUE;
   }
 
   /**

@@ -33,11 +33,6 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
       }
     }
 
-    $keyExpiry = self::checkKeyExpiry(FALSE);
-    if (!empty($keyExpiry)) {
-      $this->assign('keyExpiry', $keyExpiry);
-    }
-
     $this->addButtons(array(
       array (
         'type' => 'submit',
@@ -54,24 +49,6 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
     $this->_submittedValues = $this->exportValues();
     $this->saveSettings();
     parent::postProcess();
-  }
-
-  /**
-   * Check certificate validity.
-   *
-   * @return int|NULL
-   */
-  public static function checkKeyExpiry() {
-    $xeroKeyExpiry = Civi::settings()->get('xero_key_expiry');
-    if ($xeroKeyExpiry) {
-      $validTo = new DateTime(date('Y-m-d H:i:s', $xeroKeyExpiry));
-      $current = new DateTime(date('Y-m-d H:i:s', time()));
-      $interval = $validTo->diff($current);
-      if ($interval->days < 30) {
-        return $interval->days;
-      }
-    }
-    return NULL;
   }
 
   /**
@@ -116,10 +93,6 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
   function saveSettings() {
     $settings = $this->getFormSettings();
     $values = array_intersect_key($this->_submittedValues, $settings);
-    if (!empty($values['xero_public_certificate'])) {
-      $certinfo = openssl_x509_parse(file_get_contents($values['xero_public_certificate']));
-      Civi::settings()->set('xero_key_expiry', $certinfo['validTo_time_t']);
-    }
     civicrm_api3('setting', 'create', $values);
   }
 
