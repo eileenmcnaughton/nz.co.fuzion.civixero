@@ -126,6 +126,26 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             $record['error_data'] = json_encode($responseErrors);
           }
           else {
+            /* When Xero returns an ID that matches an existing account_contact, update it instead. */
+            $matching = civicrm_api('account_contact', 'getsingle', array(
+                'accounts_contact_id' => $result['Contacts']['Contact']['ContactID'],
+                'plugin' => $this->_plugin,
+                'version' => 3,
+              )
+            );
+            if(!$matching['is_error']) {
+              if(empty($matching['contact_id']) ||
+                civicrm_api3('contact', 'getvalue', array('id' => $matching['contact_id'], 'return' => 'contact_is_deleted'))) {
+                CRM_Core_Error::debug_log_message(ts('Updating existing contact for %1', array(1 => $record['contact_id'])));
+                civicrm_api3('account_contact', 'delete', array('id' => $record['id']));
+                $record['do_not_sync'] = 0;
+                $record['id'] = $matching['id'];
+              }
+              else {
+                throw new CiviCRM_API3_Exception(ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2', array(1 => $record['contact_id'], 2 => $matching['contact_id'])));
+              }
+            }
+
             $record['error_data'] = 'null';
             if (empty($record['accounts_contact_id'])) {
               $record['accounts_contact_id'] = $result['Contacts']['Contact']['ContactID'];
