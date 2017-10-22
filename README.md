@@ -7,7 +7,7 @@ This extension requires the extension https://github.com/eileenmcnaughton/nz.co.
 
 It sets up scheduled jobs that synchronize Xero contacts and invoices with CiviCRM contacts and invoices.
 
-Interaction with this module is primarily by API and it creates scheduled jobs to run those API. These jobs may not auto-create in CiviCRM versions prior to 4.4 or 4.2.16.
+Interaction with this module is primarily by API and it creates scheduled jobs to run those API.
 
 SETUP
 
