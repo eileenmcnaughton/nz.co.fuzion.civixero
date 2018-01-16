@@ -78,7 +78,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       }
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
-      throw new CRM_Core_Exception('Invoice Pull aborted due to throttling by Xero');
+      throw new CRM_Core_Exception('Contact Pull aborted due to throttling by Xero');
     }
   }
 
@@ -172,7 +172,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       return TRUE;
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
-      throw new CRM_Core_Exception('Invoice Pull aborted due to throttling by Xero');
+      throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero');
     }
   }
 
