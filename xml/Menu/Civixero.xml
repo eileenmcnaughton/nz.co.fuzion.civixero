@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/ajax/civixero/sync/contact/errors</path>
+    <page_callback>CRM_Civixero_Page_AJAX::contactSyncErrors</page_callback>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/ajax/civixero/sync/invoice/errors</path>
+    <page_callback>CRM_Civixero_Page_AJAX::invoiceSyncErrors</page_callback>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/xero/errorlog</path>
+    <page_callback>CRM_Civixero_Page_XeroErrorLogs</page_callback>
+    <title>XeroErrorLogs</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>
