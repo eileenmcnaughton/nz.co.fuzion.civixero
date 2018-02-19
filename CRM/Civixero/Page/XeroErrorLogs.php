@@ -24,7 +24,7 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
             $this->errorsFor = $for;
         }
         $this->assign("errorsfor", $this->errorsFor);
-        CRM_Utils_System::setTitle(E::ts('Xero %1 error logs', array(1 => $this->errorsFor));
+        CRM_Utils_System::setTitle(E::ts('Xero %1 error logs', array(1 => $this->errorsFor)));
         CRM_Core_Resources::singleton()->addStyleFile('nz.co.fuzion.civixero','css/civixero_styles.css');
     }
 
@@ -44,7 +44,7 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
                 "return"      => array("contact_id.display_name","accounts_contact_id","error_data","last_sync_date","contact_id"),
                 "options"     => array('limit' => $limit, 'offset' => $offset, 'sort' => 'id DESC'),
             ));
-    
+
             $accountcontacts = $accountcontacts["values"];
             $this->formatErrors($accountcontacts);
             $this->formatContactsInfo($accountcontacts);
