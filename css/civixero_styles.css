@@ -1,0 +1,12 @@
+.crm-container a.helpicon.error {
+    color: #8c2e0b;
+}
+.xeroerror {
+    margin: 1.2em 0 1.2em 0;
+    text-align: center;
+}
+ul.syncErrorsList {
+    margin: 0;
+    padding: 0;
+    padding-left: 15px;
+}
