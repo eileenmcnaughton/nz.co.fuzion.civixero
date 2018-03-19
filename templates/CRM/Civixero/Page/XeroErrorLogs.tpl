@@ -15,6 +15,7 @@
                 {/if}
                 <th id="nosort">{ts}Error Data{/ts}</th>
                 <th>{ts}Last Sync Date{/ts}</th>
+                <th></th>
             </tr>
             </thead>
             <tbody>
@@ -46,6 +47,12 @@
 
                     <td>{ $syncerror.last_sync_date|crmDate }
                     </td>
+                    <td>
+                        <span>
+                            <a href="{ $clearurl }?id={ $syncerror.id }" class="action-item crm-hover-button ajax-button">Clear</a>
+                            <a href="{ $retryurl }?id={ $syncerror.id }" class="action-item crm-hover-button ajax-button">Retry</a>
+                        </span>
+                    </td>
                 </tr>
                 {if $rowClass eq "odd-row"}
                     {assign var="rowClass" value="even-row"}
@@ -58,3 +65,25 @@
     </div>
     {include file="CRM/common/pager.tpl" location="bottom"}
 </div>
+{literal}
+<script type="text/javascript">
+    CRM.$('body').on('click','.ajax-button',function(e) {
+        e.preventDefault();
+        var eventurl = CRM.$(this).attr('href');
+        var rowelement = CRM.$(this).parents('tr');
+        CRM.$.ajax({
+            "dataType": 'json',
+            "type": "GET",
+            "url": eventurl,
+            "success": function(data) {
+                if(data["status"] == 1) {
+                    CRM.$(rowelement).remove();
+                    CRM.alert(data.message, ts('Success'), 'success');
+                } else {
+                    CRM.alert("Error occured while adding record into queue, Please try again.", ts('Error'), 'error');
+                }
+            }
+        });
+    });
+</script>
+{/literal}

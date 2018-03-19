@@ -20,10 +20,18 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
      */
     protected function setupPage() {
         $for = CRM_Utils_Request::retrieve('for', 'String');
+        $retryUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/contact/errors/retry');
+        $clearUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/contact/errors/clear');
+
         if($for == 'invoice') {
             $this->errorsFor = $for;
+            $retryUrl = CRM_Utils_System::url('/civicrm/ajax/civixero/sync/invoice/errors/retry');
+            $clearUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/invoice/errors/clear');
         }
         $this->assign("errorsfor", $this->errorsFor);
+        $this->assign("retryurl", $retryUrl);
+        $this->assign("clearurl",$clearUrl);
+
         CRM_Utils_System::setTitle(E::ts('Xero %1 error logs', array(1 => $this->errorsFor)));
         CRM_Core_Resources::singleton()->addStyleFile('nz.co.fuzion.civixero','css/civixero_styles.css');
     }
@@ -39,7 +47,7 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
         list($offset, $limit) = $this->_pager->getOffsetAndRowCount();
         if($this->errorsFor == "contact") {
             $accountcontacts = civicrm_api3("AccountContact","get",array(
-                "error_data"  =>  array("<>" => ""),
+                "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
                 "plugin"      =>  "xero",
                 "return"      => array("contact_id.display_name","accounts_contact_id","error_data","last_sync_date","contact_id"),
                 "options"     => array('limit' => $limit, 'offset' => $offset, 'sort' => 'id DESC'),
@@ -52,7 +60,7 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
         }
 
         $accountinvoices = civicrm_api3("AccountInvoice","get",array(
-            "error_data"  =>  array("<>" => ""),
+            "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
             "plugin"      =>  "xero",
             "return"      => array("contribution_id","contribution_id.contact_id","contribution_id.contact_id.display_name","accounts_invoice_id","error_data","last_sync_date"),
             "options"     => array('limit' => $limit, 'offset' => $offset),
@@ -100,7 +108,7 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
      */
     protected function initializePager() {
         $accountcontacts = civicrm_api3("AccountContact","getcount",array(
-            "error_data"  =>  array("<>" => ""),
+            "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
             "plugin"      =>  "xero"
         ));
         $totalitems = $accountcontacts;

@@ -304,11 +304,11 @@ function _civixero_append_sync_errors(&$xeroBlock, $account_contact) {
 function civixero_civicrm_check(&$messages) {
 
     $accountContactErrors = civicrm_api3("AccountContact","getcount",array(
-        "error_data"  =>  array("<>" => ""),
+        "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
         "plugin"      => "xero"
     ));
     $accountInvoiceErrors = civicrm_api3("AccountInvoice","getcount",array(
-        "error_data"  =>  array("<>" => ""),
+        "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
         "plugin"      => "xero"
     ));
     $errorMessage = "";
