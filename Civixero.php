@@ -295,6 +295,47 @@ function _civixero_append_sync_errors(&$xeroBlock, $account_contact) {
 }
 
 /**
+ * Implementation of hook_civicrm_check.
+ *
+ * Add Xero links to contact summary
+ *
+ * @param $page
+ */
+function civixero_civicrm_check(&$messages) {
+
+    $accountContactErrors = civicrm_api3("AccountContact","getcount",array(
+        "error_data"  =>  array("<>" => ""),
+        "plugin"      => "xero"
+    ));
+    $accountInvoiceErrors = civicrm_api3("AccountInvoice","getcount",array(
+        "error_data"  =>  array("<>" => ""),
+        "plugin"      => "xero"
+    ));
+    $errorMessage = "";
+    $errorsPageUrl = CRM_Utils_System::url('/civicrm/xero/errorlog');
+
+    if($accountContactErrors > 0) {
+        $errorMessage .= 'Found '.$accountContactErrors.' contact sync errors. <a href="'.$errorsPageUrl.'" target="_blank">Click here</a> to resolve them.';
+        if($accountInvoiceErrors > 0) {
+            $errorMessage .= "<br><br>";
+        }
+    }
+    if($accountInvoiceErrors > 0) {
+        $errorMessage .= 'Found '.$accountInvoiceErrors.' invoice sync errors. <a href="'.$errorsPageUrl.'?for=invoice" target="_blank">Click here</a> to resolve them.';
+    }
+
+    if($accountInvoiceErrors > 0 || $accountContactErrors >0) {
+        $messages[] = new CRM_Utils_Check_Message(
+            'civixero_sync_errors',
+            $errorMessage,
+            'Xero Sync Errors',
+            \Psr\Log\LogLevel::CRITICAL,
+            'fa-refresh'
+        );
+    }
+}
+
+/**
  * Implements hook pageRun().
  *
  * Add Xero links to contact summary
