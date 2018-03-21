@@ -297,7 +297,7 @@ function _civixero_append_sync_errors(&$xeroBlock, $account_contact) {
 /**
  * Implementation of hook_civicrm_check.
  *
- * Add Xero links to contact summary
+ * Add a check to the status page. Check if there are any account contact or invoice sync errors.
  *
  * @param $page
  */

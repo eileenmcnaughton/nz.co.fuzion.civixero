@@ -3,6 +3,10 @@ use CRM_Civixero_ExtensionUtil as E;
 
 class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
 
+  /**
+   * Function get contact sync errors by id
+   *
+   */
   public static function contactSyncErrors() {
       $syncerrors = array();
       if(CRM_Utils_Array::value('xeroerrorid', $_REQUEST)) {
@@ -20,6 +24,10 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
       CRM_Utils_JSON::output($syncerrors);
   }
 
+  /**
+   * Function get invoice sync errors by id
+   *
+   */
     public static function invoiceSyncErrors() {
         $syncerrors = array();
         if(CRM_Utils_Array::value('xeroerrorid', $_REQUEST)) {
@@ -33,6 +41,10 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
         CRM_Utils_JSON::output($syncerrors);
     }
 
+    /**
+     * Function to retry the contact sync on fail by id
+     *
+     */
     public static function retryContactError() {
         $id = CRM_Utils_Request::retrieve('id', 'Integer');
         $accountcontact = civicrm_api3("AccountContact","get",array(
@@ -52,6 +64,10 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
         ));
     }
 
+    /**
+     * Function to retry the invoice sync on fail by id
+     *
+     */
     public static function retryInvoiceError() {
         $id = CRM_Utils_Request::retrieve('id', 'Integer');
         $accountinvoice = civicrm_api3("AccountInvoice","get",array(
@@ -71,6 +87,10 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
         ));
     }
 
+    /**
+     * Function get clear/dismiss the contact sync error
+     *
+     */
     public static function clearContactError() {
         $id = CRM_Utils_Request::retrieve('id', 'Integer');
         $accountcontact = civicrm_api3("AccountContact","get",array(
@@ -93,6 +113,10 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
         ));
     }
 
+    /**
+     * Function get clear/dismiss the invoice sync error
+     *
+     */
     public static function clearInvoiceError() {
         $id = CRM_Utils_Request::retrieve('id', 'Integer');
         $accountinvoice = civicrm_api3("AccountInvoice","get",array(
