@@ -25,7 +25,7 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
 
         if($for == 'invoice') {
             $this->errorsFor = $for;
-            $retryUrl = CRM_Utils_System::url('/civicrm/ajax/civixero/sync/invoice/errors/retry');
+            $retryUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/invoice/errors/retry');
             $clearUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/invoice/errors/clear');
         }
         $this->assign("errorsfor", $this->errorsFor);
@@ -107,21 +107,21 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
      * @access protected
      */
     protected function initializePager() {
-        $accountcontacts = civicrm_api3("AccountContact","getcount",array(
-            "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
-            "plugin"      =>  "xero"
-        ));
-        $totalitems = $accountcontacts;
-        $params           = array(
-            'total' => $totalitems,
-            'rowCount' => CRM_Utils_Pager::ROWCOUNT,
-            'status' => ts('Expense Claim Levels %%StatusMessage%%'),
-            'buttonBottom' => 'PagerBottomButton',
-            'buttonTop' => 'PagerTopButton',
-            'pageID' => $this->get(CRM_Utils_Pager::PAGE_ID),
-        );
-        $this->_pager = new CRM_Utils_Pager($params);
-        $this->assign_by_ref('pager', $this->_pager);
+      $entity = ($this->errorsFor == 'contact'? 'AccountContact' : 'AccountInvoice');
+      $totalitems = civicrm_api3($entity,"getcount",array(
+                      "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
+                      "plugin"      =>  "xero"
+                    ));
+      $params           = array(
+        'total' => $totalitems,
+        'rowCount' => CRM_Utils_Pager::ROWCOUNT,
+        'status' => ts('Synchronization Errors %%StatusMessage%%'),
+        'buttonBottom' => 'PagerBottomButton',
+        'buttonTop' => 'PagerTopButton',
+        'pageID' => $this->get(CRM_Utils_Pager::PAGE_ID),
+      );
+      $this->_pager = new CRM_Utils_Pager($params);
+      $this->assign_by_ref('pager', $this->_pager);
     }
 
 }

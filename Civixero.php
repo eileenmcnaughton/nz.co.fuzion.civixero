@@ -312,7 +312,7 @@ function civixero_civicrm_check(&$messages) {
         "plugin"      => "xero"
     ));
     $errorMessage = "";
-    $errorsPageUrl = CRM_Utils_System::url('/civicrm/xero/errorlog');
+    $errorsPageUrl = CRM_Utils_System::url('civicrm/xero/errorlog');
 
     if($accountContactErrors > 0) {
         $errorMessage .= 'Found '.$accountContactErrors.' contact sync errors. <a href="'.$errorsPageUrl.'" target="_blank">Click here</a> to resolve them.';
@@ -329,7 +329,7 @@ function civixero_civicrm_check(&$messages) {
             'civixero_sync_errors',
             $errorMessage,
             'Xero Sync Errors',
-            \Psr\Log\LogLevel::CRITICAL,
+            \Psr\Log\LogLevel::ERROR,
             'fa-refresh'
         );
     }
