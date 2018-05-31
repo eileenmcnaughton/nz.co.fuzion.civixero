@@ -54,7 +54,7 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
         ));
         if($accountcontact["count"]) {
             $accountcontact = $accountcontact["values"][0];
-            $accountcontact["error_data"] = NULL;
+            $accountcontact["error_data"] = '';
             $accountcontact["accounts_needs_update"] = "1";
             civicrm_api3("AccountContact","create",$accountcontact);
         }
@@ -77,7 +77,7 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
         ));
         if($accountinvoice["count"]) {
             $accountinvoice = $accountinvoice["values"][0];
-            $accountinvoice["error_data"] = NULL;
+            $accountinvoice["error_data"] = '';
             $accountinvoice["accounts_needs_update"] = "1";
             civicrm_api3("AccountInvoice","create",$accountinvoice);
         }
