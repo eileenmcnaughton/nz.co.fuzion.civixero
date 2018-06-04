@@ -1219,7 +1219,10 @@ class ArrayToXML
             } else {
 
                 // add single node.
-                $value = htmlspecialchars( $value, ENT_NOQUOTES, 'UTF-8', FALSE );
+                $value = htmlspecialchars(
+                  html_entity_decode($value, (ENT_QUOTES | ENT_HTML401), 'UTF-8'),
+                  ENT_NOQUOTES | ENT_XML1 | ENT_SUBSTITUTE , 'UTF-8', FALSE
+                );
                 $xml->addChild( $key, $value );
             }
         }

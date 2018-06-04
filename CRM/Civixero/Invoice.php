@@ -75,6 +75,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               'return' => 'id',
               'accounts_invoice_id' => $invoice['InvoiceID'],
               'plugin' => $this->_plugin,
+              'connector_id' => $params['connector_id'],
             ));
           }
           catch (CiviCRM_API3_Exception $e) {
@@ -89,7 +90,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               $params['id'] = $existing['id'];
               if (!empty($existing['accounts_invoice_id']) && $existing['accounts_invoice_id'] != $invoice['InvoiceID']) {
                 // no idea how this happened or what it means - calling function can catch & deal with it
-                throw new CRM_Core_Exception(ts('Cannot update invoice'), 'data_error', $invoice);
+                throw CRM_Core_Exception(ts('Cannot update invoice'), 'data_error', $invoice);
               }
             }
             catch (CiviCRM_API3_Exception $e) {
@@ -226,6 +227,21 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'LineItems' => array('LineItem' => $lineItems),
     );
 
+    /* Use due date and period from the invoice settings when available. */
+    try {
+      $invoice_settings = civicrm_api3(
+        'Setting',
+        'getvalue',
+        array('name' => 'contribution_invoice_settings')
+      );
+
+      if (!empty($invoice_settings['due_date']) && $invoice_settings['due_date_period'] != 'select') {
+        $new_invoice['DueDate'] = strftime('%Y-%m-%d', strtotime($invoiceData['receive_date'] . ' + ' . $invoice_settings['due_date'] . ' ' . $invoice_settings['due_date_period']));
+      }
+    }
+    catch (Exception $e) {
+    }
+
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('invoice', $invoiceData, $proceed, $new_invoice);
     if (!$proceed) {
@@ -359,7 +375,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'accounts_needs_update' => 1,
       'plugin' => 'xero',
       'connector_id' => $params['connector_id'],
-      'accounts_status_id' => array('NOT IN', 3),
+      'accounts_status_id' => array('NOT IN' => array(3)),
       'options' => array(
         'sort' => 'error_data',
         'limit' => $limit,
