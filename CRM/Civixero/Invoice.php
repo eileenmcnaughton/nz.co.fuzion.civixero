@@ -200,6 +200,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         $lineItems[$index]['UnitAmount'] = -$lineItem['UnitAmount'];
       }
     }
+    
+    // Get default Invoice status
+    $status = civicrm_api('setting', 'getvalue', array(
+        'group' => 'Xero Settings',
+        'name' => 'xero_default_invoice_status',
+        'version' => 3,
+      ));
 
     $prefix = $this->getSetting('xero_invoice_number_prefix');
     if (empty($prefix)) {
@@ -212,7 +219,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ),
       "Date"            => substr($invoiceData['receive_date'], 0, 10),
       "DueDate"         => substr($invoiceData['receive_date'], 0, 10),
-      "Status"          => "SUBMITTED",
+      "Status"          => $status,
       "InvoiceNumber"   => $prefix . $invoiceData['id'],
       "CurrencyCode"    => CRM_Core_Config::singleton()->defaultCurrency,
       "Reference"       => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
