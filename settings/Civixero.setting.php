@@ -115,7 +115,6 @@ return array(
     'group' => 'xero',
     'name' => 'xero_default_invoice_status',
     'type' => 'Array',
-    'add' => '4.4',
     'is_domain' => 1,
     'is_contact' => 0,
     'default' => array('SUBMITTED'),

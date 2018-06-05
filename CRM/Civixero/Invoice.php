@@ -200,13 +200,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         $lineItems[$index]['UnitAmount'] = -$lineItem['UnitAmount'];
       }
     }
-    
+
     // Get default Invoice status
-    $status = civicrm_api('setting', 'getvalue', array(
-        'group' => 'Xero Settings',
-        'name' => 'xero_default_invoice_status',
-        'version' => 3,
-      ));
+    $status = $this->getSetting('xero_default_invoice_status');
 
     $prefix = $this->getSetting('xero_invoice_number_prefix');
     if (empty($prefix)) {
