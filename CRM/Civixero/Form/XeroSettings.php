@@ -21,9 +21,17 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
         }
         elseif ($setting['html_type'] == 'Select') {
           $optionValues = array();
-          if (!empty($setting['pseudoconstant']) && !empty($setting['pseudoconstant']['optionGroupName'])) {
-            $optionValues = CRM_Core_OptionGroup::values($setting['pseudoconstant']['optionGroupName'], FALSE, FALSE, FALSE, NULL, 'name');
+          if (!empty($setting['pseudoconstant'])) {
+
+            if(!empty($setting['pseudoconstant']['optionGroupName'])) {
+              $optionValues = CRM_Core_OptionGroup::values($setting['pseudoconstant']['optionGroupName'], FALSE, FALSE, FALSE, NULL, 'name');
+            }
+            elseif (!empty($setting['pseudoconstant']['callback'])) {
+              $cb = Civi\Core\Resolver::singleton()->get($setting['pseudoconstant']['callback']);
+              $optionValues = call_user_func_array($cb, $optionValues);
+            }
           }
+
           $this->add('select', $setting['name'], $setting['title'], $optionValues, FALSE, $setting['html_attributes']);
         }
         else {
