@@ -149,6 +149,8 @@ class CRM_Civixero_Base {
           'xero_secret' => $connector['field2'],
           'xero_public_certificate' => $connector['field3'],
           'xero_private_key' => $connector['field4'],
+          // @todo not yet configurable per selector.
+          'xero_default_invoice_status' => 'SUBMITTED',
         );
       }
       return $connectors[$this->connector_id][$var];
