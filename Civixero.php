@@ -333,6 +333,24 @@ function civixero_civicrm_check(&$messages) {
             'fa-refresh'
         );
     }
+  $xeroKeyPath = Civi::settings()->get('xero_public_certificate');
+  if ($xeroKeyPath) {
+    $certinfo = openssl_x509_parse(file_get_contents($xeroKeyPath));
+    if (!empty($certinfo['validTo_time_t'])) {
+      $validTo = new DateTime(date('Y-m-d H:i:s', $certinfo['validTo_time_t']));
+      $current = new DateTime(date('Y-m-d H:i:s', time()));
+      $interval = $validTo->diff($current);
+      if ($interval->days < 30) {
+        $messages[] = new CRM_Utils_Check_Message(
+          'civixero_keyexpiry',
+          ts('Your api key is expiring in %1 days. Please renew to let CiviCRM interact with Xero', array(1 => $interval->days)),
+          ts('Xero Api Key Expiry'),
+          \Psr\Log\LogLevel::WARNING,
+          'fa-flag'
+        );
+      }
+    }
+  }
 }
 
 /**
@@ -573,32 +591,6 @@ function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
     }
   }
 
-}
-
-/**
- * Implementation of hook_civicrm_check
- *
- * Add a check for key expiry.
- */
-function civixero_civicrm_check(&$messages) {
-  $xeroKeyPath = Civi::settings()->get('xero_public_certificate');
-  if ($xeroKeyPath) {
-    $certinfo = openssl_x509_parse(file_get_contents($xeroKeyPath));
-    if (!empty($certinfo['validTo_time_t'])) {
-      $validTo = new DateTime(date('Y-m-d H:i:s', $certinfo['validTo_time_t']));
-      $current = new DateTime(date('Y-m-d H:i:s', time()));
-      $interval = $validTo->diff($current);
-      if ($interval->days < 30) {
-        $messages[] = new CRM_Utils_Check_Message(
-          'civixero_keyexpiry',
-          ts('Your api key is expiring in %1 days. Please renew to let CiviCRM interact with Xero', array(1 => $interval->days)),
-          ts('Xero Api Key Expiry'),
-          \Psr\Log\LogLevel::WARNING,
-          'fa-flag'
-        );
-      }
-    }
-  }
 }
 
 /**
