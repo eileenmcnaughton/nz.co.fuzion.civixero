@@ -152,100 +152,58 @@ function civixero_civicrm_alterSettingsFolders(&$metaDataFolders){
  * @param array $menu
  */
 function civixero_civicrm_navigationMenu(&$menu) {
-  $maxID = CRM_Core_DAO::singleValueQuery("SELECT max(id) FROM civicrm_navigation");
-  $navId = $maxID + 287;
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer', [
+    'label' => 'Xero',
+    'name' => 'Xero',
+    'url' => NULL,
+    'permission' => 'administer CiviCRM',
+    'operator' => NULL,
+    'separator' => NULL,
+  ]);
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
+    'label' => 'Xero Settings',
+    'name' => 'Xero Settings',
+    'url' => 'civicrm/xero/settings',
+    'permission' => 'administer CiviCRM',
+    'operator' => NULL,
+    'separator' => 0,
+  ]);
 
-  // Get the id of System Settings Menu
-  $administerMenuId = CRM_Core_DAO::getFieldValue('CRM_Core_BAO_Navigation', 'Administer', 'id', 'name');
-  $parentID = !empty($administerMenuId) ? $administerMenuId : NULL;
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
+    'label' => 'Xero Error Logs',
+    'name' => 'XeroErrorLogs',
+    'url' => NULL,
+    'permission' => 'administer CiviCRM',
+    'operator' => NULL,
+    'separator' => 1,
+  ]);
 
-  $navigationMenu = array(
-    'attributes' => array(
-      'label' => 'Xero',
-      'name' => 'Xero',
-      'url' => NULL,
-      'permission' => 'administer CiviCRM',
-      'operator' => NULL,
-      'separator' => NULL,
-      'parentID' => $parentID,
-      'active' => 1,
-      'navID' => $navId,
-    ),
-    'child' => array(
-      $navId + 1 => array(
-        'attributes' => array(
-          'label' => 'Xero Settings',
-          'name' => 'Xero Settings',
-          'url' => 'civicrm/xero/settings',
-          'permission' => 'administer CiviCRM',
-          'operator' => NULL,
-          'separator' => 0,
-          'active' => 1,
-          'parentID' => $navId,
-          'navID' => $navId + 1,
-        ),
-      ),
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
+    'label' => 'Synchronize contacts',
+    'name' => 'Contact Sync',
+    'url' => 'civicrm/a/#/accounts/contact/sync',
+    'permission' => 'administer CiviCRM',
+    'operator' => null,
+    'separator' => 1,
+  ]);
 
-        $navId + 2 => array(
-            'attributes' => array(
-                'label' => 'Xero Error Logs',
-                'name' => 'Xero Error Logs',
-                'url' => NULL,
-                'permission' => 'administer CiviCRM',
-                'operator' => NULL,
-                'separator' => 1,
-                'active' => 1,
-                'parentID' => $navId,
-                'navID' => $navId + 2,
-            ),
-            'child' => array(
-                $navId+4 => array (
-                  'attributes' => array(
-                    'label' => 'Contact Errors',
-                    'name' => 'Contact Errors',
-                    'url' => 'civicrm/xero/errorlog',
-                    'permission' => 'administer CiviCRM',
-                    'operator' => null,
-                    'separator' => 0,
-                    'active' => 1,
-                    'parentID'   => $navId + 2,
-                  )
-                ),
-                $navId+5 => array (
-                  'attributes' => array(
-                    'label' => 'Invoice Errors',
-                    'name' => 'Invoice Errors',
-                    'url' => 'civicrm/xero/errorlog?for=invoice',
-                    'permission' => 'administer CiviCRM',
-                    'operator' => null,
-                    'separator' => 0,
-                    'active' => 1,
-                    'parentID'   => $navId + 5,
-                  )
-                ),
-            ),
-        ),
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/XeroErrorLogs', [
+    'label' => 'Contact Errors',
+    'name' => 'Contact Errors',
+    'url' => 'civicrm/xero/errorlog',
+    'permission' => 'administer CiviCRM',
+    'operator' => null,
+    'separator' => 0,
+  ]);
 
-      $navId+3 => array (
-        'attributes' => array(
-          'label' => 'Synchronize contacts',
-          'name' => 'Contact Sync',
-          'url' => 'civicrm/a/#/accounts/contact/sync',
-          'permission' => 'administer CiviCRM',
-          'operator' => null,
-          'separator' => 1,
-          'active' => 1,
-          'parentID'   => $navId + 3,
-        ))
-
-    ),
-  );
-  if ($parentID) {
-    $menu[$parentID]['child'][$navId] = $navigationMenu;
-  }
-  else {
-    $menu[$navId] = $navigationMenu;
-  }
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/XeroErrorLogs', [
+    'label' => 'Invoice Errors',
+    'name' => 'Invoice Errors',
+    'url' => 'civicrm/xero/errorlog?for=invoice',
+    'permission' => 'administer CiviCRM',
+    'operator' => null,
+    'separator' => 0,
+  ]);
 }
 
 /**
