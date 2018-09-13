@@ -16,6 +16,7 @@ return array(
       'api_action' => 'contactpush',
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero',
+      'update' => 'never',
     ),
   ),
   1 => array(
@@ -30,6 +31,7 @@ return array(
       'api_action' => 'contactpull',
       'run_frequency' => 'Always',
       'parameters' => "plugin=xero\nstart_date=yesterday",
+      'update' => 'never',
     ),
   ),
   2 => array(
@@ -44,6 +46,7 @@ return array(
       'api_action' => 'invoicepush',
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero',
+      'update' => 'never',
     ),
   ),
   3 => array(
@@ -58,6 +61,7 @@ return array(
       'api_action' => 'invoicepull',
       'run_frequency' => 'Always',
       'parameters' => "plugin=xero\nstart_date=yesterday",
+      'update' => 'never',
     ),
   ),
   4 => array (
@@ -73,6 +77,7 @@ return array(
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero
 accounts_status_id=1',
+      'update' => 'never',
     ),
   ),
   5 => array (
@@ -88,6 +93,7 @@ accounts_status_id=1',
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero
        accounts_status_id=3',
+      'update' => 'never',
     ),
   ),
 );
