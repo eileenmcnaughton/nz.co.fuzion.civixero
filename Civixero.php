@@ -292,7 +292,16 @@ function civixero_civicrm_check(&$messages) {
         );
     }
   $xeroKeyPath = Civi::settings()->get('xero_public_certificate');
-  if ($xeroKeyPath) {
+  if (!CRM_Utils_File::isIncludable($xeroKeyPath)) {
+    $messages[] = new CRM_Utils_Check_Message(
+      'civixero_keyinvalid',
+      ts('Please configure a Xero api key - see https://github.com/eileenmcnaughton/nz.co.fuzion.civixero/blob/master/README.md'),
+      ts('No valid Xero api key'),
+      \Psr\Log\LogLevel::WARNING,
+      'fa-flag'
+    );
+  }
+  elseif ($xeroKeyPath) {
     $certinfo = openssl_x509_parse(file_get_contents($xeroKeyPath));
     if (!empty($certinfo['validTo_time_t'])) {
       $validTo = new DateTime(date('Y-m-d H:i:s', $certinfo['validTo_time_t']));
