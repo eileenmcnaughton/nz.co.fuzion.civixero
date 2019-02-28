@@ -194,10 +194,14 @@ class CRM_Civixero_Base {
     // Comes back as a string for oauth errors.
     if (is_string($response)) {
       $responseParts = explode('&', urldecode($response));
-      if (CRM_Utils_Array::value(0, $responseParts) == 'oauth_problem=token_rejected') {
+      $problem = str_replace('oauth_problem=', '', CRM_Utils_Array::value(0, $responseParts));
+      if ($problem == 'oauth_problem=token_rejected') {
         throw new Exception('Invalid credentials');
       }
-      throw new CRM_Civixero_Exception_XeroThrottle($responseParts['oauth_problem']);
+      if ($problem == 'signature_invalid') {
+        throw new Exception('Invalid signature - your key may be invalid');
+      }
+      throw new CRM_Civixero_Exception_XeroThrottle($problem );
     }
     if (!empty($response['ErrorNumber'])) {
       $errors[] = $response['Message'];
