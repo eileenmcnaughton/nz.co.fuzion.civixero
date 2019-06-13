@@ -21,9 +21,10 @@ To use these extensions on the site, on the Civi menu on the site go to administ
 
 SETUP XERO KEYS
 
-Log into https://api.xero.com/Application?redirectCount=0
+Log into https://api.xero.com/Application?redirectCount=0  
 
-Choose My Applications, Add application
+Choose My Applications, Add application and choose the Private App option
+
 <img src='https://github.com/kayliefz/nz.co.fuzion.civixero/blob/master/docs/images/Add_new_App.png'>
 
 Follow the Xero instructions to set up a .cer and public key
