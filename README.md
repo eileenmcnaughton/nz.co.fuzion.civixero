@@ -40,6 +40,8 @@ This involves running the following 3 commands in terminal if you are a mac user
 
 from http://developer.xero.com/documentation/advanced-docs/public-private-keypair/
 
+Ensure the above files are correctly permissioned so they are readable by the user that php is running as.
+
 Either copy and paste or download the .cer (publickey) file and put into the Xero new app.
 
 <img src='https://github.com/kayliefz/nz.co.fuzion.civixero/blob/master/docs/images/New_App_filled_out.png'>
