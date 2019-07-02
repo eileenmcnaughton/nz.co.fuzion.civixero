@@ -16,11 +16,11 @@
     <author>eileen</author>
     <email>eileen@fuzion.co.nz</email>
   </maintainer>
-  <releaseDate>2018-10-01</releaseDate>
+  <releaseDate>2019-07-03</releaseDate>
   <version>1.2</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.5</ver>
+    <ver>5.14</ver>
   </compatibility>
   <comments>This module requires nz.co.fuzion.accountsync</comments>
   <civix>
