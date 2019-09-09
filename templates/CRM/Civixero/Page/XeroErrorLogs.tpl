@@ -49,8 +49,8 @@
                     </td>
                     <td>
                         <span>
-                            <a href="{ $clearurl }?id={ $syncerror.id }" class="action-item crm-hover-button ajax-button">Clear</a>
-                            <a href="{ $retryurl }?id={ $syncerror.id }" class="action-item crm-hover-button ajax-button">Retry</a>
+                            <a href="{ $syncerror.clearUrl }" class="action-item crm-hover-button ajax-button">Clear</a>
+                            <a href="{ $syncerror.retryUrl }" class="action-item crm-hover-button ajax-button">Retry</a>
                         </span>
                     </td>
                 </tr>

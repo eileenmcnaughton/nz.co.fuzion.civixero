@@ -5,6 +5,8 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
 
     private $errorsFor = "contact";
     private $pageTitle = "";
+    private $retryUrl = "";
+    private $clearUrl = "";
 
     public function run() {
         $this->setupPage();
@@ -20,17 +22,15 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
      */
     protected function setupPage() {
         $for = CRM_Utils_Request::retrieve('for', 'String');
-        $retryUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/contact/errors/retry');
-        $clearUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/contact/errors/clear');
+        $this->retryUrl = 'civicrm/ajax/civixero/sync/contact/errors/retry';
+        $this->clearUrl = 'civicrm/ajax/civixero/sync/contact/errors/clear';
 
         if($for == 'invoice') {
             $this->errorsFor = $for;
-            $retryUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/invoice/errors/retry');
-            $clearUrl = CRM_Utils_System::url('civicrm/ajax/civixero/sync/invoice/errors/clear');
+            $this->retryUrl = 'civicrm/ajax/civixero/sync/invoice/errors/retry';
+            $this->clearUrl = 'civicrm/ajax/civixero/sync/invoice/errors/clear';
         }
         $this->assign("errorsfor", $this->errorsFor);
-        $this->assign("retryurl", $retryUrl);
-        $this->assign("clearurl",$clearUrl);
 
         CRM_Utils_System::setTitle(E::ts('Xero %1 error logs', array(1 => $this->errorsFor)));
         CRM_Core_Resources::singleton()->addStyleFile('nz.co.fuzion.civixero','css/civixero_styles.css');
@@ -68,6 +68,7 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
         $accountinvoices = $accountinvoices["values"];
         $this->formatErrors($accountinvoices);
         $this->formatContactsInfo($accountinvoices);
+        $this->formatUrl($accountinvoices);
         return $accountinvoices;
     }
 
@@ -98,6 +99,18 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
             if(array_key_exists("contribution_id.contact_id", $syncerror)) {
                 $syncerrors[$index]["contact_id"] = $syncerror["contribution_id.contact_id"];
             }
+        }
+    }
+
+    /**
+     * Method to format Url
+     *
+     * @access protected
+     */
+    protected function formatUrl(&$syncerrors) {
+        foreach($syncerrors as $index => $syncerror) {
+            $syncerrors[$index]['retryUrl'] = CRM_Utils_System::url($this->retryUrl, ['id' => $syncerror['id']]);
+            $syncerrors[$index]['clearUrl'] = CRM_Utils_System::url($this->clearUrl, ['id' => $syncerror['id']]);
         }
     }
 
