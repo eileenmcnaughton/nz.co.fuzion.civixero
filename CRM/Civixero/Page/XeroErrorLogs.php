@@ -56,6 +56,7 @@ class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
             $accountcontacts = $accountcontacts["values"];
             $this->formatErrors($accountcontacts);
             $this->formatContactsInfo($accountcontacts);
+            $this->formatUrl($accountcontacts);
             return $accountcontacts;
         }
 
