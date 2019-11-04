@@ -1,5 +1,4 @@
-nz.co.fuzion.civixero
-=====================
+# nz.co.fuzion.civixero
 
 Synchronisation between CiviCRM &amp; Xero
 
@@ -9,7 +8,7 @@ It sets up scheduled jobs that synchronize Xero contacts and invoices with CiviC
 
 Interaction with this module is primarily by API and it creates scheduled jobs to run those API.
 
-SETUP EXTENSIONS
+## Setup extensions
 
 In the server in the sites, extensions folder in a terminal window you can run the command 
 git clone https://github.com/eileenmcnaughton/nz.co.fuzion.civixero.git 
@@ -19,7 +18,7 @@ then you will have the extensions added to the site.
 
 To use these extensions on the site, on the Civi menu on the site go to administer - customise data and screens - manage extensions. There you should install CiviXero and Account Sync.
 
-SETUP XERO KEYS
+## Setup XERO keys
 
 Log into https://api.xero.com/Application?redirectCount=0
 
@@ -50,7 +49,7 @@ Save the new app and you should see the app details page in Xero.
 
 <img src='https://github.com/kayliefz/nz.co.fuzion.civixero/blob/master/docs/images/App_Details.png'>
 
-SETUP IN CIVICRM
+## Setup in CiviCRM
 
 You then need to enter the Xero keys (seen on the app details page) into the Xero Settings page in CiviCRM (Administer>Xero>Xero Settings)
 
