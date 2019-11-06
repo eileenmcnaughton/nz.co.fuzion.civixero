@@ -16,7 +16,6 @@ class CRM_Civixero_Page_Inline_ContactSyncErrors extends CRM_Core_Page {
    * @param int $contactID
    */
   public static function addContactSyncErrorsBlock(&$page, $contactID) {
-
     $hasContactErrors = FALSE;
 
     try{
@@ -27,8 +26,6 @@ class CRM_Civixero_Page_Inline_ContactSyncErrors extends CRM_Core_Page {
         'plugin' => 'xero',
         'connector_id' => array('IN' => array_keys($connectors)),
       ));
-
-      $page->assign('accountContactId_xero', $account_contact['accounts_contact_id']);
 
       if (!empty($account_contact["error_data"])) {
         $hasContactErrors = TRUE;

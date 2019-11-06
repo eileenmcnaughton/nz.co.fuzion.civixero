@@ -4,7 +4,8 @@
             Contact Sync Errors with Xero
         </div>
         <div class="crm-content">
-            Contact <span class='error'>sync error</span> with Xero <a href='#' class='helpicon error xeroerror-info' data-xeroerrorid='{$accountContactId_xero}'></a>
+          Contact <span class='error'>sync error</span> with Xero
+          <a href='#' class='helpicon error xeroerror-info' data-xeroerrorid='{$contactID_xero}'></a>
         </div>
     </div>
 {/if}
