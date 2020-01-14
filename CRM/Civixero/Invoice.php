@@ -189,7 +189,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       );
       $total_amount += $lineItem['qty'] * $lineItem['unit_price'];
 
-      if(!empty($lineItem['tax_amount'])) {
+      // Historically 'tax_amount' might come at us as NULL, the empty string,
+      // or a false numeric, but now it seems to be a string. '0.00' casts to
+      // true but is equal to zero, so we have to check it.
+      if(isset($lineItem['tax_amount']) && $lineItem['tax_amount'] && $lineItem['tax_amount'] !== '0.00') {
         // If we discover a non-zero tax_amount, switch to tax exclusive amounts.
         $line_amount_types = 'Exclusive';
       }
