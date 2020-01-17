@@ -13,9 +13,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @throws CRM_Core_Exception
    */
   public function pull($params) {
+    // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
+    isset($params['xero_contact_id']) ?: $params['xero_contact_id'] = FALSE;
     try {
       $result = $this->getSingleton($params['connector_id'])
-        ->Contacts(FALSE, $this->formatDateForXero($params['start_date']));
+        ->Contacts($params['xero_contact_id'], $this->formatDateForXero($params['start_date']));
       if (!is_array($result)) {
         throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
       }

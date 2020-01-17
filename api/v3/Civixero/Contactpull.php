@@ -24,6 +24,12 @@ function _civicrm_api3_civixero_contactpull_spec(&$spec) {
     'title' => 'Connector ID',
     'description' => 'Connector ID if using nz.co.fuzion.connectors, else 0',
   );
+  $spec['xero_contact_id'] = [
+    'type' => CRM_Utils_Type::T_STRING,
+    'name' => 'xero_contact_id',
+    'title' => 'Xero Contact ID',
+    'description' => 'Specify Xero Contact UUID to retrieve a single contact record',
+  ];
 }
 
 /**
