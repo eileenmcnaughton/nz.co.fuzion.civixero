@@ -1,18 +1,27 @@
 # nz.co.fuzion.civixero
 
-Synchronisation between CiviCRM &amp; Xero
+Synchronisation [CiviCRM](https://civicrm.org) and [Xero](https://xero.com) for financial transactions and contacts.
 
-This extension requires the extension https://github.com/eileenmcnaughton/nz.co.fuzion.accountsync to work.
+This extension requires the [AccountSync extension](https://github.com/eileenmcnaughton/nz.co.fuzion.accountsync).
 
 It sets up scheduled jobs that synchronize Xero contacts and invoices with CiviCRM contacts and invoices.
 
 Interaction with this module is primarily by API and it creates scheduled jobs to run those API.
 
-## Customisation / Additional Extensions
+## Customisation &amp; Additional Extensions
 
-To modify the behaviour of the civixero extension various hooks are available.
+To modify the behaviour of the CiviXero extension various hooks are available. The additional CiviCRM extensions are available:
 
-See https://github.com/agileware/au.com.agileware.xerotweaks for an example usage of this.
+[Xero Tweaks](https://github.com/agileware/au.com.agileware.xerotweaks)
+- Removes the Contact ID from their Xero name.
+- Includes additional address lines in the contact address.
+- Removes the Contact's name from the Invoice Reference and Line items.
+
+[Xero Untax](https://github.com/agileware/au.com.agileware.xerountax)
+- Remove tax details from line items sent via CiviXero, so Xero can figure it out avoiding rounding issues.
+
+[Xero Items](https://github.com/agileware/au.com.agileware.xeroitems)
+- Replaces Xero account codes with [Xero item codes](https://help.xero.com/nz/Inventory) (also referred to as Xero inventory items)
 
 ## Setup extensions
 
@@ -20,13 +29,13 @@ In the server in the sites, extensions folder in a terminal window you can run t
 
 `git clone https://github.com/eileenmcnaughton/nz.co.fuzion.civixero.git`
 
-and the same for account sync
+and the same for AccountSync
 
 `git clone https://github.com/eileenmcnaughton/nz.co.fuzion.accountsync.git`
 
 then you will have the extensions added to the site.
 
-To use these extensions on the site, on the Civi menu on the site go to administer - customise data and screens - manage extensions. There you should install CiviXero and Account Sync.
+To use these extensions on the site, on the CiviCRM menu on the site go to administer - customise data and screens - manage extensions. There you should install CiviXero and AccountSync.
 
 ## Setup XERO keys
 
@@ -72,7 +81,7 @@ Consumer Secret = Xero Secret
 
 On this page you should also define which edit and create actions should trigger contacts / invoices to be created / edited in Xero
 
-(Due to current civi bug, disable and re-enable civi logging if you are using db logging)
+(Due to current CiviCRM bug, disable and re-enable CiviCRM logging if you are using db logging)
 
 Once installed you interact with CiviXero via the scheduled jobs page and the api. Matched contacts should show links on their contact summary screen and matched contributions should show links on the invoices
 
