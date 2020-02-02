@@ -18,6 +18,7 @@
  * mappings but are otherwise the same.
  */
 class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
+
   /**
    * Name in Xero of entity being pushed.
    *
@@ -58,7 +59,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    *   BankTransaction Object/ array as expected by accounts package.
    */
   protected function mapToAccounts($invoiceData, $accountsID) {
-    $lineItems = array();
+    $lineItems = [];
 
     foreach ($invoiceData['line_items'] as $lineItem) {
       if ($this->connector_id != 0
@@ -71,34 +72,34 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
         // contact_id on the connector account.
         continue;
       }
-      $lineItems[] = array(
-        "Description" => $lineItem['display_name'] . ' ' . str_replace(array('&nbsp;'), ' ', $lineItem['label']),
-        "Quantity"    => $lineItem['qty'],
-        "UnitAmount"  => $lineItem['unit_price'],
+      $lineItems[] = [
+        "Description" => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
+        "Quantity" => $lineItem['qty'],
+        "UnitAmount" => $lineItem['unit_price'],
         "AccountCode" => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
-      );
+      ];
     }
 
-    $new_invoice = array(
+    $new_invoice = [
       "Type" => "RECEIVE",
-      "Contact" => array(
+      "Contact" => [
         "ContactNumber" => $invoiceData['contact_id'],
-      ),
-      "Date"            => substr($invoiceData['receive_date'], 0, 10),
-      "Status"          => "AUTHORISED",
-      "CurrencyCode"    => CRM_Core_Config::singleton()->defaultCurrency,
-      "Reference"       => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
+      ],
+      "Date" => substr($invoiceData['receive_date'], 0, 10),
+      "Status" => "AUTHORISED",
+      "CurrencyCode" => CRM_Core_Config::singleton()->defaultCurrency,
+      "Reference" => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
       "LineAmountTypes" => "Inclusive",
-      'LineItems' => array('LineItem' => $lineItems),
-      'BankAccount' => array(
+      'LineItems' => ['LineItem' => $lineItems],
+      'BankAccount' => [
         'Code' => $invoiceData['payment_instrument_accounting_code'],
-      ),
+      ],
       'Url' => CRM_Utils_System::url(
         'civicrm/contact/view/contribution',
-        array('reset' => 1, 'id' => $invoiceData['id'], 'action' => 'view'),
+        ['reset' => 1, 'id' => $invoiceData['id'], 'action' => 'view'],
         TRUE
       ),
-    );
+    ];
     if ($accountsID) {
       $new_invoice['BankTransactionID'] = $accountsID;
     }
@@ -110,9 +111,9 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
     }
 
     $this->validatePrerequisites($new_invoice);
-    $new_invoice = array(
+    $new_invoice = [
       $new_invoice,
-    );
+    ];
     return $new_invoice;
   }
 
@@ -137,9 +138,9 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    * @return array
    */
   protected function getNotUpdateCandidateResponses() {
-    return array(
+    return [
       'This Bank Transaction cannot be edited as it has been reconciled with a Bank Statement.',
-    );
+    ];
   }
 
 }

@@ -18,7 +18,7 @@ class CRM_Civixero_Item extends CRM_Civixero_Base {
    * @throws CRM_Core_Exception
    */
   public function pull($params) {
-    static $items = array();
+    static $items = [];
     if (empty($items)) {
       $retrieved = $this->getSingleton()->Items();
       if ($this->validateResponse($retrieved)) {

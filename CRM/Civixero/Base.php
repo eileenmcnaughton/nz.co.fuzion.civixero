@@ -1,15 +1,22 @@
 <?php
+
 /**
  * Class CRM_Civixero_Base
  *
  * Base class for classes that interact with Xero using push and pull methods.
  */
 class CRM_Civixero_Base {
+
   private static $singleton;
+
   private $_xero_key;
+
   private $_xero_secret;
+
   private $_xero_public_certificate;
+
   private $_xero_private_key;
+
   protected $_plugin = 'xero';
 
   protected $accounts_contact;
@@ -30,15 +37,15 @@ class CRM_Civixero_Base {
    *
    * @throws \CRM_Core_Exception
    */
-  public function __construct($parameters = array()) {
+  public function __construct($parameters = []) {
     $force = FALSE;
     $this->connector_id = CRM_Utils_Array::value('connector_id', $parameters, 0);
-    $variables = array(
+    $variables = [
       'xero_key',
       'xero_secret',
       'xero_public_certificate',
       'xero_private_key',
-    );
+    ];
     foreach ($variables as $var) {
       $value = CRM_Utils_Array::value($var, $parameters);
       if (empty($value)) {
@@ -68,16 +75,16 @@ class CRM_Civixero_Base {
   protected function getAccountsContact() {
     if (empty($this->accounts_contact)) {
       if (empty($this->connector_id)) {
-        $this->accounts_contact = civicrm_api3('domain', 'getvalue', array(
+        $this->accounts_contact = civicrm_api3('domain', 'getvalue', [
           'current_domain' => TRUE,
           'return' => 'contact_id',
-        ));
+        ]);
       }
       else {
-        $this->accounts_contact = civicrm_api3('connector', 'getvalue', array(
+        $this->accounts_contact = civicrm_api3('connector', 'getvalue', [
           'id' => $this->connector_id,
           'return' => 'contact_id',
-        ));
+        ]);
       }
     }
     return $this->accounts_contact;
@@ -141,25 +148,25 @@ class CRM_Civixero_Base {
   protected function getSetting($var) {
 
     if ($this->connector_id > 0) {
-      static $connectors = array();
+      static $connectors = [];
       if (empty($connectors[$this->connector_id])) {
-        $connector = civicrm_api3('connector', 'getsingle', array('id' => $this->connector_id));
-        $connectors[$this->connector_id] = array(
+        $connector = civicrm_api3('connector', 'getsingle', ['id' => $this->connector_id]);
+        $connectors[$this->connector_id] = [
           'xero_key' => $connector['field1'],
           'xero_secret' => $connector['field2'],
           'xero_public_certificate' => $connector['field3'],
           'xero_private_key' => $connector['field4'],
           // @todo not yet configurable per selector.
           'xero_default_invoice_status' => 'SUBMITTED',
-        );
+        ];
       }
       return $connectors[$this->connector_id][$var];
     }
     else {
-      return civicrm_api3('setting', 'getvalue', array(
+      return civicrm_api3('setting', 'getvalue', [
         'name' => $var,
         'group' => 'Xero Settings',
-      ));
+      ]);
     }
   }
 
@@ -190,7 +197,7 @@ class CRM_Civixero_Base {
    */
   protected function validateResponse($response) {
     $message = '';
-    $errors  = array();
+    $errors = [];
     // Comes back as a string for oauth errors.
     if (is_string($response)) {
       $responseParts = explode('&', urldecode($response));
@@ -201,7 +208,7 @@ class CRM_Civixero_Base {
       if ($problem == 'signature_invalid') {
         throw new Exception('Invalid signature - your key may be invalid');
       }
-      throw new CRM_Civixero_Exception_XeroThrottle($problem );
+      throw new CRM_Civixero_Exception_XeroThrottle($problem);
     }
     if (!empty($response['ErrorNumber'])) {
       $errors[] = $response['Message'];
@@ -215,9 +222,9 @@ class CRM_Civixero_Base {
         if (is_array($value[0])) {
           foreach ($value as $errorMessage) {
             if (trim($errorMessage['Message']) == 'Account code must be specified') {
-              return array(
+              return [
                 'You need to set up the account code',
-              );
+              ];
             }
             $message .= " " . $errorMessage['Message'];
           }

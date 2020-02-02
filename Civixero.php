@@ -70,11 +70,11 @@ function civixero_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  */
 function civixero_civicrm_managed(&$entities) {
   if (civixero_is_extension_installed('nz.co.fuzion.connectors')) {
-    $entities[] = array(
+    $entities[] = [
       'name' => 'CiviXero connector Type',
       'entity' => 'ConnectorType',
       'module' => 'nz.co.fuzion.civixero',
-      'params' => array(
+      'params' => [
         'name' => 'CiviXero',
         'description' => 'CiviXero connector information',
         'module' => 'accountsync',
@@ -86,8 +86,8 @@ function civixero_civicrm_managed(&$entities) {
         'field4_label' => 'Xero Private Key Path',
         'field5_label' => 'Settings',
         'version' => 3,
-      ),
-    );
+      ],
+    ];
   }
   return _civixero_civix_civicrm_managed($entities);
 }
@@ -99,11 +99,11 @@ function civixero_civicrm_managed(&$entities) {
  *
  * I like to snaffle hacks into their own function for easy later fixing :-)
  *
- * @todo - test using CRM_Extension_System::singleton()->getManager()->getStatus($key)
- *
  * @param string $extension
  *
  * @return bool
+ * @todo - test using CRM_Extension_System::singleton()->getManager()->getStatus($key)
+ *
  */
 function civixero_is_extension_installed($extension) {
   if ($extension == 'nz.co.fuzion.connectors') {
@@ -132,14 +132,16 @@ function civixero_civicrm_caseTypes(&$caseTypes) {
  *
  * @param $metaDataFolders
  */
-function civixero_civicrm_alterSettingsFolders(&$metaDataFolders){
+function civixero_civicrm_alterSettingsFolders(&$metaDataFolders) {
   static $configured = FALSE;
-  if ($configured) return;
+  if ($configured) {
+    return;
+  }
   $configured = TRUE;
 
-  $extRoot = dirname( __FILE__ ) . DIRECTORY_SEPARATOR;
+  $extRoot = dirname(__FILE__) . DIRECTORY_SEPARATOR;
   $extDir = $extRoot . 'settings';
-  if(!in_array($extDir, $metaDataFolders)){
+  if (!in_array($extDir, $metaDataFolders)) {
     $metaDataFolders[] = $extDir;
   }
 }
@@ -183,7 +185,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'name' => 'Contact Sync',
     'url' => 'civicrm/a/#/accounts/contact/sync',
     'permission' => 'administer CiviCRM',
-    'operator' => null,
+    'operator' => NULL,
     'separator' => 1,
   ]);
 
@@ -192,7 +194,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'name' => 'Contact Errors',
     'url' => 'civicrm/xero/errorlog',
     'permission' => 'administer CiviCRM',
-    'operator' => null,
+    'operator' => NULL,
     'separator' => 0,
   ]);
 
@@ -201,7 +203,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'name' => 'Invoice Errors',
     'url' => 'civicrm/xero/errorlog?for=invoice',
     'permission' => 'administer CiviCRM',
-    'operator' => null,
+    'operator' => NULL,
     'separator' => 0,
   ]);
 }
@@ -212,13 +214,13 @@ function civixero_civicrm_navigationMenu(&$menu) {
  * @param $contactid
  */
 function getContactContributions($contactid) {
-    $contributions = civicrm_api3("Contribution","get",array(
-        "contact_id" => $contactid,
-        "return"     => array("contribution_id"),
-        "sequential" => TRUE
-    ));
-    $contributions = array_column($contributions["values"], "id");
-    return $contributions;
+  $contributions = civicrm_api3("Contribution", "get", [
+    "contact_id" => $contactid,
+    "return" => ["contribution_id"],
+    "sequential" => TRUE,
+  ]);
+  $contributions = array_column($contributions["values"], "id");
+  return $contributions;
 }
 
 /**
@@ -227,13 +229,13 @@ function getContactContributions($contactid) {
  * @param $contributions
  */
 function getErroredInvoicesOfContributions($contributions) {
-    $invoices = civicrm_api3("AccountInvoice","get",array(
-        "plugin"          => "xero",
-        "sequential"      => TRUE,
-        "contribution_id" => array("IN" => $contributions),
-        "error_data"      => array("<>" => "")
-    ));
-    return $invoices;
+  $invoices = civicrm_api3("AccountInvoice", "get", [
+    "plugin" => "xero",
+    "sequential" => TRUE,
+    "contribution_id" => ["IN" => $contributions],
+    "error_data" => ["<>" => ""],
+  ]);
+  return $invoices;
 }
 
 /**
@@ -245,36 +247,36 @@ function getErroredInvoicesOfContributions($contributions) {
  */
 function civixero_civicrm_check(&$messages) {
 
-    $accountContactErrors = civicrm_api3("AccountContact","getcount",array(
-        "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
-        "plugin"      => "xero"
-    ));
-    $accountInvoiceErrors = civicrm_api3("AccountInvoice","getcount",array(
-        "error_data"  =>  array("NOT LIKE" => "%error_cleared%"),
-        "plugin"      => "xero"
-    ));
-    $errorMessage = "";
-    $errorsPageUrl = CRM_Utils_System::url('civicrm/xero/errorlog');
+  $accountContactErrors = civicrm_api3("AccountContact", "getcount", [
+    "error_data" => ["NOT LIKE" => "%error_cleared%"],
+    "plugin" => "xero",
+  ]);
+  $accountInvoiceErrors = civicrm_api3("AccountInvoice", "getcount", [
+    "error_data" => ["NOT LIKE" => "%error_cleared%"],
+    "plugin" => "xero",
+  ]);
+  $errorMessage = "";
+  $errorsPageUrl = CRM_Utils_System::url('civicrm/xero/errorlog');
 
-    if($accountContactErrors > 0) {
-        $errorMessage .= 'Found '.$accountContactErrors.' contact sync errors. <a href="'.$errorsPageUrl.'" target="_blank">Click here</a> to resolve them.';
-        if($accountInvoiceErrors > 0) {
-            $errorMessage .= "<br><br>";
-        }
+  if ($accountContactErrors > 0) {
+    $errorMessage .= 'Found ' . $accountContactErrors . ' contact sync errors. <a href="' . $errorsPageUrl . '" target="_blank">Click here</a> to resolve them.';
+    if ($accountInvoiceErrors > 0) {
+      $errorMessage .= "<br><br>";
     }
-    if($accountInvoiceErrors > 0) {
-        $errorMessage .= 'Found '.$accountInvoiceErrors.' invoice sync errors. <a href="'.$errorsPageUrl.'?for=invoice" target="_blank">Click here</a> to resolve them.';
-    }
+  }
+  if ($accountInvoiceErrors > 0) {
+    $errorMessage .= 'Found ' . $accountInvoiceErrors . ' invoice sync errors. <a href="' . $errorsPageUrl . '?for=invoice" target="_blank">Click here</a> to resolve them.';
+  }
 
-    if($accountInvoiceErrors > 0 || $accountContactErrors >0) {
-        $messages[] = new CRM_Utils_Check_Message(
-            'civixero_sync_errors',
-            $errorMessage,
-            'Xero Sync Errors',
-            \Psr\Log\LogLevel::ERROR,
-            'fa-refresh'
-        );
-    }
+  if ($accountInvoiceErrors > 0 || $accountContactErrors > 0) {
+    $messages[] = new CRM_Utils_Check_Message(
+      'civixero_sync_errors',
+      $errorMessage,
+      'Xero Sync Errors',
+      \Psr\Log\LogLevel::ERROR,
+      'fa-refresh'
+    );
+  }
   $xeroKeyPath = Civi::settings()->get('xero_public_certificate');
   if (!CRM_Utils_File::isIncludable($xeroKeyPath)) {
     $messages[] = new CRM_Utils_Check_Message(
@@ -294,7 +296,7 @@ function civixero_civicrm_check(&$messages) {
       if ($interval->days < 30) {
         $messages[] = new CRM_Utils_Check_Message(
           'civixero_keyexpiry',
-          ts('Your api key is expiring in %1 days. Please renew to let CiviCRM interact with Xero', array(1 => $interval->days)),
+          ts('Your api key is expiring in %1 days. Please renew to let CiviCRM interact with Xero', [1 => $interval->days]),
           ts('Xero Api Key Expiry'),
           \Psr\Log\LogLevel::WARNING,
           'fa-flag'
@@ -317,7 +319,7 @@ function civixero_civicrm_pageRun(&$page) {
     return;
   }
 
-  if(($contactID = $page->getVar('_contactId')) != FALSE) {
+  if (($contactID = $page->getVar('_contactId')) != FALSE) {
 
     CRM_Civixero_Page_Inline_ContactSyncStatus::addContactSyncStatusBlock($page, $contactID);
     CRM_Civixero_Page_Inline_ContactSyncLink::addContactSyncLinkBlock($page, $contactID);
@@ -325,13 +327,13 @@ function civixero_civicrm_pageRun(&$page) {
     CRM_Civixero_Page_Inline_ContactSyncErrors::addContactSyncErrorsBlock($page, $contactID);
     CRM_Civixero_Page_Inline_InvoiceSyncErrors::addInvoiceSyncErrorsBlock($page, $contactID);
 
-    CRM_Core_Region::instance('contact-basic-info-left')->add(array(
+    CRM_Core_Region::instance('contact-basic-info-left')->add([
       'template' => "CRM/Civixero/ContactSyncBlock.tpl",
-    ));
+    ]);
 
   }
 
-  CRM_Core_Resources::singleton()->addScriptFile('nz.co.fuzion.civixero','js/civixero_errors.js');
+  CRM_Core_Resources::singleton()->addScriptFile('nz.co.fuzion.civixero', 'js/civixero_errors.js');
 }
 
 /**
@@ -340,14 +342,14 @@ function civixero_civicrm_pageRun(&$page) {
  * @return string
  */
 function _civixero_get_connectors() {
-  static $connectors = array();
+  static $connectors = [];
   if (empty($connectors)) {
     try {
-      $connectors = civicrm_api3('connector', 'get', array('connector_type_id' => 'CiviXero'));
+      $connectors = civicrm_api3('connector', 'get', ['connector_type_id' => 'CiviXero']);
       $connectors = $connectors['values'];
     }
     catch (CiviCRM_API3_Exception $e) {
-      $connectors = array(0 => 0);
+      $connectors = [0 => 0];
     }
   }
   return $connectors;
@@ -359,15 +361,15 @@ function _civixero_get_connectors() {
  * @param $values
  * @param $selector
  */
-function civixero_civicrm_searchColumns( $objectName, &$headers,  &$values, &$selector ) {
+function civixero_civicrm_searchColumns($objectName, &$headers, &$values, &$selector) {
   if ($objectName == 'contribution') {
     foreach ($values as &$value) {
       try {
-        $invoiceID = civicrm_api3('AccountInvoice', 'getvalue', array(
+        $invoiceID = civicrm_api3('AccountInvoice', 'getvalue', [
           'plugin' => 'xero',
           'contribution_id' => $value['contribution_id'],
           'return' => 'accounts_invoice_id',
-        ));
+        ]);
         $value['contribution_status'] .= "<a href='https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=" . $invoiceID . "'> <p>Xero</p></a>";
       }
       catch (Exception $e) {
@@ -388,13 +390,13 @@ function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
   if ($plugin != 'xero' || $entity != 'contact') {
     return;
   }
-  $accountsData['civicrm_formatted'] = array();
-  $mappedFields = array(
+  $accountsData['civicrm_formatted'] = [];
+  $mappedFields = [
     'Name' => 'display_name',
     'FirstName' => 'first_name',
     'LastName' => 'last_name',
     'EmailAddress' => 'email',
-  );
+  ];
   foreach ($mappedFields as $xeroField => $civicrmField) {
     if (!empty($accountsData[$xeroField])) {
       $accountsData['civicrm_formatted'][$civicrmField] = $accountsData[$xeroField];
@@ -404,11 +406,11 @@ function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
   if (is_array($accountsData['Addresses']) && is_array($accountsData['Addresses']['Address'])) {
     foreach ($accountsData['Addresses']['Address'] as $address) {
       if (count($address) > 1) {
-        $addressMappedFields = array(
+        $addressMappedFields = [
           'AddressLine1' => 'street_address',
           'City' => 'city',
           'PostalCode' => 'postal_code',
-        );
+        ];
         foreach ($addressMappedFields as $xeroField => $civicrmField) {
           if (!empty($address[$xeroField])) {
             $accountsData['civicrm_formatted'][$civicrmField] = $address[$xeroField];
@@ -422,9 +424,9 @@ function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
   if (is_array($accountsData['Phones']) && is_array($accountsData['Phones']['Phone'])) {
     foreach ($accountsData['Phones']['Phone'] as $address) {
       if (count($address) > 1) {
-        $addressMappedFields = array(
+        $addressMappedFields = [
           'PhoneNumber' => 'phone',
-        );
+        ];
         foreach ($addressMappedFields as $xeroField => $civicrmField) {
           if (!empty($address[$xeroField])) {
             $accountsData['civicrm_formatted'][$civicrmField] = $address[$xeroField];
@@ -454,7 +456,7 @@ function civixero_civicrm_contactSummaryBlocks(&$blocks) {
     'civixeroblock' => [
       'title' => ts('Civi Xero'),
       'blocks' => [],
-    ]
+    ],
   ];
   $blocks['civixeroblock']['blocks']['contactsyncstatus'] = [
     'title' => ts('Contact Sync Status'),

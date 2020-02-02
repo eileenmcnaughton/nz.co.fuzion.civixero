@@ -7,6 +7,7 @@
  * Time: 10:33 AM
  */
 class CRM_Civixero_Exception_XeroThrottle extends Exception {
+
   private $id;
 
   /**

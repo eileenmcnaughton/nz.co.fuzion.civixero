@@ -1,13 +1,13 @@
 <?php
 
-$invoice_statuses = array(
+$invoice_statuses = [
   'SUBMITTED' => 'Submitted',
   'AUTHORISED' => 'Authorised',
   'DRAFT' => 'Draft',
-  );
+];
 
-return array(
-  'xero_key' => array(
+return [
+  'xero_key' => [
     'group_name' => 'Xero Settings',
     'group' => 'xero',
     'name' => 'xero_key',
@@ -16,15 +16,15 @@ return array(
     'is_domain' => 1,
     'is_contact' => 0,
     'description' => 'Xero Key',
-    'title' =>  'Xero Key',
+    'title' => 'Xero Key',
     'help_text' => '',
     'html_type' => 'Text',
-    'html_attributes' => array(
+    'html_attributes' => [
       'size' => 50,
-    ),
+    ],
     'quick_form_type' => 'Element',
-  ),
-  'xero_secret' => array(
+  ],
+  'xero_secret' => [
     'group_name' => 'Xero Settings',
     'group' => 'xero',
     'name' => 'xero_secret',
@@ -36,12 +36,12 @@ return array(
     'title' => 'Xero Secret',
     'help_text' => '',
     'html_type' => 'Text',
-    'html_attributes' => array(
+    'html_attributes' => [
       'size' => 50,
-    ),
+    ],
     'quick_form_type' => 'Element',
-  ),
-  'xero_public_certificate' => array(
+  ],
+  'xero_public_certificate' => [
     'group_name' => 'Xero Settings',
     'group' => 'xero',
     'name' => 'xero_public_certificate',
@@ -53,12 +53,12 @@ return array(
     'description' => 'Enter the full path to your public Certificate',
     'help_text' => '',
     'html_type' => 'Text',
-    'html_attributes' => array(
+    'html_attributes' => [
       'size' => 50,
-    ),
+    ],
     'quick_form_type' => 'Element',
-  ),
-  'xero_private_key' => array(
+  ],
+  'xero_private_key' => [
     'group_name' => 'Xero Settings',
     'group' => 'xero',
     'name' => 'xero_private_key',
@@ -70,12 +70,12 @@ return array(
     'description' => 'Enter the full path to your private Key',
     'help_text' => '',
     'html_type' => 'Text',
-    'html_attributes' => array(
+    'html_attributes' => [
       'size' => 50,
-    ),
+    ],
     'quick_form_type' => 'Element',
-  ),
-  'xero_default_revenue_account' => array(
+  ],
+  'xero_default_revenue_account' => [
     'group_name' => 'Xero Settings',
     'group' => 'xero',
     'name' => 'xero_default_revenue_account',
@@ -88,12 +88,12 @@ return array(
     'description' => 'Account to code contributions to',
     'help_text' => 'For more complex rules you will need to add a custom extension',
     'html_type' => 'Text',
-    'html_attributes' => array(
+    'html_attributes' => [
       'size' => 50,
-    ),
+    ],
     'quick_form_type' => 'Element',
-  ),
-  'xero_invoice_number_prefix' => array(
+  ],
+  'xero_invoice_number_prefix' => [
     'group_name' => 'Xero Settings',
     'group' => 'xero',
     'name' => 'xero_invoice_number_prefix',
@@ -102,27 +102,27 @@ return array(
     'is_domain' => 1,
     'is_contact' => 0,
     'description' => 'Optionally define a string to prefix invoice numbers when pushing to Xero.',
-    'title' =>  'Xero invoice number prefix',
+    'title' => 'Xero invoice number prefix',
     'help_text' => '',
     'html_type' => 'Text',
-    'html_attributes' => array(
+    'html_attributes' => [
       'size' => 50,
-    ),
+    ],
     'quick_form_type' => 'Element',
-  ),
-  'xero_default_invoice_status' => array(
+  ],
+  'xero_default_invoice_status' => [
     'group_name' => 'Xero Settings',
     'group' => 'xero',
     'name' => 'xero_default_invoice_status',
     'type' => 'Array',
     'is_domain' => 1,
     'is_contact' => 0,
-    'default' => array('SUBMITTED'),
+    'default' => ['SUBMITTED'],
     'title' => 'Xero Default Invoice Status',
     'description' => 'Default Invoice status to push to Xero.',
     'help_text' => '',
     'html_type' => 'Select',
     'quick_form_type' => 'Element',
     'html_attributes' => $invoice_statuses,
-  ),
- );
+  ],
+];

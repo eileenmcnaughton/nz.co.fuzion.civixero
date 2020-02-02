@@ -14,7 +14,7 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
    * @throws API_Exception
    */
   function pull($params) {
-    static $trackingOptions = array();
+    static $trackingOptions = [];
     if (empty($trackingOptions)) {
       $tc = $this->getSingleton()->TrackingCategories();
       foreach ($tc['TrackingCategories']['TrackingCategory'] as $trackingCategory) {

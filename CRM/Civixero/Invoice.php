@@ -9,6 +9,7 @@
  * civicrm_account_sync extension.
  */
 class CRM_Civixero_Invoice extends CRM_Civixero_Base {
+
   /**
    * Name in Xero of entity.
    *
@@ -37,26 +38,26 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   public function pull($params) {
     try {
       $result = $this->getSingleton($params['connector_id'])
-        ->Invoices(FALSE, $this->formatDateForXero($params['start_date']), array("Type" => "ACCREC"));
+        ->Invoices(FALSE, $this->formatDateForXero($params['start_date']), ["Type" => "ACCREC"]);
       if (!is_array($result)) {
         throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
       }
-      $errors = array();
+      $errors = [];
       if (!empty($result['Invoices'])) {
         $invoices = $result['Invoices']['Invoice'];
         if (isset($invoices['InvoiceID'])) {
           // The return syntax puts the contact only level higher up when only one contact is involved.
-          $invoices = array($invoices);
+          $invoices = [$invoices];
         }
         $prefix = $this->getSetting('xero_invoice_number_prefix');
-        if(!isset($prefix)) {
+        if (!isset($prefix)) {
           $prefix = '';
         }
         foreach ($invoices as $invoice) {
           $save = TRUE;
           // Strip out the invoice number prefix if present.
           $contributionId = preg_replace("/^\Q{$prefix}\E/", '', CRM_Utils_Array::value('InvoiceNumber', $invoice));
-          $params = array(
+          $params = [
             'contribution_id' => $contributionId,
             'accounts_modified_date' => $invoice['UpdatedDateUTC'],
             'plugin' => 'xero',
@@ -65,28 +66,28 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             'accounts_status_id' => $this->mapStatus($invoice['Status']),
             'accounts_needs_update' => 0,
             'connector_id' => $params['connector_id'],
-          );
+          ];
           CRM_Accountsync_Hook::accountPullPreSave('invoice', $invoice, $save, $params);
           if (!$save) {
             continue;
           }
           try {
-            $params['id'] = civicrm_api3('AccountInvoice', 'getvalue', array(
+            $params['id'] = civicrm_api3('AccountInvoice', 'getvalue', [
               'return' => 'id',
               'accounts_invoice_id' => $invoice['InvoiceID'],
               'plugin' => $this->_plugin,
               'connector_id' => $params['connector_id'],
-            ));
+            ]);
           }
           catch (CiviCRM_API3_Exception $e) {
             // this is an update - but lets just check the contact id doesn't exist in the account_contact table first
             // e.g if a list has been generated but not yet pushed
             try {
-              $existing = civicrm_api3('AccountInvoice', 'getsingle', array(
+              $existing = civicrm_api3('AccountInvoice', 'getsingle', [
                 'return' => 'id',
                 'contribution_id' => $contributionId,
                 'plugin' => $this->_plugin,
-              ));
+              ]);
               $params['id'] = $existing['id'];
               if (!empty($existing['accounts_invoice_id']) && $existing['accounts_invoice_id'] != $invoice['InvoiceID']) {
                 // no idea how this happened or what it means - calling function can catch & deal with it
@@ -136,7 +137,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   public function push($params, $limit = 10) {
     try {
       $records = $this->getContributionsRequiringPushUpdate($params, $limit);
-      $errors = array();
+      $errors = [];
 
       foreach ($records['values'] as $record) {
         try {
@@ -147,7 +148,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         catch (CiviCRM_API3_Exception $e) {
           $errors[] = ts('Failed to store ') . $record['contribution_id'] . ' (' . $record['accounts_contact_id'] . ' )'
             . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
-            . ts('%1 Push failed', array(1 => $this->xero_entity));
+            . ts('%1 Push failed', [1 => $this->xero_entity]);
         }
       }
       if ($errors) {
@@ -179,20 +180,20 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     // Initially Assume that tax is not set up, and all amounts are tax inclusive.
     $line_amount_types = 'Inclusive';
     $total_amount = 0;
-    $lineItems = array();
+    $lineItems = [];
     foreach ($invoiceData['line_items'] as $lineItem) {
-      $lineItems[] = array(
-        "Description" => $lineItem['display_name'] . ' ' . str_replace(array('&nbsp;'), ' ', $lineItem['label']),
-        "Quantity"    => $lineItem['qty'],
-        "UnitAmount"  => $lineItem['unit_price'],
+      $lineItems[] = [
+        "Description" => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
+        "Quantity" => $lineItem['qty'],
+        "UnitAmount" => $lineItem['unit_price'],
         "AccountCode" => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
-      );
+      ];
       $total_amount += $lineItem['qty'] * $lineItem['unit_price'];
 
       // Historically 'tax_amount' might come at us as NULL, the empty string,
       // or a false numeric, but now it seems to be a string. '0.00' casts to
       // true but is equal to zero, so we have to check it.
-      if(isset($lineItem['tax_amount']) && $lineItem['tax_amount'] && $lineItem['tax_amount'] !== '0.00') {
+      if (isset($lineItem['tax_amount']) && $lineItem['tax_amount'] && $lineItem['tax_amount'] !== '0.00') {
         // If we discover a non-zero tax_amount, switch to tax exclusive amounts.
         $line_amount_types = 'Exclusive';
       }
@@ -211,27 +212,27 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     if (empty($prefix)) {
       $prefix = '';
     }
-    $new_invoice = array(
+    $new_invoice = [
       "Type" => ($total_amount > 0) ? "ACCREC" : 'ACCPAY',
-      "Contact" => array(
+      "Contact" => [
         "ContactNumber" => $invoiceData['contact_id'],
-      ),
-      "Date"            => substr($invoiceData['receive_date'], 0, 10),
-      "DueDate"         => substr($invoiceData['receive_date'], 0, 10),
-      "Status"          => $status,
-      "InvoiceNumber"   => $prefix . $invoiceData['id'],
-      "CurrencyCode"    => CRM_Core_Config::singleton()->defaultCurrency,
-      "Reference"       => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
+      ],
+      "Date" => substr($invoiceData['receive_date'], 0, 10),
+      "DueDate" => substr($invoiceData['receive_date'], 0, 10),
+      "Status" => $status,
+      "InvoiceNumber" => $prefix . $invoiceData['id'],
+      "CurrencyCode" => CRM_Core_Config::singleton()->defaultCurrency,
+      "Reference" => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
       "LineAmountTypes" => $line_amount_types,
-      'LineItems' => array('LineItem' => $lineItems),
-    );
+      'LineItems' => ['LineItem' => $lineItems],
+    ];
 
     /* Use due date and period from the invoice settings when available. */
     try {
       $invoice_settings = civicrm_api3(
         'Setting',
         'getvalue',
-        array('name' => 'contribution_invoice_settings')
+        ['name' => 'contribution_invoice_settings']
       );
 
       if (!empty($invoice_settings['due_date']) && $invoice_settings['due_date_period'] != 'select') {
@@ -248,9 +249,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     $this->validatePrerequisites($new_invoice);
-    $new_invoice = array(
+    $new_invoice = [
       $new_invoice,
-    );
+    ];
     return $new_invoice;
   }
 
@@ -263,26 +264,26 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return array
    */
   protected function mapCancelled($contributionID, $accounts_invoice_id) {
-    $newInvoice = array(
-      'Invoice' => array(
-        'InvoiceID'     => $accounts_invoice_id,
+    $newInvoice = [
+      'Invoice' => [
+        'InvoiceID' => $accounts_invoice_id,
         'InvoiceNumber' => $contributionID,
-        'Type'          => 'ACCREC',
+        'Type' => 'ACCREC',
         'Reference' => 'Cancelled',
         'Date' => date('Y-m-d', strtotime(now)),
         'DueDate' => date('Y-m-d', strtotime(now)),
         'Status' => 'DRAFT',
         'LineAmountTypes' => 'Exclusive',
-        'LineItems' => array(
-          'LineItem' => array(
+        'LineItems' => [
+          'LineItem' => [
             'Description' => 'Cancelled',
             'Quantity' => 0,
             'UnitAmount' => 0,
             'AccountCode' => $this->getDefaultAccountCode(),
-          ),
-        ),
-      ),
-    );
+          ],
+        ],
+      ],
+    ];
     return $newInvoice;
   }
 
@@ -296,14 +297,14 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   CiviCRM equivalent status ID.
    */
   protected function mapStatus($status) {
-    $statuses = array(
+    $statuses = [
       'PAID' => 1,
       'DELETED' => 3,
       'VOIDED' => 3,
       'DRAFT' => 2,
       'AUTHORISED' => 2,
       'SUBMITTED' => 2,
-    );
+    ];
     return $statuses[$status];
   }
 
@@ -344,14 +345,14 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     if (empty($lineItem['TrackingCategory'])) {
       return;
     }
-    static $trackingOptions = array();
+    static $trackingOptions = [];
     if (empty($trackingOptions)) {
-      $trackingOptions = civicrm_api3('xerosync', 'trackingcategorypull', array());
+      $trackingOptions = civicrm_api3('xerosync', 'trackingcategorypull', []);
       $trackingOptions = $trackingOptions['values'];
     }
     foreach ($lineItem['TrackingCategory'] as $tracking) {
       if (!array_key_exists($tracking['Name'], $trackingOptions)
-      || !in_array($tracking['Option'], $trackingOptions[$tracking['Name']])) {
+        || !in_array($tracking['Option'], $trackingOptions[$tracking['Name']])) {
         throw new CRM_Core_Exception(ts('Tracking Category Does Not Exist ') . $tracking['Name'] . ' ' . $tracking['Option'], 'invalid_tracking', $tracking);
       }
     }
@@ -370,16 +371,16 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getContributionsRequiringPushUpdate($params, $limit) {
-    $criteria = array(
+    $criteria = [
       'accounts_needs_update' => 1,
       'plugin' => 'xero',
       'connector_id' => $params['connector_id'],
-      'accounts_status_id' => array('NOT IN' => array(3)),
-      'options' => array(
+      'accounts_status_id' => ['NOT IN' => [3]],
+      'options' => [
         'sort' => 'error_data',
         'limit' => $limit,
-      ),
-    );
+      ],
+    ];
     if (!empty($params['contribution_id'])) {
       $criteria['contribution_id'] = $params['contribution_id'];
       unset($criteria['accounts_needs_update']);
@@ -404,14 +405,14 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
 
     $accountsInvoiceID = isset($record['accounts_invoice_id']) ? $record['accounts_invoice_id'] : NULL;
     $contributionID = $record['contribution_id'];
-    $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', array(
+    $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', [
       'id' => $contributionID,
-    ));
+    ]);
 
     $civiCRMInvoice = $civiCRMInvoice['values'][$contributionID];
-    $statuses = civicrm_api3('Contribution', 'getoptions', array('field' => 'contribution_status_id'));
+    $statuses = civicrm_api3('Contribution', 'getoptions', ['field' => 'contribution_status_id']);
     $contributionStatus = $statuses['values'][$civiCRMInvoice['contribution_status_id']];
-    $cancelledStatuses = array('Failed', 'Cancelled');
+    $cancelledStatuses = ['Failed', 'Cancelled'];
 
     if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
       $accountsInvoice = $this->mapCancelled($contributionID, $accountsInvoiceID);
@@ -430,11 +431,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   protected function getDefaultAccountCode() {
     if (empty($this->default_account_code)) {
-      $this->default_account_code = civicrm_api('setting', 'getvalue', array(
+      $this->default_account_code = civicrm_api('setting', 'getvalue', [
         'group' => 'Xero Settings',
         'name' => 'xero_default_revenue_account',
         'version' => 3,
-      ));
+      ]);
     }
     return $this->default_account_code;
   }
@@ -453,7 +454,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   protected function savePushResponse($result, $record) {
     if ($result === FALSE) {
-      $responseErrors = array();
+      $responseErrors = [];
       $record['accounts_needs_update'] = 0;
     }
     else {
@@ -513,9 +514,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return array
    */
   protected function getNotUpdateCandidateResponses() {
-    return array(
+    return [
       'Invoice not of valid status for modification',
-      ' Invoice not of valid status for modification This document cannot be edited as it has a payment or credit note allocated to it.');
+      ' Invoice not of valid status for modification This document cannot be edited as it has a payment or credit note allocated to it.',
+    ];
   }
 
   /**

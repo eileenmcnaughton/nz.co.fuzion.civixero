@@ -3,12 +3,12 @@
 // The record will be automatically inserted, updated, or deleted from the
 // database as appropriate. For more details, see "hook_civicrm_managed" at:
 // http://wiki.civicrm.org/confluence/display/CRMDOC42/Hook+Reference
-return array(
-  0 => array(
+return [
+  0 => [
     'name' => 'CiviXero Contact Push Job',
     'entity' => 'Job',
     'update' => 'never',
-    'params' => array(
+    'params' => [
       'version' => 3,
       'name' => 'CiviXero Contact Push Job',
       'description' => 'Push updated contacts to Xero',
@@ -17,13 +17,13 @@ return array(
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero',
       'update' => 'never',
-    ),
-  ),
-  1 => array(
+    ],
+  ],
+  1 => [
     'name' => 'CiviXero Contact Pull Job',
     'entity' => 'Job',
     'update' => 'never',
-    'params' => array(
+    'params' => [
       'version' => 3,
       'name' => 'CiviXero Contact Pull Job',
       'description' => 'Pull updated contacts from Xero',
@@ -32,13 +32,13 @@ return array(
       'run_frequency' => 'Always',
       'parameters' => "plugin=xero\nstart_date=yesterday",
       'update' => 'never',
-    ),
-  ),
-  2 => array(
+    ],
+  ],
+  2 => [
     'name' => 'CiviXero Invoice Push Job',
     'entity' => 'Job',
     'update' => 'never',
-    'params' => array(
+    'params' => [
       'version' => 3,
       'name' => 'CiviXero Invoice Push Job',
       'description' => 'Push updated invoices from Xero',
@@ -47,13 +47,13 @@ return array(
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero',
       'update' => 'never',
-    ),
-  ),
-  3 => array(
+    ],
+  ],
+  3 => [
     'name' => 'CiviXero Invoice Pull Job',
     'entity' => 'Job',
     'update' => 'never',
-    'params' => array(
+    'params' => [
       'version' => 3,
       'name' => 'CiviXero Invoice Pull Job',
       'description' => 'Pull updated invoices from Xero',
@@ -62,38 +62,38 @@ return array(
       'run_frequency' => 'Always',
       'parameters' => "plugin=xero\nstart_date=yesterday",
       'update' => 'never',
-    ),
-  ),
-  4 => array (
+    ],
+  ],
+  4 => [
     'name' => 'CiviAccountSync Complete Contributions From Accounts (Xero)',
     'entity' => 'Job',
     'params' =>
-    array (
-      'version' => 3,
-      'name' => 'CiviAccountSync Complete Contributions',
-      'description' => 'Complete Contributions in CiviCRM where completed in Accounts',
-      'api_entity' => 'AccountInvoice',
-      'api_action' => 'update_contribution',
-      'run_frequency' => 'Always',
-      'parameters' => 'plugin=xero
+      [
+        'version' => 3,
+        'name' => 'CiviAccountSync Complete Contributions',
+        'description' => 'Complete Contributions in CiviCRM where completed in Accounts',
+        'api_entity' => 'AccountInvoice',
+        'api_action' => 'update_contribution',
+        'run_frequency' => 'Always',
+        'parameters' => 'plugin=xero
 accounts_status_id=1',
-      'update' => 'never',
-    ),
-  ),
-  5 => array (
+        'update' => 'never',
+      ],
+  ],
+  5 => [
     'name' => 'CiviAccountSync Cancel Contributions From Accounts (Xero)',
     'entity' => 'Job',
     'params' =>
-    array (
-      'version' => 3,
-      'name' => 'CiviAccountSync Cancel Contributions',
-      'description' => 'Cancel Contributions in CiviCRM where cancelled in Accounts',
-      'api_entity' => 'AccountInvoice',
-      'api_action' => 'update_contribution',
-      'run_frequency' => 'Always',
-      'parameters' => 'plugin=xero
+      [
+        'version' => 3,
+        'name' => 'CiviAccountSync Cancel Contributions',
+        'description' => 'Cancel Contributions in CiviCRM where cancelled in Accounts',
+        'api_entity' => 'AccountInvoice',
+        'api_action' => 'update_contribution',
+        'run_frequency' => 'Always',
+        'parameters' => 'plugin=xero
        accounts_status_id=3',
-      'update' => 'never',
-    ),
-  ),
-);
+        'update' => 'never',
+      ],
+  ],
+];
