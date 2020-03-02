@@ -270,8 +270,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         'InvoiceNumber' => $contributionID,
         'Type' => 'ACCREC',
         'Reference' => 'Cancelled',
-        'Date' => date('Y-m-d', strtotime(now)),
-        'DueDate' => date('Y-m-d', strtotime(now)),
+        'Date' => date('Y-m-d', strtotime('now')),
+        'DueDate' => date('Y-m-d', strtotime('now')),
         'Status' => 'DRAFT',
         'LineAmountTypes' => 'Exclusive',
         'LineItems' => [
