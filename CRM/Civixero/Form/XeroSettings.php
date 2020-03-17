@@ -14,6 +14,10 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
   private $_submittedValues = [];
 
   private $_settings = [];
+  
+  function preProcess() {
+
+  }
 
   function buildQuickForm() {
     $settings = $this->getFormSettings();
@@ -123,4 +127,5 @@ class CRM_Civixero_Form_XeroSettings extends CRM_Core_Form {
     }
     return $defaults;
   }
+
 }

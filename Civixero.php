@@ -7,6 +7,10 @@ require_once 'Civixero.civix.php';
  */
 function civixero_civicrm_config(&$config) {
   _civixero_civix_civicrm_config($config);
+  require_once __DIR__ . '/vendor/autoload.php';
+  if (!function_exists('random_bytes')) {
+    require_once(__DIR__ . '/vendor/paragonie/random_compat/lib/random.php');
+  }
 }
 
 /**
@@ -206,6 +210,14 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'operator' => NULL,
     'separator' => 0,
   ]);
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/', [
+    'label' => 'Xero Authorize',
+    'name' => 'Xero Authorize',
+    'url' => 'civicrm/xero/authorize',
+    'permission' => 'administer CiviCRM',
+    'operator' => NULL,
+    'separator' => 0,
+  ]);
 }
 
 /**
@@ -277,32 +289,27 @@ function civixero_civicrm_check(&$messages) {
       'fa-refresh'
     );
   }
-  $xeroKeyPath = Civi::settings()->get('xero_public_certificate');
-  if (!CRM_Utils_File::isIncludable($xeroKeyPath)) {
+  $clientID = Civi::settings()->get('xero_client_id');
+  $clientSecret = Civi::settings()->get('xero_client_secret');
+  $accessTokenData = Civi::settings()->get('xero_access_token');
+  if (!$clientID || !$clientSecret) {
     $messages[] = new CRM_Utils_Check_Message(
-      'civixero_keyinvalid',
-      ts('Please configure a Xero api key - see https://github.com/eileenmcnaughton/nz.co.fuzion.civixero/blob/master/README.md'),
-      ts('No valid Xero api key'),
+      'civixero_clientrequired',
+      ts('Please configure a Client ID and Client Secret from your Xero app.'),
+      ts('Missing Xero App Details'),
       \Psr\Log\LogLevel::WARNING,
       'fa-flag'
     );
   }
-  elseif ($xeroKeyPath) {
-    $certinfo = openssl_x509_parse(file_get_contents($xeroKeyPath));
-    if (!empty($certinfo['validTo_time_t'])) {
-      $validTo = new DateTime(date('Y-m-d H:i:s', $certinfo['validTo_time_t']));
-      $current = new DateTime(date('Y-m-d H:i:s', time()));
-      $interval = $validTo->diff($current);
-      if ($interval->days < 30) {
-        $messages[] = new CRM_Utils_Check_Message(
-          'civixero_keyexpiry',
-          ts('Your api key is expiring in %1 days. Please renew to let CiviCRM interact with Xero', [1 => $interval->days]),
-          ts('Xero Api Key Expiry'),
-          \Psr\Log\LogLevel::WARNING,
-          'fa-flag'
-        );
-      }
-    }
+  elseif (empty($accessTokenData['access_token'])) {
+    $messages[] = new CRM_Utils_Check_Message(
+      'civixero_authorizationrequired',
+      ts('Please Authorize with Xero to enable a connection.'),
+      ts('Xero Authorization Required'),
+      \Psr\Log\LogLevel::WARNING,
+      'fa-flag'
+    );
+
   }
 }
 
