@@ -278,10 +278,10 @@ function _Civixero_civix_civicrm_managed(&$entities) {
       if (empty($e['module'])) {
         $e['module'] = E::LONG_NAME;
       }
+      $entities[] = $e;
       if (empty($e['params']['version'])) {
         $e['params']['version'] = '3';
       }
-      $entities[] = $e;
     }
   }
 }
@@ -363,10 +363,8 @@ function _Civixero_civix_glob($pattern) {
  * Inserts a navigation menu item at a given place in the hierarchy.
  *
  * @param array $menu - menu hierarchy
- * @param string $path - path to parent of this item, e.g. 'my_extension/submenu'
- *    'Mailing', or 'Administer/System Settings'
- * @param array $item - the item to insert (parent/child attributes will be
- *    filled for you)
+ * @param string $path - path where insertion should happen (ie. Administer/System Settings)
+ * @param array $item - menu you need to insert (parent/child attributes will be filled for you)
  */
 function _Civixero_civix_insert_navigation_menu(&$menu, $path, $item) {
   // If we are done going down the path, insert menu
