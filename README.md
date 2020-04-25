@@ -37,45 +37,34 @@ then you will have the extensions added to the site.
 
 To use these extensions on the site, on the CiviCRM menu on the site go to administer - customise data and screens - manage extensions. There you should install CiviXero and AccountSync.
 
-## Setup XERO keys
+## Setup XERO OAuth 2.0
 
-Log into https://api.xero.com/Application?redirectCount=0
+You will need to have set up an company/organisation and an OAuth 2.0 App with XERO.
 
-Choose My Applications, Add application and choose the Private App option
+### Company/Organization
+For testing purposes, you can use the [Xero Demo Company](https://central.xero.com/s/article/Use-the-demo-company)
 
-![Add New App](docs/images/Add_new_App.png)
+### Create Xero App
+Before creating the app, it will help to be logged into CiviCRM as well as Xero.
 
-Follow the Xero instructions to set up a .cer and public key
+Go to https://developer.xero.com/
 
-https://developer.xero.com/documentation/auth-and-limits/private-applications
+On the menu, click on __MyApps__, then click __New app__.
 
-This involves running the following 3 commands in terminal if you are a mac user
+Use the following details:
+- Company or application URL: https://YOUR-SITE-URL
+- OAuth 2.0 redirect URI: For Drupal installations this will be
+  https://YOUR-SITE-URL/civicrm/xero/authorize.
+  For WordPress installations, copy the url from the link CiviCRM : Administer -> Xero -> Xero Authorize.  
 
-1 - openssl genrsa -out privatekey.pem 1024
+After the app is created, click the button to generate a Client Secret.
+Copy the Client ID and the Client Secret, you will need them later.
 
-2 - openssl req -new -x509 -key privatekey.pem -out publickey.cer -days 1825
-
-3 - openssl pkcs12 -export -out public_privatekey.pfx -inkey privatekey.pem -in publickey.cer
-
-from https://developer.xero.com/documentation/api-guides/create-publicprivate-key
-
-Ensure the above files are correctly permissioned so they are readable by the user that php is running as.
-
-Either copy and paste or download the .cer (publickey) file and put into the Xero new app.
-
-![New App filled out](docs/images/New_App_filled_out.png)
-
-Save the new app and you should see the app details page in Xero.
-
-![App Details](docs/images/App_Details.png)
 
 ## Setup in CiviCRM
 
-You then need to enter the Xero keys (seen on the app details page) into the Xero Settings page in CiviCRM (Administer>Xero>Xero Settings)
-
-Enter the relevant keys and paths
-Consumer Key = Xero Key
-Consumer Secret = Xero Secret
+### CiviXero Settings
+You then need to add the __Client ID__ and __Client Secret__ in the Xero Settings page in CiviCRM (Administer>Xero>Xero Settings)
 
 ![Xero Settings](docs/images/xero_settings.png)
 
@@ -83,7 +72,14 @@ On this page you should also define which edit and create actions should trigger
 
 (Due to current CiviCRM bug, disable and re-enable CiviCRM logging if you are using db logging)
 
-Once installed you interact with CiviXero via the scheduled jobs page and the api. Matched contacts should show links on their contact summary screen and matched contributions should show links on the invoices
+### Authorizing with Xero
+Next, authorize the app to access your Xero Company data. In CiviCRM, go to (Administer>Xero>Xero Authorize).
+Click the button to Authorize. You will be prompted for your Xero credentials and then further prompted to grant the app various permissions.
+You should then be returned to the Authorize page. The page will show a status to indicate it has successfully connected to Xero.
+
+
+### Set up Synchronization
+Once authorized you interact with CiviXero via the scheduled jobs page and the api. Matched contacts should show links on their contact summary screen and matched contributions should show links on the invoices
 
 
 CiviCRM tracks synchronisation in the civicrm_account_contact table - to populate this from xero run the api command civixero contactpull with a start_date - e.g '1 year ago'
