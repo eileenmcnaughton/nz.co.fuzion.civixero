@@ -4,6 +4,8 @@ require_once 'Civixero.civix.php';
 
 /**
  * Implementation of hook_civicrm_config
+ *
+ * @param \CRM_Core_Config $config
  */
 function civixero_civicrm_config(&$config) {
   _civixero_civix_civicrm_config($config);
@@ -40,7 +42,7 @@ function civixero_civicrm_uninstall() {
  * Implementation of hook_civicrm_enable
  */
 function civixero_civicrm_enable() {
-  return _civixero_civix_civicrm_enable();
+  _civixero_civix_civicrm_enable();
 }
 
 /**
@@ -93,7 +95,7 @@ function civixero_civicrm_managed(&$entities) {
       ],
     ];
   }
-  return _civixero_civix_civicrm_managed($entities);
+  _civixero_civix_civicrm_managed($entities);
 }
 
 /**
@@ -110,7 +112,7 @@ function civixero_civicrm_managed(&$entities) {
  *
  */
 function civixero_is_extension_installed($extension) {
-  if ($extension == 'nz.co.fuzion.connectors') {
+  if ($extension === 'nz.co.fuzion.connectors') {
     if (function_exists('connectors_civicrm_entityTypes')) {
       return TRUE;
     }
@@ -137,15 +139,9 @@ function civixero_civicrm_caseTypes(&$caseTypes) {
  * @param $metaDataFolders
  */
 function civixero_civicrm_alterSettingsFolders(&$metaDataFolders) {
-  static $configured = FALSE;
-  if ($configured) {
-    return;
-  }
-  $configured = TRUE;
-
-  $extRoot = dirname(__FILE__) . DIRECTORY_SEPARATOR;
+  $extRoot = __DIR__ . DIRECTORY_SEPARATOR;
   $extDir = $extRoot . 'settings';
-  if (!in_array($extDir, $metaDataFolders)) {
+  if (!in_array($extDir, $metaDataFolders, TRUE)) {
     $metaDataFolders[] = $extDir;
   }
 }
@@ -223,31 +219,37 @@ function civixero_civicrm_navigationMenu(&$menu) {
 /**
  * Gettings contributions of sinlge contact
  *
- * @param $contactid
+ * @param int $contactid
+ *
+ * @return array
+ * @throws \CiviCRM_API3_Exception
  */
 function getContactContributions($contactid) {
-  $contributions = civicrm_api3("Contribution", "get", [
-    "contact_id" => $contactid,
-    "return" => ["contribution_id"],
-    "sequential" => TRUE,
-  ]);
-  $contributions = array_column($contributions["values"], "id");
+  $contributions = civicrm_api3('Contribution', 'get', [
+    'contact_id' => $contactid,
+    'return' => ['contribution_id'],
+    'sequential' => TRUE,
+  ])['values'];
+  $contributions = array_column($contributions, 'id');
   return $contributions;
 }
 
 /**
- * Gettings errored invoices of given contributions
+ * Get AccountInvoice data for contributions with errors.
  *
- * @param $contributions
+ * @param array $contributions
+ *
+ * @return array
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function getErroredInvoicesOfContributions($contributions) {
-  $invoices = civicrm_api3("AccountInvoice", "get", [
-    "plugin" => "xero",
-    "sequential" => TRUE,
-    "contribution_id" => ["IN" => $contributions],
-    "error_data" => ["<>" => ""],
+  return civicrm_api3('AccountInvoice', 'get', [
+    'plugin' => 'xero',
+    'sequential' => TRUE,
+    'contribution_id' => ['IN' => $contributions],
+    'error_data' => ['<>' => ''],
   ]);
-  return $invoices;
 }
 
 /**
@@ -256,6 +258,8 @@ function getErroredInvoicesOfContributions($contributions) {
  * Add a check to the status page. Check if there are any account contact or invoice sync errors.
  *
  * @param $page
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function civixero_civicrm_check(&$messages) {
 
@@ -319,10 +323,12 @@ function civixero_civicrm_check(&$messages) {
  * Add Xero links to contact summary
  *
  * @param $page
+ *
+ * @throws \CRM_Core_Exception
  */
 function civixero_civicrm_pageRun(&$page) {
   $pageName = get_class($page);
-  if ($pageName != 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
+  if ($pageName !== 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
     return;
   }
 
@@ -335,7 +341,7 @@ function civixero_civicrm_pageRun(&$page) {
     CRM_Civixero_Page_Inline_InvoiceSyncErrors::addInvoiceSyncErrorsBlock($page, $contactID);
 
     CRM_Core_Region::instance('contact-basic-info-left')->add([
-      'template' => "CRM/Civixero/ContactSyncBlock.tpl",
+      'template' => 'CRM/Civixero/ContactSyncBlock.tpl',
     ]);
 
   }
@@ -368,8 +374,8 @@ function _civixero_get_connectors() {
  * @param $values
  * @param $selector
  */
-function civixero_civicrm_searchColumns($objectName, &$headers, &$values, &$selector) {
-  if ($objectName == 'contribution') {
+function civixero_civicrm_searchColumns($objectName, &$headers, &$values) {
+  if ($objectName === 'contribution') {
     foreach ($values as &$value) {
       try {
         $invoiceID = civicrm_api3('AccountInvoice', 'getvalue', [
@@ -394,7 +400,7 @@ function civixero_civicrm_searchColumns($objectName, &$headers, &$values, &$sele
  * @param string $plugin
  */
 function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
-  if ($plugin != 'xero' || $entity != 'contact') {
+  if ($plugin !== 'xero' || $entity !== 'contact') {
     return;
   }
   $accountsData['civicrm_formatted'] = [];
@@ -448,6 +454,8 @@ function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
 
 /**
  * Implements hook_civicrm_accountsync_plugins().
+ *
+ * @param $plugins
  */
 function civixero_civicrm_accountsync_plugins(&$plugins) {
   $plugins[] = 'xero';
@@ -457,6 +465,8 @@ function civixero_civicrm_accountsync_plugins(&$plugins) {
  * Implements hook_civicrm_contactSummaryBlocks().
  *
  * @link https://github.com/civicrm/org.civicrm.contactlayout
+ *
+ * @param $blocks
  */
 function civixero_civicrm_contactSummaryBlocks(&$blocks) {
   $blocks += [
