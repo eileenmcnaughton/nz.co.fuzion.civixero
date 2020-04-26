@@ -38,7 +38,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   public function pull($params) {
     try {
       $result = $this->getSingleton($params['connector_id'])
-        ->Invoices(FALSE, $this->formatDateForXero($params['start_date']), ["Type" => "ACCREC"]);
+        ->Invoices(FALSE, $this->formatDateForXero($params['start_date']), ['Type' => 'ACCREC']);
       if (!is_array($result)) {
         throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
       }
@@ -312,6 +312,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * Validate an invoice by checking the tracking category exists (if set).
    *
    * @param array $invoice array ready for Xero
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function validatePrerequisites($invoice) {
     if (empty($invoice['LineItems'])) {
@@ -339,7 +341,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $lineItem
    *
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   protected function validateTrackingCategory($lineItem) {
     if (empty($lineItem['TrackingCategory'])) {
@@ -386,8 +389,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       unset($criteria['accounts_needs_update']);
     }
 
-    $records = civicrm_api3('AccountInvoice', 'get', $criteria);
-    return $records;
+    return civicrm_api3('AccountInvoice', 'get', $criteria);
   }
 
   /**
