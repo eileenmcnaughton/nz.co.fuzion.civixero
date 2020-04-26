@@ -350,7 +350,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     static $trackingOptions = [];
     if (empty($trackingOptions)) {
-      $trackingOptions = civicrm_api3('xerosync', 'trackingcategorypull', []);
+      $trackingOptions = civicrm_api3('civixero', 'trackingcategorypull', []);
       $trackingOptions = $trackingOptions['values'];
     }
     foreach ($lineItem['TrackingCategory'] as $tracking) {
