@@ -1,9 +1,9 @@
 <?php
 
 $invoice_statuses = [
-  'SUBMITTED' => 'Submitted',
-  'AUTHORISED' => 'Authorised',
   'DRAFT' => 'Draft',
+  'SUBMITTED' => 'Submitted',
+  'AUTHORISED' => 'Approved',
 ];
 
 return [
