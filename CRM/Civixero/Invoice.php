@@ -221,7 +221,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       "DueDate" => substr($invoiceData['receive_date'], 0, 10),
       "Status" => $status,
       "InvoiceNumber" => $prefix . $invoiceData['id'],
-      "CurrencyCode" => CRM_Core_Config::singleton()->defaultCurrency,
+      "CurrencyCode" => $invoiceData['currency'],
       "Reference" => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
       "LineAmountTypes" => $line_amount_types,
       'LineItems' => ['LineItem' => $lineItems],
