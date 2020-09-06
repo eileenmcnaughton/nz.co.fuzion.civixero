@@ -8,20 +8,7 @@ It sets up scheduled jobs that synchronize Xero contacts and invoices with CiviC
 
 Interaction with this module is primarily by API and it creates scheduled jobs to run those API.
 
-## Customisation &amp; Additional Extensions
 
-To modify the behaviour of the CiviXero extension various hooks are available. The additional CiviCRM extensions are available:
-
-[Xero Tweaks](https://github.com/agileware/au.com.agileware.xerotweaks)
-- Removes the Contact ID from their Xero name.
-- Includes additional address lines in the contact address.
-- Removes the Contact's name from the Invoice Reference and Line items.
-
-[Xero Untax](https://github.com/agileware/au.com.agileware.xerountax)
-- Remove tax details from line items sent via CiviXero, so Xero can figure it out avoiding rounding issues.
-
-[Xero Items](https://github.com/agileware/au.com.agileware.xeroitems)
-- Replaces Xero account codes with [Xero item codes](https://help.xero.com/nz/Inventory) (also referred to as Xero inventory items)
 
 ## Setup extensions
 
@@ -86,6 +73,21 @@ CiviCRM tracks synchronisation in the civicrm_account_contact table - to populat
 
 e.g
 drush cvapi civixero.contactpull start_date=0
+
+## Customisation &amp; Additional Extensions
+
+To modify the behaviour of the CiviXero extension various hooks are available. The additional CiviCRM extensions are available:
+
+[Xero Tweaks](https://github.com/agileware/au.com.agileware.xerotweaks)
+- Removes the Contact ID from their Xero name.
+- Includes additional address lines in the contact address.
+- Removes the Contact's name from the Invoice Reference and Line items.
+
+[Xero Untax](https://github.com/agileware/au.com.agileware.xerountax)
+- Remove tax details from line items sent via CiviXero, so Xero can figure it out avoiding rounding issues.
+
+[Xero Items](https://github.com/agileware/au.com.agileware.xeroitems)
+- Replaces Xero account codes with [Xero item codes](https://help.xero.com/nz/Inventory) (also referred to as Xero inventory items)
 
 
 
