@@ -86,10 +86,9 @@ function civixero_civicrm_managed(&$entities) {
         'module' => 'accountsync',
         'function' => 'credentials',
         'plugin' => 'xero',
-        'field1_label' => 'Xero Key',
-        'field2_label' => 'Xero Secret',
-        'field3_label' => 'Xero Public Certificate Path',
-        'field4_label' => 'Xero Private Key Path',
+        'field1_label' => 'Xero Client Id',
+        'field2_label' => 'Xero Secret Id',
+        'field3_label' => 'Xero Tennant Id',
         'field5_label' => 'Settings',
         'version' => 3,
       ],
@@ -206,14 +205,29 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'operator' => NULL,
     'separator' => 0,
   ]);
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/', [
-    'label' => 'Xero Authorize',
-    'name' => 'Xero Authorize',
-    'url' => 'civicrm/xero/authorize',
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
-    'separator' => 0,
-  ]);
+  $connectors = _civixero_get_connectors();
+  if (array_keys($connectors) === 0) {
+    _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/', [
+      'label' => 'Xero Authorize',
+      'name' => 'Xero Authorize',
+      'url' => 'civicrm/xero/authorize',
+      'permission' => 'administer CiviCRM',
+      'operator' => NULL,
+      'separator' => 0,
+    ]);
+  }
+  else {
+    foreach ($connectors as $connectorID => $details) {
+      _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/', [
+        'label' => 'Xero Authorize ' . $details['name'],
+        'name' => 'Xero Authorize ' . $details['name'],
+        'url' => 'civicrm/xero/authorize?connector_id=' . $connectorID,
+        'permission' => 'administer CiviCRM',
+        'operator' => NULL,
+        'separator' => 0,
+      ]);
+    }
+  }
 }
 
 /**

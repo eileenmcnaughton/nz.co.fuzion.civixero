@@ -1,57 +1,59 @@
 <?php
 use CRM_Civixero_ExtensionUtil as E;
 /**
- * 
+ *
  * Controls page for handling OAuth 2.0 Authorization with Xero.
- * 
+ *
  * TODO: Refactor reusable functionality into a separate class.
  *
  */
 
 class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
 
-  
+
   private $resourceOwnerURL = 'https://api.xero.com/api.xro/2.0/Organisation';
-  
+
   private $connectionsURL = 'https://api.xero.com/connections';
 
   private $redirectURL;
-  
+
   private $clientID;
 
   private $clientSecret;
-  
+
   private $hasValidTokens = FALSE;
-  
+
   private $tenantID;
-  
+
   /**
-   * 
+   *
    * @var []
    */
   private $accessTokenData;
-  
+
   public $provider;
 
 
   private function init() {
-    $this->clientID = trim(Civi::settings()->get('xero_client_id'));
-    $this->clientSecret = trim(Civi::settings()->get('xero_client_secret'));
-    $this->accessTokenData = Civi::settings()->get('xero_access_token');
-    $this->tenantID = Civi::settings()->get('xero_tenant_id');
+    $this->connector_id = CRM_Utils_Request::retrieveValue('connector_id', 'Integer', 0);
+    $this->clientID = $this->getSetting('xero_client_id');
+    $this->clientSecret = $this->getSetting('xero_client_secret');
+    $this->accessTokenData = $this->getSetting('xero_access_token');
+    $this->tenantID = $this->getSetting('xero_tenant_id');
     $this->redirectURL = CRM_Utils_System::url('civicrm/xero/authorize',
-      NULL, 
+      $this->connector_id > 0 ? ['connector_id' => $this->connector_id] : NULL,
       TRUE,
       NULL,
       FALSE,
       FALSE,
       TRUE
     );
+
     $this->provider = new CRM_Civixero_OAuth2_Provider_Xero([
-      'clientId' => trim(Civi::settings()->get('xero_client_id')),
-      'clientSecret' => trim(Civi::settings()->get('xero_client_secret')),
+      'clientId' => $this->getSetting('xero_client_id'),
+      'clientSecret' => $this->getSetting('xero_client_secret'),
       'redirectUri' => $this->redirectURL,
-      ]    
+      ]
     );
     $refresh_token = NULL;
     if (!empty($this->accessTokenData['refresh_token'])) {
@@ -72,8 +74,8 @@ class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
           $this->accessTokenData = $newAccessToken->jsonSerialize();
           $this->tenantID = $this->provider->getConnectedTenantID($newAccessToken->getToken());
           if ($this->tenantID) {
-            Civi::settings()->set('xero_access_token', $this->accessTokenData);
-            Civi::settings()->set('xero_tenant_id', $this->tenantID);
+            $this->saveSetting('xero_access_token', $this->accessTokenData);
+            $this->saveSetting('xero_tenant_id', $this->tenantID);
             $this->hasValidTokens = TRUE;
           }
         }
@@ -83,9 +85,9 @@ class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
       }
     }
   }
-  
 
-  private function processAuthCode() { 
+
+  private function processAuthCode() {
     // Have we been redirected back from an authorization?
     $code = CRM_Utils_Array::value('code', $_GET, '');
     $state = CRM_Utils_Array::value('state', $_GET, '');
@@ -94,7 +96,7 @@ class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
       if ($state != $this->getState()) {
         throw new Exception('Invalid state.');
       }
-      
+
       // Try to get an access token using the authorization code grant.
       $token = $this->provider->getAccessToken('authorization_code', [
         'code' => $code
@@ -110,22 +112,19 @@ class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
         $tenant_id = $this->provider->getConnectedTenantID($access_token);
         if ($tenant_id) {
           // Save to Settings.
-          Civi::settings()->add([
-            'xero_access_token' => $token->jsonSerialize(),
-            'xero_tenant_id' => $tenant_id,
-            ]
-           );
+          $this->saveSetting('xero_access_token', $token->jsonSerialize());
+          $this->saveSetting('xero_tenant_id', $tenant_id);
          // Signal success.
           $success = TRUE;
           CRM_Core_Session::setStatus(E::ts('Xero Authorization Successful'));
           // Redirect to clear stale $_GET params.
-          CRM_Utils_System::redirect('/' . CRM_Utils_System::currentPath(), 'reset=1');
+          CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/xero/authorize'));
         }
       }
       if (!$success) {
         CRM_Core_Session::setStatus(E::ts('Xero Authorization Not Successful, try again.'));
         CRM_Core_Error::debug_var('XeroAuthorization Error', [
-          'token' => $token->jsonSerialize(), 
+          'token' => $token->jsonSerialize(),
           'tenant_id' => $tenant_id,
         ]);
       }
@@ -134,39 +133,40 @@ class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
 
   /**
    * Gets the URL to authorize with Xero.
-   * 
+   *
    * @return string
    */
   public function getAuthURL() {
     $options = [
       'state' => $this->getState(), // If empty, the provider will generate one.
-    ];    
+    ];
     $url = $this->provider->getAuthorizationUrl($options);
     // The state is used to verify the response.
     // Store the state generated by the OAuth provider object.
     $this->setState($this->provider->getState());
     return $url;
   }
- 
+
   /**
    * Gets the state used during  authorization.
    * @return string
    */
   protected function getState() {
-    return CRM_Core_Session::singleton()->get('oauth2state', 'xero'); 
+    return CRM_Core_Session::singleton()->get('oauth2state', 'xero');
   }
-  
+
   /**
    * Stores the state used during authorization.
-   * 
+   *
    * @param string $state
    */
   protected function setState($state = NULL) {
-    CRM_Core_Session::singleton()->set('oauth2state', $state, 'xero'); 
+    CRM_Core_Session::singleton()->set('oauth2state', $state, 'xero');
   }
-  
+
 
   public function run() {
+
     $this->init();
     $page_content = '';
     //Check if we have returned from authorization and process data.
@@ -184,7 +184,7 @@ class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
       }
       else {
         $status_msg = E::ts('You will need to Authorize with Xero by clicking the link below.');
-        
+
       }
       $page_content = '<p>' . $status_msg . '</p>';
       $url = $this->getAuthURL();
@@ -193,6 +193,66 @@ class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
     $this->assign('authorizeLink', $page_content);
 
     parent::run();
+  }
+
+  protected function saveSetting($name, $value) {
+    if ($this->connector_id > 0) {
+      static $connectors = [];
+      if (!empty($connectors[$this->connector_id])) {
+        unset($connectors[$this->connector_id]);
+      }
+      $mapping = [
+        'xero_client_id' => 'field1',
+        'xero_client_secret' => 'field2',
+        'xero_tenant_id' => 'field3',
+        'xero_access_token' => 'field4',
+      ];
+      if (is_array($value)) {
+        $value = serialize($value);
+      }
+      $params = ['id' => $this->connector_id, $mapping[$name] => $value];
+      civicrm_api3('Connector', 'create', $params);
+    }
+    else {
+      Civi::settings()->set($name, $value);
+    }
+  }
+
+  /**
+   * Get Xero Setting.
+   *
+   * @param string $var
+   *
+   * @return mixed
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function getSetting($var) {
+    if ($this->connector_id > 0) {
+      static $connectors = [];
+      if (empty($connectors[$this->connector_id])) {
+        $connector = civicrm_api3('connector', 'getsingle', ['id' => $this->connector_id]);
+        $connectors[$this->connector_id] = [
+          'xero_client_id' => $connector['field1'],
+          'xero_client_secret' => $connector['field2'],
+          'xero_tenant_id' => $connector['field3'],
+          'xero_access_token' => unserialize($connector['field4']),
+          // @todo not yet configurable per selector.
+          'xero_default_invoice_status' => 'SUBMITTED',
+        ];
+      }
+
+      $value = $connectors[$this->connector_id][$var];
+    }
+    else {
+      $value = civicrm_api3('setting', 'getvalue', [
+        'name' => $var,
+        'group' => 'Xero Settings',
+      ]);
+    }
+    if (is_array($value)) {
+      return $value;
+    }
+    return trim($value);
   }
 
 }

@@ -40,9 +40,9 @@ On the menu, click on __MyApps__, then click __New app__.
 
 Use the following details:
 - Company or application URL: https://YOUR-SITE-URL
-- OAuth 2.0 redirect URI: For Drupal installations this will be
-  https://YOUR-SITE-URL/civicrm/xero/authorize.
-  For WordPress installations, copy the url from the link CiviCRM : Administer -> Xero -> Xero Authorize.  
+- OAuth 2.0 redirect URI: this needs to exactly match the url you get when you navigate to Administer -> Xero -> Xero Authorize.
+  Xero validates it against this url.
+  Note - if you are working in a local dev environment the url will not be accepted if it does not use localhost as the domain.
 
 After the app is created, click the button to generate a Client Secret.
 Copy the Client ID and the Client Secret, you will need them later.
