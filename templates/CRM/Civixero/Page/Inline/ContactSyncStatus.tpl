@@ -21,6 +21,7 @@
                     CRM.api('account_contact', 'create',{
                         'contact_id' : cj(this).data('contact-id'),
                         'plugin' : 'xero',
+                        'connector_id' : 0,
                         'accounts_needs_update' : 1,
                     });
                     cj(this).replaceWith('Contact is queued for sync with Xero');
