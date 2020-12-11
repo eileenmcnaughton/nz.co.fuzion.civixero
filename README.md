@@ -39,10 +39,8 @@ Go to https://developer.xero.com/
 On the menu, click on __MyApps__, then click __New app__.
 
 Use the following details:
-- Company or application URL: https://YOUR-SITE-URL
-- OAuth 2.0 redirect URI: this needs to exactly match the url you get when you navigate to Administer -> Xero -> Xero Authorize.
-  Xero validates it against this url.
-  Note - if you are working in a local dev environment the url will not be accepted if it does not use localhost as the domain.
+- __Company or application URL__: Enter your website URL.
+- __OAuth 2.0 redirect URI__: this is the __URL of the Xero Authorize page__ in CiviCRM. Navigate to the page, __Administer -> Xero -> Xero Authorize__ and copy the URL to this page. Xero will validate using this URL. If working in a local development environment, then use localhost as the domain name.
 
 After the app is created, click the button to generate a Client Secret.
 Copy the Client ID and the Client Secret, you will need them later.
