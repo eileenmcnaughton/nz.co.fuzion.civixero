@@ -89,8 +89,8 @@ To modify the behaviour of the CiviXero extension various hooks are available. T
 [Xero Items](https://github.com/agileware/au.com.agileware.xeroitems)
 - Replaces Xero account codes with [Xero item codes](https://help.xero.com/nz/Inventory) (also referred to as Xero inventory items)
 
+## Linking from Xero to CiviCRM
 
+You can create a link from Xero back to your site by going to settings/ Custom links and adding a link pointing to
 
-  You can create a link from Xero back to your site by going to settings/ Custom links and adding a link pointing to
-
-  https://YOURSITE/civicrm/contact/view?reset=1&cid={!CONTACTCODE}
+https://YOURSITE/civicrm/contact/view?reset=1&cid={!CONTACTCODE}
