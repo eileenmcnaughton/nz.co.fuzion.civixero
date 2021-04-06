@@ -26,12 +26,9 @@ class CRM_Civixero_OAuth2_Xero {
 
   private $resourceOwnerURL = 'https://api.xero.com/api.xro/2.0/Organisation';
 
-  private $connectionsURL = 'https://api.xero.com/connections';
-
   private $tenantID;
 
   private $redirectURL;
-
 
   /**
    * Get Xero instance.
@@ -117,8 +114,10 @@ class CRM_Civixero_OAuth2_Xero {
     // Try again if failed?
     if ($newToken) {
       $this->store->save($newToken);
-      CRM_Core_Error::debug_var('CiviXeroDebug', 'Storing renewed token.');
       return $newToken;
+    }
+    else {
+      \Civi::log()->warning('Xero renewToken failed - no new token.');
     }
   }
 
