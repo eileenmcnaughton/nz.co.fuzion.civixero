@@ -177,8 +177,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   Contact Object/ array as expected by accounts package
    */
   protected function mapToAccounts($invoiceData, $accountsID) {
-    // Initially Assume that tax is not set up, and all amounts are tax inclusive.
-    $line_amount_types = 'Inclusive';
+    // Get the tax mode from the CiviCRM setting. This should be 'exclusive' if
+    // tax is enabled (but for historical reasons we force that later on).
+    $line_amount_types = Civi::settings()->get('xero_tax_mode');
     $total_amount = 0;
     $lineItems = [];
     foreach ($invoiceData['line_items'] as $lineItem) {
