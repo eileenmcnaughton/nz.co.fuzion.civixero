@@ -15,7 +15,7 @@ function _civicrm_api3_civixero_invoicepull_spec(&$spec) {
     'type' => CRM_Utils_Type::T_DATE,
     'name' => 'start_date',
     'title' => 'Sync Start Date',
-    'description' => 'date to start pulling from',
+    'description' => 'date to start pulling from (default "yesterday")',
   ];
   $spec['connector_id'] = [
     'api.default' => 0,
@@ -40,5 +40,6 @@ function _civicrm_api3_civixero_invoicepull_spec(&$spec) {
  */
 function civicrm_api3_civixero_invoicepull($params) {
   $xero = new CRM_Civixero_Invoice($params);
-  $xero->pull($params);
+  $result = $xero->pull($params);
+  return civicrm_api3_create_success($result, $params);
 }

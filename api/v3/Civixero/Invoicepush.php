@@ -38,6 +38,7 @@ function civicrm_api3_civixero_invoicepush($params) {
   $options = _civicrm_api3_get_options_from_params($params);
 
   $xero = new CRM_Civixero_Invoice($params);
-  $xero->push($params, $options['limit']);
+  $result = $xero->push($params, $options['limit']);
+  return civicrm_api3_create_success($result, $params);
 }
 

@@ -31,7 +31,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $params
    *
-   * @return bool
+   * @return int
    * @throws API_Exception
    * @throws CRM_Core_Exception
    */
@@ -53,6 +53,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         if (!isset($prefix)) {
           $prefix = '';
         }
+
+        $count = 0;
         foreach ($invoices as $invoice) {
           $save = TRUE;
           // Strip out the invoice number prefix if present.
@@ -100,6 +102,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           }
           try {
             civicrm_api3('AccountInvoice', 'create', $params);
+            $count++;
           }
           catch (CiviCRM_API3_Exception $e) {
             $errors[] = ts('Failed to store ') . $invoice['InvoiceNumber'] . ' (' . $invoice['InvoiceID'] . ' )'
@@ -112,7 +115,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         // Since we expect this to wind up in the job log we'll print the errors
         throw new CRM_Core_Exception(ts('Not all records were saved') . print_r($errors, TRUE), 'incomplete', $errors);
       }
-      return TRUE;
+      return $count;
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
       throw new CRM_Core_Exception('Invoice Pull aborted due to throttling by Xero');
@@ -130,7 +133,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param int $limit
    *   Number of invoices to process
    *
-   * @return bool
+   * @return int
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
@@ -139,11 +142,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $records = $this->getContributionsRequiringPushUpdate($params, $limit);
       $errors = [];
 
+      $count = 0;
       foreach ($records['values'] as $record) {
         try {
           $accountsInvoice = $this->getAccountsInvoice($record);
           $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
           $responseErrors = $this->savePushResponse($result, $record);
+          $count++;
         }
         catch (CiviCRM_API3_Exception $e) {
           $errors[] = ts('Failed to store ') . $record['contribution_id'] . ' (' . $record['accounts_contact_id'] . ' )'
@@ -155,7 +160,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         // since we expect this to wind up in the job log we'll print the errors
         throw new CRM_Core_Exception(ts('Not all records were saved') . print_r($errors, TRUE), 'incomplete', $errors);
       }
-      return TRUE;
+      return $count;
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
       throw new CRM_Core_Exception($this->xero_entity . ' Push aborted due to throttling by Xero');
