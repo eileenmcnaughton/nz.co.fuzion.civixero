@@ -1,5 +1,7 @@
 <?php
 
+use CRM_Civixero_ExtensionUtil as E;
+
 /**
  * Civixero.ContactPull API specification.
  *
@@ -14,15 +16,20 @@ function _civicrm_api3_civixero_invoicepull_spec(&$spec) {
     'api.default' => 'yesterday',
     'type' => CRM_Utils_Type::T_DATE,
     'name' => 'start_date',
-    'title' => 'Sync Start Date',
-    'description' => 'date to start pulling from (default "yesterday")',
+    'title' => E::ts('Sync Start Date'),
+    'description' => E::ts('date to start pulling from (default "yesterday")'),
   ];
   $spec['connector_id'] = [
     'api.default' => 0,
     'type' => CRM_Utils_Type::T_INT,
     'name' => 'connector_id',
-    'title' => 'Connector ID',
-    'description' => 'Connector ID if using nz.co.fuzion.connectors, else 0',
+    'title' => E::ts('Connector ID'),
+    'description' => E::ts('Connector ID if using nz.co.fuzion.connectors, else 0'),
+  ];
+  $spec['invoice_number'] = [
+    'type' => CRM_Utils_Type::T_STRING,
+    'title' => E::ts('Invoice Number'),
+    'description' => E::ts('The (Optional) Xero Invoice number to pull (eg. IN-0624'),
   ];
 }
 

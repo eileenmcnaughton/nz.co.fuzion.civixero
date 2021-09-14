@@ -36,9 +36,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws CRM_Core_Exception
    */
   public function pull($params) {
+    $xeroParams = ['Type' => 'ACCREC'];
+    $filter = $params['invoice_number'] ?? FALSE;
     try {
       $result = $this->getSingleton($params['connector_id'])
-        ->Invoices(FALSE, $this->formatDateForXero($params['start_date']), ['Type' => 'ACCREC']);
+        ->Invoices($filter, $this->formatDateForXero($params['start_date']), $xeroParams);
       if (!is_array($result)) {
         throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
       }
