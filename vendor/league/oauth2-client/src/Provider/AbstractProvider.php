@@ -476,6 +476,7 @@ abstract class AbstractProvider
         if (is_string($grant)) {
             return $this->grantFactory->getGrant($grant);
         }
+
         $this->grantFactory->checkGrant($grant);
         return $grant;
     }
