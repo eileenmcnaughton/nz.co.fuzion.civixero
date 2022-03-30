@@ -1,5 +1,9 @@
 {
-    "require": {
-        "league/oauth2-client": "^2.4"
-    }
+  "require": {
+    "league/oauth2-client": "^2.4"
+  },
+  "replace": {
+    "guzzlehttp/guzzle": "^6.5",
+    "guzzlehttp/psr7": "^1.8.5"
+  }
 }
