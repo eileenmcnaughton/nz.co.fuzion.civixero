@@ -16,26 +16,26 @@ function civixero_civicrm_config(&$config) {
 }
 
 /**
- * Implementation of hook_civicrm_xmlMenu
- *
- * @param $files array(string)
- */
-function civixero_civicrm_xmlMenu(&$files) {
-  _civixero_civix_civicrm_xmlMenu($files);
-}
-
-/**
  * Implementation of hook_civicrm_install
  */
 function civixero_civicrm_install() {
-  return _civixero_civix_civicrm_install();
+  _civixero_civix_civicrm_install();
+}
+
+/**
+ * Implements hook_civicrm_postInstall().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
+ */
+function Civixero_civicrm_postInstall() {
+  _Civixero_civix_civicrm_postInstall();
 }
 
 /**
  * Implementation of hook_civicrm_uninstall
  */
 function civixero_civicrm_uninstall() {
-  return _civixero_civix_civicrm_uninstall();
+  _civixero_civix_civicrm_uninstall();
 }
 
 /**
@@ -66,38 +66,6 @@ function civixero_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @param array $entities
- *   Existing entity array
- */
-function civixero_civicrm_managed(&$entities) {
-  if (civixero_is_extension_installed('nz.co.fuzion.connectors')) {
-    $entities[] = [
-      'name' => 'CiviXero connector Type',
-      'entity' => 'ConnectorType',
-      'module' => 'nz.co.fuzion.civixero',
-      'params' => [
-        'name' => 'CiviXero',
-        'description' => 'CiviXero connector information',
-        'module' => 'accountsync',
-        'function' => 'credentials',
-        'plugin' => 'xero',
-        'field1_label' => 'Xero Client Id',
-        'field2_label' => 'Xero Secret Id',
-        'field3_label' => 'Xero Tennant Id',
-        'field5_label' => 'Settings',
-        'version' => 3,
-      ],
-    ];
-  }
-  _civixero_civix_civicrm_managed($entities);
-}
-
-/**
  * Is a given extension installed.
  *
  * Currently adding very roughly just to support checking if connectors is installed.
@@ -117,19 +85,6 @@ function civixero_is_extension_installed($extension) {
     }
   }
   return FALSE;
-}
-
-/**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @param array $caseTypes
- */
-function civixero_civicrm_caseTypes(&$caseTypes) {
-  _civixero_civix_civicrm_caseTypes($caseTypes);
 }
 
 /**
