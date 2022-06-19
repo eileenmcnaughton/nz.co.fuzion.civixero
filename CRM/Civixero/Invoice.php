@@ -42,6 +42,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     try {
       CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
 
+      $errors = [];
       $count = 0;
       $result = $this
         ->getSingleton($params['connector_id'])
@@ -49,7 +50,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       if (!is_array($result)) {
         throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
       }
-      $errors = [];
       if (!empty($result['Invoices'])) {
         $invoices = $result['Invoices']['Invoice'];
         if (isset($invoices['InvoiceID'])) {
@@ -139,7 +139,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param int $limit
    *   Number of invoices to process
    *
-   * @return int
+   * @return array
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
@@ -147,8 +147,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     try {
       CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
       $records = $this->getContributionsRequiringPushUpdate($params, $limit);
-      $errors = [];
+      if (empty($records)) {
+        return [];
+      }
 
+      $errors = [];
       $count = 0;
       foreach ($records['values'] as $record) {
         try {
@@ -166,12 +169,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
             . E::ts('%1 Push failed', [1 => $this->xero_entity]);
         }
+        $contributionIDsPushed[] = $record['contribution_id'];
       }
       if ($errors) {
         // since we expect this to wind up in the job log we'll print the errors
         throw new CRM_Core_Exception(ts('Not all records were saved') . print_r($errors, TRUE), 'incomplete', $errors);
       }
-      return $count;
+      return $contributionIDsPushed ?? [];
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
       throw new CRM_Core_Exception($this->xero_entity . ' Push aborted due to throttling by Xero');
@@ -369,9 +373,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
 
   /**
    * Get contributions marked as needing to be pushed to the accounts package.
-   *
-   * We sort by error data to get the ones that have not yet been attempted first.
-   * Otherwise we can wind up endlessly retrying the same failing records.
    *
    * @param array $params
    * @param int $limit
