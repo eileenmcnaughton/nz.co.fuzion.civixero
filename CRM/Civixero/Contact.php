@@ -100,7 +100,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       $accountContactParams = [
         'accounts_needs_update' => 1,
         'plugin' => $this->_plugin,
-        'api.contact.get' => 1,
         'connector_id' => $params['connector_id'],
       ];
       // If we specified a CiviCRM contact ID just push that contact.
@@ -115,8 +114,12 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       //@todo pass limit through from params to get call
       foreach ($records['values'] as $record) {
         try {
-          // Get the contact data. This includes the "Primary" email as $contact['email'] if set.
-          $contact = civicrm_api3('Contact', 'get', ['id' => $record['contact_id']]);
+          // Get the contact data.
+          $contact = \Civi\Api4\Contact::get(FALSE)
+            ->addWhere('id', '=', $record['contact_id'])
+            ->execute()
+            ->first();
+
           // See if we have an email for the preferred location type?
           $locationTypeToSync = (int)\Civi::settings()->get('xero_sync_location_type');
           if ($locationTypeToSync !== 0) {
@@ -130,9 +133,20 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
               $contact['email'] = $email['email'];
             }
           }
+          else {
+            // Get the primary email
+            $email = \Civi\Api4\Email::get(FALSE)
+              ->addWhere('is_primary', '=', TRUE)
+              ->addWhere('contact_id', '=', $record['contact_id'])
+              ->execute()
+              ->first();
+            if (!empty($email['email'])) {
+              $contact['email'] = $email['email'];
+            }
+          }
 
           $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
-          $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
+          $accountsContact = $this->mapToAccounts($contact, $accountsContactID);
           if ($accountsContact === FALSE) {
             $result = FALSE;
             $responseErrors = [];
@@ -186,8 +200,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           civicrm_api3('account_contact', 'create', $record);
         }
         catch (Exception $e) {
-          $errors[] = ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-            . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
+          $errors[] = ts('Failed to push contactID: %1', [1 => $record['contact_id']]) . '; '
+            . ts('Error: ') . $e->getMessage() . print_r($responseErrors, TRUE)
+            . ts('Record: ') . print_r($record,TRUE) . '; '
             . ts('Contact Push failed');
         }
       }
@@ -207,14 +222,14 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $contact
    *          Contact Array as returned from API
-   * @param $accountsID
+   * @param int|NULL $accountsContactID
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
    */
-  protected function mapToAccounts($contact, $accountsID) {
+  protected function mapToAccounts(array $contact, ?int $accountsContactID) {
     $new_contact = [
-      "Name" => $contact['display_name'] . " - " . $contact['contact_id'],
+      "Name" => $contact['display_name'] . " - " . $contact['id'],
       "FirstName" => $contact['first_name'],
       "LastName" => $contact['last_name'],
       "EmailAddress" => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
@@ -226,11 +241,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             "AddressLine1" => $contact['street_address'],
             "City" => $contact['city'],
             "PostalCode" => $contact['postal_code'],
-            "AddressLine2" => CRM_Utils_Array::value('supplemental_address_1', $contact, ''),
-            "AddressLine3" => CRM_Utils_Array::value('supplemental_address_2', $contact, ''),
-            "AddressLine4" => CRM_Utils_Array::value('supplemental_address_3', $contact, ''),
-            "Country" => CRM_Utils_Array::value('country', $contact, ''),
-            "Region" => CRM_Utils_Array::value('state_province_name', $contact, ''),
+            "AddressLine2" => $contact['supplemental_address_1'] ?? '',
+            "AddressLine3" => $contact['supplemental_address_2'] ?? '',
+            "AddressLine4" => $contact['supplemental_address_3'] ?? '',
+            "Country" => $contact['country'] ?? '',
+            "Region" => $contact['state_province_name'] ?? '',
           ],
         ],
       ],
@@ -241,8 +256,8 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         ],
       ],
     ];
-    if (!empty($accountsID)) {
-      $new_contact['ContactID'] = $accountsID;
+    if (!empty($accountsContactID)) {
+      $new_contact['ContactID'] = $accountsContactID;
     }
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('contact', $contact, $proceed, $new_contact);
