@@ -6,6 +6,14 @@ $invoice_statuses = [
   'AUTHORISED' => 'Approved',
 ];
 
+$locationTypes = \Civi\Api4\LocationType::get(FALSE)
+  ->addSelect('id', 'display_name')
+  ->execute();
+$locTypes = [0 => ts('- Primary -')];
+foreach ($locationTypes as $locationType) {
+  $locTypes[$locationType['id']] = $locationType['display_name'];
+}
+
 return [
   // Removed settings.
   // xero_key, xero_public_certificate.
@@ -140,5 +148,20 @@ return [
     'html_type' => 'Select',
     'quick_form_type' => 'Element',
     'html_attributes' => ['Inclusive' => 'Inclusive', 'Exclusive' => 'Exclusive'],
+  ],
+  'xero_sync_location_type' => [
+    'group_name' => 'Xero Settings',
+    'group' => 'xero',
+    'name' => 'xero_sync_location_type',
+    'type' => 'Int',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'default' => 0,
+    'title' => 'CiviCRM location type to sync to Xero (will fallback to - Primary - if location type is empty)',
+    'description' => 'Select the preferred location type to sync to Xero. Will fallback to "Primary" if not set.',
+    'help_text' => '',
+    'html_type' => 'Select',
+    'quick_form_type' => 'Element',
+    'html_attributes' => $locTypes,
   ],
 ];

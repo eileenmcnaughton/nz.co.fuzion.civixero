@@ -99,7 +99,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     try {
       $records = civicrm_api3('account_contact', 'get', [
           'accounts_needs_update' => 1,
-          'api.contact.get' => 1,
           'plugin' => $this->_plugin,
           'connector_id' => $params['connector_id'],
         ]
@@ -110,6 +109,22 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       //@todo pass limit through from params to get call
       foreach ($records['values'] as $record) {
         try {
+          // Get the contact data. This includes the "Primary" email as $contact['email'] if set.
+          $contact = civicrm_api3('Contact', 'get', ['id' => $record['contact_id']]);
+          // See if we have an email for the preferred location type?
+          $locationTypeToSync = (int)\Civi::settings()->get('xero_sync_location_type');
+          if ($locationTypeToSync !== 0) {
+            $email = \Civi\Api4\Email::get(FALSE)
+              ->addWhere('contact_id', '=', $record['contact_id'])
+              ->addWhere('location_type_id', '=', $locationTypeToSync)
+              ->execute()
+              ->first();
+            if (!empty($email['email'])) {
+              // Yes, we have an email. "Overwrite" the primary email in the data passed to Xero.
+              $contact['email'] = $email['email'];
+            }
+          }
+
           $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
           $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
           if ($accountsContact === FALSE) {
