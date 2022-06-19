@@ -46,8 +46,8 @@ function _civicrm_api3_civixero_contactpush_spec(&$spec) {
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_civixero_contactpush($params) {
-  $xero = new CRM_Civixero_Contact($params);
-  $xero->push($params);
-  return civicrm_api3_create_success($params, $params);
+  $xero = new CRM_Civixero_Contact();
+  $result = $xero->push($params);
+  return civicrm_api3_create_success(['contactspushed' => $result], $params);
 }
 

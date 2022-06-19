@@ -443,10 +443,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   protected function getDefaultAccountCode() {
     if (empty($this->default_account_code)) {
-      $this->default_account_code = civicrm_api('setting', 'getvalue', [
+      $this->default_account_code = civicrm_api3('setting', 'getvalue', [
         'group' => 'Xero Settings',
         'name' => 'xero_default_revenue_account',
-        'version' => 3,
       ]);
     }
     return $this->default_account_code;

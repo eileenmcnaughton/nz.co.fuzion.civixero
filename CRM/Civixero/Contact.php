@@ -1,5 +1,7 @@
 <?php
 
+use CRM_Civixero_ExtensionUtil as E;
+
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
   /**
@@ -37,6 +39,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             'plugin' => 'xero',
             'accounts_contact_id' => $contact['ContactID'],
             'accounts_data' => json_encode($contact),
+            'connector_id' => $params['connector_id'],
           ];
           CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save, $params);
           if (!$save) {
@@ -91,32 +94,41 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @param array $params
    *  - start_date
    *
-   * @return bool
+   * @return array
    * @throws CRM_Core_Exception
    * @throws CiviCRM_API3_Exception
    */
-  public function push(array $params): bool {
+  public function push(array $params): array {
     try {
       $accountContactParams = [
         'accounts_needs_update' => 1,
         'plugin' => $this->_plugin,
-        'api.contact.get' => 1,
         'connector_id' => $params['connector_id'],
       ];
       // If we specified a CiviCRM contact ID just push that contact.
       if (!empty($params['contact_id'])) {
         $accountContactParams['contact_id'] = $params['contact_id'];
-        $accountContactParams['accounts_needs_update'] = 0;
+        $accountContactParams['accounts_needs_update'] = ['IN' => [0, 1]];
       }
       $records = civicrm_api3('AccountContact', 'get', $accountContactParams);
+      if (empty($records)) {
+        return [];
+      }
 
       $errors = [];
 
       //@todo pass limit through from params to get call
       foreach ($records['values'] as $record) {
         try {
-          // Get the contact data. This includes the "Primary" email as $contact['email'] if set.
-          $contact = civicrm_api3('Contact', 'get', ['id' => $record['contact_id']]);
+          if (empty($record['contact_id'])) {
+            continue;
+          }
+          // Get the contact data.
+          $contact = \Civi\Api4\Contact::get(FALSE)
+            ->addWhere('id', '=', $record['contact_id'])
+            ->execute()
+            ->first();
+
           // See if we have an email for the preferred location type?
           $locationTypeToSync = (int)\Civi::settings()->get('xero_sync_location_type');
           if ($locationTypeToSync !== 0) {
@@ -130,9 +142,19 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
               $contact['email'] = $email['email'];
             }
           }
+          else {
+            // Get the primary email
+            $email = \Civi\Api4\Email::get(FALSE)
+              ->addWhere('is_primary', '=', TRUE)
+              ->addWhere('contact_id', '=', $record['contact_id'])
+              ->execute()
+              ->first();
+            if (!empty($email['email'])) {
+              $contact['email'] = $email['email'];
+            }
+          }
 
-          $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
-          $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
+          $accountsContact = $this->mapToAccounts($contact, $record['accounts_contact_id'] ?? '');
           if ($accountsContact === FALSE) {
             $result = FALSE;
             $responseErrors = [];
@@ -150,16 +172,15 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           }
           else {
             /* When Xero returns an ID that matches an existing account_contact, update it instead. */
-            $matching = civicrm_api('AccountContact', 'getsingle', [
+            $matching = civicrm_api3('AccountContact', 'getsingle', [
                 'accounts_contact_id' => $result['Contacts']['Contact']['ContactID'],
                 'plugin' => $this->_plugin,
-                'version' => 3,
               ]
             );
             if (!$matching['is_error']) {
               if (empty($matching['contact_id']) ||
                 civicrm_api3('contact', 'getvalue', ['id' => $matching['contact_id'], 'return' => 'contact_is_deleted'])) {
-                CRM_Core_Error::debug_log_message(ts('Updating existing contact for %1', [1 => $record['contact_id']]));
+                \Civi::log(E::SHORT_NAME)->error(ts('Updating existing contact for %1', [1 => $record['contact_id']]));
                 civicrm_api3('AccountContact', 'delete', ['id' => $record['id']]);
                 $record['do_not_sync'] = 0;
                 $record['id'] = $matching['id'];
@@ -185,17 +206,19 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           unset($record['last_sync_date']);
           civicrm_api3('AccountContact', 'create', $record);
         }
-        catch (Exception $e) {
-          $errors[] = ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-            . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
+        catch (\Exception $e) {
+          $errors[] = ts('Failed to push contactID: %1', [1 => $record['contact_id']]) . '; '
+            . ts('Error: ') . $e->getMessage() . print_r($record['error_data'], TRUE)
+            . ts('Record: ') . print_r($record,TRUE) . '; '
             . ts('Contact Push failed');
         }
+        $contactsPushed[] = $record['contact_id'];
       }
       if ($errors) {
         // since we expect this to wind up in the job log we'll print the errors
         throw new CRM_Core_Exception(ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
       }
-      return TRUE;
+      return $contactsPushed ?? [];
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
       throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero');
@@ -207,18 +230,18 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $contact
    *          Contact Array as returned from API
-   * @param $accountsID
+   * @param string $accountsContactID
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
    */
-  protected function mapToAccounts($contact, $accountsID) {
+  protected function mapToAccounts(array $contact, string $accountsContactID) {
     $new_contact = [
-      "Name" => $contact['display_name'] . " - " . $contact['contact_id'],
+      "Name" => $contact['display_name'] . " - " . $contact['id'],
       "FirstName" => $contact['first_name'],
       "LastName" => $contact['last_name'],
       "EmailAddress" => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
-      "ContactNumber" => $contact['contact_id'],
+      "ContactNumber" => $contact['id'],
       "Addresses" => [
         "Address" => [
           [
@@ -226,11 +249,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             "AddressLine1" => $contact['street_address'],
             "City" => $contact['city'],
             "PostalCode" => $contact['postal_code'],
-            "AddressLine2" => CRM_Utils_Array::value('supplemental_address_1', $contact, ''),
-            "AddressLine3" => CRM_Utils_Array::value('supplemental_address_2', $contact, ''),
-            "AddressLine4" => CRM_Utils_Array::value('supplemental_address_3', $contact, ''),
-            "Country" => CRM_Utils_Array::value('country', $contact, ''),
-            "Region" => CRM_Utils_Array::value('state_province_name', $contact, ''),
+            "AddressLine2" => $contact['supplemental_address_1'] ?? '',
+            "AddressLine3" => $contact['supplemental_address_2'] ?? '',
+            "AddressLine4" => $contact['supplemental_address_3'] ?? '',
+            "Country" => $contact['country'] ?? '',
+            "Region" => $contact['state_province_name'] ?? '',
           ],
         ],
       ],
@@ -241,8 +264,8 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         ],
       ],
     ];
-    if (!empty($accountsID)) {
-      $new_contact['ContactID'] = $accountsID;
+    if (!empty($accountsContactID)) {
+      $new_contact['ContactID'] = $accountsContactID;
     }
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('contact', $contact, $proceed, $new_contact);
