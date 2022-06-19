@@ -39,6 +39,6 @@ function civicrm_api3_civixero_invoicepush($params) {
 
   $xero = new CRM_Civixero_Invoice($params);
   $result = $xero->push($params, $options['limit']);
-  return civicrm_api3_create_success($result, $params);
+  return civicrm_api3_create_success(['contributionIDsPushed' => $result], $params);
 }
 
