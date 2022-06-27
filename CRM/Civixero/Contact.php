@@ -100,6 +100,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       $records = civicrm_api3('account_contact', 'get', [
           'accounts_needs_update' => 1,
           'plugin' => $this->_plugin,
+          'api.contact.get' => 1,
           'connector_id' => $params['connector_id'],
         ]
       );
