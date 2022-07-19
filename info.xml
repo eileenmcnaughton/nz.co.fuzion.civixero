@@ -15,13 +15,17 @@
     <author>eileen</author>
     <email>eileen@fuzion.co.nz</email>
   </maintainer>
-  <releaseDate>2022-06-27</releaseDate>
-  <version>2.0.2</version>
+  <releaseDate>2022-10-27</releaseDate>
+  <version>2.1</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.49</ver>
   </compatibility>
   <comments>This module requires nz.co.fuzion.accountsync</comments>
+  <classloader>
+    <psr0 prefix="CRM_" path="."/>
+    <psr4 prefix="Civi\" path="Civi"/>
+  </classloader>
   <civix>
     <namespace>CRM/Civixero</namespace>
     <format>22.05.2</format>

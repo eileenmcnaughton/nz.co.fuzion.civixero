@@ -21,7 +21,7 @@ class CRM_Civixero_Page_Inline_InvoiceSyncErrors extends CRM_Core_Page {
 
     try {
       $connectors = _civixero_get_connectors();
-      $account_contact = civicrm_api3('account_contact', 'getsingle', [
+      $account_contact = civicrm_api3('AccountContact', 'getsingle', [
         'contact_id' => $contactID,
         'return' => 'accounts_contact_id, accounts_needs_update, connector_id, error_data, id, contact_id',
         'plugin' => 'xero',

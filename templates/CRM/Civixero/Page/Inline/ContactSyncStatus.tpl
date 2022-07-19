@@ -14,7 +14,6 @@
         </div>
 
         {literal}
-
             <script type="text/javascript">
                 cj('#xero-sync').click(function( event) {
                     event.preventDefault();

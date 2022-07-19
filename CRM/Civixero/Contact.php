@@ -32,7 +32,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           $save = TRUE;
           $params = [
             'accounts_display_name' => $contact['Name'],
-            'contact_id' => CRM_Utils_Array::value('ContactNumber', $contact),
+            'contact_id' => $contact['ContactNumber'] ?? NULL,
             'accounts_modified_date' => $contact['UpdatedDateUTC'],
             'plugin' => 'xero',
             'accounts_contact_id' => $contact['ContactID'],
@@ -43,7 +43,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             continue;
           }
           try {
-            $params['id'] = civicrm_api3('account_contact', 'getvalue', [
+            $params['id'] = civicrm_api3('AccountContact', 'getvalue', [
               'return' => 'id',
               'accounts_contact_id' => $contact['ContactID'],
               'plugin' => $this->_plugin,
@@ -53,7 +53,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             // this is an update - but lets just check the contact id doesn't exist in the account_contact table first
             // e.g if a list has been generated but not yet pushed
             try {
-              $existing = civicrm_api3('account_contact', 'getsingle', [
+              $existing = civicrm_api3('AccountContact', 'getsingle', [
                 'return' => 'id',
                 'contact_id' => $contact['ContactNumber'],
                 'plugin' => $this->_plugin,
@@ -68,7 +68,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             }
           }
           try {
-            civicrm_api3('account_contact', 'create', $params);
+            civicrm_api3('AccountContact', 'create', $params);
           }
           catch (CiviCRM_API3_Exception $e) {
             CRM_Core_Session::setStatus(ts('Failed to store ') . $params['accounts_display_name']
@@ -95,7 +95,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @throws CRM_Core_Exception
    * @throws CiviCRM_API3_Exception
    */
-  public function push($params) {
+  public function push(array $params): bool {
     try {
       $accountContactParams = [
         'accounts_needs_update' => 1,
@@ -108,7 +108,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $accountContactParams['contact_id'] = $params['contact_id'];
         $accountContactParams['accounts_needs_update'] = 0;
       }
-      $records = civicrm_api3('account_contact', 'get', $accountContactParams);
+      $records = civicrm_api3('AccountContact', 'get', $accountContactParams);
 
       $errors = [];
 
@@ -150,7 +150,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           }
           else {
             /* When Xero returns an ID that matches an existing account_contact, update it instead. */
-            $matching = civicrm_api('account_contact', 'getsingle', [
+            $matching = civicrm_api('AccountContact', 'getsingle', [
                 'accounts_contact_id' => $result['Contacts']['Contact']['ContactID'],
                 'plugin' => $this->_plugin,
                 'version' => 3,
@@ -160,7 +160,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
               if (empty($matching['contact_id']) ||
                 civicrm_api3('contact', 'getvalue', ['id' => $matching['contact_id'], 'return' => 'contact_is_deleted'])) {
                 CRM_Core_Error::debug_log_message(ts('Updating existing contact for %1', [1 => $record['contact_id']]));
-                civicrm_api3('account_contact', 'delete', ['id' => $record['id']]);
+                civicrm_api3('AccountContact', 'delete', ['id' => $record['id']]);
                 $record['do_not_sync'] = 0;
                 $record['id'] = $matching['id'];
               }
@@ -183,7 +183,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           // This will update the last sync date.
           $record['accounts_needs_update'] = 0;
           unset($record['last_sync_date']);
-          civicrm_api3('account_contact', 'create', $record);
+          civicrm_api3('AccountContact', 'create', $record);
         }
         catch (Exception $e) {
           $errors[] = ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'

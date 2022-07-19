@@ -15,13 +15,12 @@ class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
    * @param CRM_Core_Page $page
    * @param int $contactID
    */
-  public static function addContactSyncStatusBlock(&$page, $contactID) {
-
+  public static function addContactSyncStatusBlock(CRM_Core_Page &$page, int $contactID) {
     $syncStatus = 0;
 
     try {
       $connectors = _civixero_get_connectors();
-      $account_contact = civicrm_api3('account_contact', 'getsingle', [
+      $account_contact = civicrm_api3('AccountContact', 'getsingle', [
         'contact_id' => $contactID,
         'return' => 'accounts_contact_id, accounts_needs_update, connector_id, error_data, id, contact_id',
         'plugin' => 'xero',
@@ -42,7 +41,6 @@ class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
 
     $page->assign('syncStatus_xero', $syncStatus);
     $page->assign('contactID_xero', $contactID);
-
   }
 
 }
