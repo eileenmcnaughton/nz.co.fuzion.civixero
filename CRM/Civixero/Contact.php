@@ -144,8 +144,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           if ($result === FALSE) {
             unset($record['accounts_modified_date']);
           }
-          elseif ($responseErrors) {
+          if ($responseErrors) {
             $record['error_data'] = json_encode($responseErrors);
+            throw new CRM_Core_Exception('Error in response from Xero');
           }
           else {
             /* When Xero returns an ID that matches an existing account_contact, update it instead. */
@@ -184,7 +185,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           unset($record['last_sync_date']);
           civicrm_api3('account_contact', 'create', $record);
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (Exception $e) {
           $errors[] = ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
             . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
             . ts('Contact Push failed');
