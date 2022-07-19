@@ -97,13 +97,18 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    */
   public function push($params) {
     try {
-      $records = civicrm_api3('account_contact', 'get', [
-          'accounts_needs_update' => 1,
-          'plugin' => $this->_plugin,
-          'api.contact.get' => 1,
-          'connector_id' => $params['connector_id'],
-        ]
-      );
+      $accountContactParams = [
+        'accounts_needs_update' => 1,
+        'plugin' => $this->_plugin,
+        'api.contact.get' => 1,
+        'connector_id' => $params['connector_id'],
+      ];
+      // If we specified a CiviCRM contact ID just push that contact.
+      if (!empty($params['contact_id'])) {
+        $accountContactParams['contact_id'] = $params['contact_id'];
+        $accountContactParams['accounts_needs_update'] = 0;
+      }
+      $records = civicrm_api3('account_contact', 'get', $accountContactParams);
 
       $errors = [];
 
