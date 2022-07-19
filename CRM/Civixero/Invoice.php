@@ -1,5 +1,7 @@
 <?php
 
+use CRM_Civixero_ExtensionUtil as E;
+
 /**
  * Class CRM_Civixero_Invoice.
  *
@@ -107,9 +109,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             $count++;
           }
           catch (CiviCRM_API3_Exception $e) {
-            $errors[] = ts('Failed to store ') . $invoice['InvoiceNumber'] . ' (' . $invoice['InvoiceID'] . ' )'
-              . ts(' with error ') . $e->getMessage()
-              . ts('Invoice Pull failed');
+            $errors[] = E::ts('Failed to store %1 (%2)', [1 => $invoice['InvoiceNumber'], 2 => $invoice['InvoiceID']])
+              . E::ts(' with error ') . $e->getMessage()
+              . E::ts('Invoice Pull failed');
           }
         }
       }
@@ -153,9 +155,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $count++;
         }
         catch (CiviCRM_API3_Exception $e) {
-          $errors[] = ts('Failed to store ') . $record['contribution_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-            . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
-            . ts('%1 Push failed', [1 => $this->xero_entity]);
+          $errors[] = E::ts('Failed to store %1 (%2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
+            . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
+            . E::ts('%1 Push failed', [1 => $this->xero_entity]);
         }
       }
       if ($errors) {

@@ -32,7 +32,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           $save = TRUE;
           $params = [
             'accounts_display_name' => $contact['Name'],
-            'contact_id' => CRM_Utils_Array::value('ContactNumber', $contact),
+            'contact_id' => $contact['ContactNumber'] ?? NULL,
             'accounts_modified_date' => $contact['UpdatedDateUTC'],
             'plugin' => 'xero',
             'accounts_contact_id' => $contact['ContactID'],
@@ -95,7 +95,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @throws CRM_Core_Exception
    * @throws CiviCRM_API3_Exception
    */
-  public function push($params) {
+  public function push(array $params): bool {
     try {
       $accountContactParams = [
         'accounts_needs_update' => 1,
@@ -150,7 +150,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           }
           else {
             /* When Xero returns an ID that matches an existing account_contact, update it instead. */
-            $matching = civicrm_api('account_contact', 'getsingle', [
+            $matching = civicrm_api('AccountContact', 'getsingle', [
                 'accounts_contact_id' => $result['Contacts']['Contact']['ContactID'],
                 'plugin' => $this->_plugin,
                 'version' => 3,

@@ -15,8 +15,7 @@ class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
    * @param CRM_Core_Page $page
    * @param int $contactID
    */
-  public static function addContactSyncStatusBlock(&$page, $contactID) {
-
+  public static function addContactSyncStatusBlock(CRM_Core_Page &$page, int $contactID) {
     $syncStatus = 0;
 
     try {
@@ -42,7 +41,6 @@ class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
 
     $page->assign('syncStatus_xero', $syncStatus);
     $page->assign('contactID_xero', $contactID);
-
   }
 
 }
