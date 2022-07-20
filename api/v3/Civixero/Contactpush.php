@@ -24,6 +24,13 @@ function _civicrm_api3_civixero_contactpush_spec(&$spec) {
     'title' => 'Connector ID',
     'description' => 'Connector ID if using nz.co.fuzion.connectors, else 0',
   ];
+  $spec['contact_id'] = [
+    'name' => 'contact_id',
+    'title' => 'contact ID',
+    'description' => 'ID of the CiviCRM contact',
+    'api.required' => 0,
+    'type' => CRM_Utils_Type::T_INT,
+  ];
 }
 
 /**
