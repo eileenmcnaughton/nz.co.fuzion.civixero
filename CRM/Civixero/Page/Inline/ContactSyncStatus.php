@@ -1,5 +1,7 @@
 <?php
 
+use CRM_Civixero_ExtensionUtil as E;
+
 class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
 
   public function run() {
@@ -36,7 +38,8 @@ class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
 
     }
     catch (Exception $e) {
-
+      \Civi::log(E::SHORT_NAME)->error('Error getting sync status for contactID: ' . $contactID . ': ' . $e->getMessage());
+      $syncStatus = 3;
     }
 
     $page->assign('syncStatus_xero', $syncStatus);
