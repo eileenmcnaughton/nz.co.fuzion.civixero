@@ -38,8 +38,14 @@
   </item>
   <item>
     <path>civicrm/xero/authorize</path>
-    <page_callback>CRM_Civixero_Page_XeroAuthorize</page_callback>
+    <page_callback>CRM_Civixero_Form_XeroAuthorize</page_callback>
     <title>XeroAuthorize</title>
     <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/admin/setting/xero</path>
+    <page_callback>CRM_Admin_Form_Generic</page_callback>
+    <title>Xero Settings</title>
+    <access_arguments>access CiviCRM</access_arguments>
   </item>
 </menu>
