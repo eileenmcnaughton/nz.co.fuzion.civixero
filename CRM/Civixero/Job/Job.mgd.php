@@ -17,6 +17,7 @@ return [
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero',
       'update' => 'never',
+      'is_active' => FALSE,
     ],
   ],
   1 => [
@@ -32,6 +33,7 @@ return [
       'run_frequency' => 'Always',
       'parameters' => "plugin=xero\nstart_date=yesterday",
       'update' => 'never',
+      'is_active' => FALSE,
     ],
   ],
   2 => [
@@ -47,6 +49,7 @@ return [
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero',
       'update' => 'never',
+      'is_active' => FALSE,
     ],
   ],
   3 => [
@@ -62,6 +65,7 @@ return [
       'run_frequency' => 'Always',
       'parameters' => "plugin=xero\nstart_date=yesterday",
       'update' => 'never',
+      'is_active' => FALSE,
     ],
   ],
   4 => [
@@ -75,9 +79,9 @@ return [
         'api_entity' => 'AccountInvoice',
         'api_action' => 'update_contribution',
         'run_frequency' => 'Always',
-        'parameters' => 'plugin=xero
-accounts_status_id=1',
+        'parameters' => "plugin=xero\naccounts_status_id=1",
         'update' => 'never',
+        'is_active' => FALSE,
       ],
   ],
   5 => [
@@ -91,9 +95,9 @@ accounts_status_id=1',
         'api_entity' => 'AccountInvoice',
         'api_action' => 'update_contribution',
         'run_frequency' => 'Always',
-        'parameters' => 'plugin=xero
-       accounts_status_id=3',
+        'parameters' => "plugin=xero\naccounts_status_id=3",
         'update' => 'never',
+        'is_active' => FALSE,
       ],
   ],
 ];
