@@ -1,0 +1,21 @@
+site_name: Xero accounting integration
+repo_url: https://github.com/eileenmcnaughton/nz.co.fuzion.civixero
+theme:
+  name: material
+markdown_extensions:
+  - attr_list
+  - admonition
+  - def_list
+  - codehilite
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.tilde
+  - pymdownx.betterem
+  - pymdownx.mark
+
+nav:
+- Overview: index.md
+- Release Notes: releasenotes.md
+- Setup: setup.md
