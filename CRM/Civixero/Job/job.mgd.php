@@ -41,7 +41,7 @@ return [
     'params' => [
       'version' => 3,
       'name' => 'CiviXero Invoice Push Job',
-      'description' => 'Push updated invoices from Xero',
+      'description' => 'Push updated invoices to Xero',
       'api_entity' => 'Civixero',
       'api_action' => 'invoicepush',
       'run_frequency' => 'Always',
