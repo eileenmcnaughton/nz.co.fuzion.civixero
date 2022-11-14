@@ -102,6 +102,7 @@ return [
     'add' => '4.6',
     'is_domain' => 1,
     'is_contact' => 0,
+    'default' => 'CIVI',
     'description' => 'Optionally define a string to prefix invoice numbers when pushing to Xero.',
     'title' => 'Xero invoice number prefix',
     'help_text' => '',
