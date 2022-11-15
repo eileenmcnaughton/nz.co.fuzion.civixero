@@ -33,3 +33,4 @@ This pulls contacts from Xero and puts them in the account_contact table.
 This pushes contacts to Xero based on the configured settings.
 
 Contacts that were created in CiviCRM and then pushed to Xero will automatically be linked and can be synced both ways.
+

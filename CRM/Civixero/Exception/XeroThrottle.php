@@ -17,7 +17,7 @@ class CRM_Civixero_Exception_XeroThrottle extends Exception {
    */
   public function __construct($message) {
     parent::__construct(ts($message));
-    Civi::log('civixero')->error('Oath rate exceeded: ' . $message);
+    Civi::log('civixero')->error('Xero Oath rate exceeded: ' . $message);
   }
 
 }
