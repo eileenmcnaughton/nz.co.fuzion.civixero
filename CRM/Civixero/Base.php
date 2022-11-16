@@ -273,4 +273,40 @@ class CRM_Civixero_Base {
     );
   }
 
+  /**
+   * @param bool $throwException
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public static function isApiRateLimitExceeded($throwException = FALSE) {
+    $rateLimitExceeded = \Civi::settings()->get('xero_oauth_rate_exceeded');
+    if (!$rateLimitExceeded) {
+      return FALSE;
+    }
+    // Wait for 1 hour if rate limit was exceeded and then retry
+    if (strtotime('+1 hours', $rateLimitExceeded) > time()) {
+      if ($throwException) {
+        throw new CRM_Core_Exception('Rate limit was previously triggered. Try again in 1 hour');
+      }
+      return TRUE;
+    }
+    self::resetApiRateLimitExceeded();
+    return FALSE;
+  }
+
+  /**
+   * @return void
+   */
+  public static function setApiRateLimitExceeded() {
+    \Civi::settings()->set('xero_oauth_rate_exceeded', time());
+  }
+
+  /**
+   * @return void
+   */
+  public static function resetApiRateLimitExceeded() {
+    \Civi::settings()->set('xero_oauth_rate_exceeded', NULL);
+  }
+
 }

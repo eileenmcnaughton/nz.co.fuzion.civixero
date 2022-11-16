@@ -41,7 +41,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $xeroParams = ['Type' => 'ACCREC'];
     $filter = $params['invoice_number'] ?? FALSE;
     try {
-      $result = $this->getSingleton($params['connector_id'])
+      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
+
+      $count = 0;
+      $result = $this
+        ->getSingleton($params['connector_id'])
         ->Invoices($filter, $this->formatDateForXero($params['start_date']), $xeroParams);
       if (!is_array($result)) {
         throw new API_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
@@ -58,7 +62,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $prefix = '';
         }
 
-        $count = 0;
         foreach ($invoices as $invoice) {
           $save = TRUE;
           // Strip out the invoice number prefix if present.
@@ -143,6 +146,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   public function push($params, $limit = 10) {
     try {
+      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
       $records = $this->getContributionsRequiringPushUpdate($params, $limit);
       $errors = [];
 
