@@ -286,7 +286,6 @@ function civixero_civicrm_pageRun(&$page) {
 
     CRM_Civixero_Page_Inline_ContactSyncStatus::addContactSyncStatusBlock($page, $contactID);
     CRM_Civixero_Page_Inline_ContactSyncLink::addContactSyncLinkBlock($page, $contactID);
-    CRM_Civixero_Page_Inline_InvoiceSyncLink::addInvoiceSyncLinkBlock($page, $contactID);
     CRM_Civixero_Page_Inline_ContactSyncErrors::addContactSyncErrorsBlock($page, $contactID);
     CRM_Civixero_Page_Inline_InvoiceSyncErrors::addInvoiceSyncErrorsBlock($page, $contactID);
 
