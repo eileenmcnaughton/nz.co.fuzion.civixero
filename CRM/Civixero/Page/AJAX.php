@@ -8,9 +8,9 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
    * Function get contact sync errors by id
    *
    */
-  public static function contactSyncErrors() {
+  public static function contactSyncErrors(): void {
     $syncerrors = [];
-    if (CRM_Utils_Array::value('xeroerrorid', $_REQUEST)) {
+    if ($_REQUEST['xeroerrorid'] ?? NULL) {
       $xeroerrorid = CRM_Utils_Type::escape($_REQUEST['xeroerrorid'], 'Integer');
       $accountcontact = civicrm_api3('AccountContact', 'get', [
         'id' => $xeroerrorid,
