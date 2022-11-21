@@ -80,7 +80,7 @@ function civixero_civicrm_upgrade($op, ?CRM_Queue_Queue $queue = NULL) {
  * @todo - test using CRM_Extension_System::singleton()->getManager()->getStatus($key)
  *
  */
-function civixero_is_extension_installed($extension): bool {
+function civixero_is_extension_installed(string $extension): bool {
   return ($extension === 'nz.co.fuzion.connectors') && function_exists('connectors_civicrm_entityTypes');
 }
 
@@ -158,27 +158,15 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'separator' => 0,
   ]);
   $connectors = _civixero_get_connectors();
-  if (array_keys($connectors) === 0) {
+  foreach ($connectors as $connectorID => $details) {
     _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/', [
-      'label' => 'Xero Authorize',
-      'name' => 'Xero Authorize',
-      'url' => 'civicrm/xero/authorize',
+      'label' => 'Xero Authorize ' . $details['name'],
+      'name' => 'Xero Authorize ' . $details['name'],
+      'url' => 'civicrm/xero/authorize?connector_id=' . $connectorID,
       'permission' => 'administer CiviCRM',
       'operator' => NULL,
       'separator' => 0,
     ]);
-  }
-  else {
-    foreach ($connectors as $connectorID => $details) {
-      _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/', [
-        'label' => 'Xero Authorize ' . $details['name'],
-        'name' => 'Xero Authorize ' . $details['name'],
-        'url' => 'civicrm/xero/authorize?connector_id=' . $connectorID,
-        'permission' => 'administer CiviCRM',
-        'operator' => NULL,
-        'separator' => 0,
-      ]);
-    }
   }
 }
 
