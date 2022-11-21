@@ -2,6 +2,11 @@
 
 use CRM_Civixero_ExtensionUtil as E;
 
+/**
+ * @todo - replace in favour of search kit displays.
+ *
+ * @deprecated
+ */
 class CRM_Civixero_Page_XeroErrorLogs extends CRM_Core_Page {
 
   private $errorsFor = 'contact';

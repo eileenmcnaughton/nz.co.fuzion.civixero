@@ -124,7 +124,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'operator' => NULL,
     'separator' => 0,
   ]);
-
+  // @todo - replace with the search kit display
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
     'label' => 'Xero Error Logs',
     'name' => 'XeroErrorLogs',
@@ -143,6 +143,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'separator' => 1,
   ]);
 
+  // @todo - replace with the search kit display
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/XeroErrorLogs', [
     'label' => 'Contact Errors',
     'name' => 'Contact Errors',
@@ -152,6 +153,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'separator' => 0,
   ]);
 
+  // @todo - replace with the search kit display
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/XeroErrorLogs', [
     'label' => 'Invoice Errors',
     'name' => 'Invoice Errors',
