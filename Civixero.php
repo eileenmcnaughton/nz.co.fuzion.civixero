@@ -1,5 +1,7 @@
 <?php
 
+use Psr\Log\LogLevel;
+
 require_once 'Civixero.civix.php';
 
 /**
@@ -258,7 +260,7 @@ function civixero_civicrm_check(&$messages) {
       'civixero_sync_errors',
       $errorMessage,
       'Xero Sync Errors',
-      \Psr\Log\LogLevel::ERROR,
+      LogLevel::ERROR,
       'fa-refresh'
     );
   }
@@ -270,7 +272,7 @@ function civixero_civicrm_check(&$messages) {
       'civixero_clientrequired',
       ts('Please configure a Client ID and Client Secret from your Xero app.'),
       ts('Missing Xero App Details'),
-      \Psr\Log\LogLevel::WARNING,
+      LogLevel::WARNING,
       'fa-flag'
     );
   }
@@ -279,7 +281,7 @@ function civixero_civicrm_check(&$messages) {
       'civixero_authorizationrequired',
       ts('Please Authorize with Xero to enable a connection.'),
       ts('Xero Authorization Required'),
-      \Psr\Log\LogLevel::WARNING,
+      LogLevel::WARNING,
       'fa-flag'
     );
 
