@@ -1,5 +1,6 @@
 <?php
 
+use CRM_Civixero_ExtensionUtil as E;
 use Civi\Api4\LocationType;
 
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
@@ -62,7 +63,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
               ]);
               if (!empty($existing['accounts_contact_id']) && $existing['accounts_contact_id'] != $contact['ContactID']) {
                 // no idea how this happened or what it means - calling function can catch & deal with it
-                throw new CRM_Core_Exception(ts('Cannot update contact'), 'data_error', $contact);
+                throw new CRM_Core_Exception(E::ts('Cannot update contact'), 'data_error', $contact);
               }
             }
             catch (CiviCRM_API3_Exception $e) {
@@ -73,9 +74,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             civicrm_api3('AccountContact', 'create', $params);
           }
           catch (CiviCRM_API3_Exception $e) {
-            CRM_Core_Session::setStatus(ts('Failed to store ') . $params['accounts_display_name']
-              . ts(' with error ') . $e->getMessage(),
-              ts('Contact Pull failed'));
+            CRM_Core_Session::setStatus(E::ts('Failed to store ') . $params['accounts_display_name']
+              . E::ts(' with error ') . $e->getMessage(),
+              E::ts('Contact Pull failed'));
           }
         }
       }
@@ -188,9 +189,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           civicrm_api3('AccountContact', 'create', $record);
         }
         catch (Exception $e) {
-          $errors[] = ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-            . ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
-            . ts('Contact Push failed');
+          $errors[] = E::ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
+            . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
+            . E::ts('Contact Push failed');
         }
       }
       if ($errors) {
@@ -268,7 +269,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     $locationTypes = LocationType::get(FALSE)
       ->addSelect('id', 'display_name')
       ->execute();
-    $locTypes = [0 => ts('- Primary -')];
+    $locTypes = [0 => E::ts('- Primary -')];
     foreach ($locationTypes as $locationType) {
       $locTypes[$locationType['id']] = $locationType['display_name'];
     }
