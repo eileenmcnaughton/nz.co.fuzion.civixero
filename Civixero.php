@@ -217,21 +217,21 @@ function getErroredInvoicesOfContributions($contributions) {
  */
 function civixero_civicrm_check(array &$messages) {
 
-  $accountContactErrors = civicrm_api3("AccountContact", "getcount", [
-    "error_data" => ["NOT LIKE" => "%error_cleared%"],
-    "plugin" => "xero",
+  $accountContactErrors = civicrm_api3('AccountContact', 'getcount', [
+    'error_data' => ['NOT LIKE' => '%error_cleared%'],
+    'plugin' => 'xero',
   ]);
-  $accountInvoiceErrors = civicrm_api3("AccountInvoice", "getcount", [
-    "error_data" => ["NOT LIKE" => "%error_cleared%"],
-    "plugin" => "xero",
+  $accountInvoiceErrors = civicrm_api3('AccountInvoice', 'getcount', [
+    'error_data' => ['NOT LIKE' => '%error_cleared%'],
+    'plugin' => 'xero',
   ]);
-  $errorMessage = "";
+  $errorMessage = '';
   $errorsPageUrl = CRM_Utils_System::url('civicrm/xero/errorlog');
 
   if ($accountContactErrors > 0) {
     $errorMessage .= 'Found ' . $accountContactErrors . ' contact sync errors. <a href="' . $errorsPageUrl . '" target="_blank">Click here</a> to resolve them.';
     if ($accountInvoiceErrors > 0) {
-      $errorMessage .= "<br><br>";
+      $errorMessage .= '<br><br>';
     }
   }
   if ($accountInvoiceErrors > 0) {

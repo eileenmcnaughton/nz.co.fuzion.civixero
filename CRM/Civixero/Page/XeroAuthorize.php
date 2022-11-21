@@ -174,12 +174,12 @@ class CRM_Civixero_Page_XeroAuthorize extends CRM_Core_Page {
     $link_label = E::ts('Authorize with Xero');
     if (empty($this->clientID) || empty($this->clientSecret)) {
       // Set status
-      $page_content = "A Client ID needs to be added in the Xero Settings.";
+      $page_content = 'A Client ID needs to be added in the Xero Settings.';
     }
     else {
       $this->processAuthCode();
       if ($this->hasValidTokens) {
-        $status_msg = '<strong>' . E::ts("CiviCRM can connect to Xero. You do not need to authorize again at this point.") . '</strong>';
+        $status_msg = '<strong>' . E::ts('CiviCRM can connect to Xero. You do not need to authorize again at this point.') . '</strong>';
         $link_label = E::ts('Change Authorized user');
       }
       else {

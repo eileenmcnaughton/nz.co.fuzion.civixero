@@ -214,30 +214,30 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    */
   protected function mapToAccounts($contact, $accountsID) {
     $new_contact = [
-      "Name" => $contact['display_name'] . " - " . $contact['contact_id'],
-      "FirstName" => $contact['first_name'],
-      "LastName" => $contact['last_name'],
-      "EmailAddress" => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
-      "ContactNumber" => $contact['contact_id'],
-      "Addresses" => [
-        "Address" => [
+      'Name' => $contact['display_name'] . ' - ' . $contact['contact_id'],
+      'FirstName' => $contact['first_name'],
+      'LastName' => $contact['last_name'],
+      'EmailAddress' => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
+      'ContactNumber' => $contact['contact_id'],
+      'Addresses' => [
+        'Address' => [
           [
-            "AddressType" => 'POBOX', // described in documentation as the default mailing address for invoices http://blog.xero.com/developer/api/types/#Addresses
-            "AddressLine1" => $contact['street_address'],
-            "City" => $contact['city'],
-            "PostalCode" => $contact['postal_code'],
-            "AddressLine2" => CRM_Utils_Array::value('supplemental_address_1', $contact, ''),
-            "AddressLine3" => CRM_Utils_Array::value('supplemental_address_2', $contact, ''),
-            "AddressLine4" => CRM_Utils_Array::value('supplemental_address_3', $contact, ''),
-            "Country" => CRM_Utils_Array::value('country', $contact, ''),
-            "Region" => CRM_Utils_Array::value('state_province_name', $contact, ''),
+            'AddressType' => 'POBOX', // described in documentation as the default mailing address for invoices http://blog.xero.com/developer/api/types/#Addresses
+            'AddressLine1' => $contact['street_address'],
+            'City' => $contact['city'],
+            'PostalCode' => $contact['postal_code'],
+            'AddressLine2' => CRM_Utils_Array::value('supplemental_address_1', $contact, ''),
+            'AddressLine3' => CRM_Utils_Array::value('supplemental_address_2', $contact, ''),
+            'AddressLine4' => CRM_Utils_Array::value('supplemental_address_3', $contact, ''),
+            'Country' => CRM_Utils_Array::value('country', $contact, ''),
+            'Region' => CRM_Utils_Array::value('state_province_name', $contact, ''),
           ],
         ],
       ],
-      "Phones" => [
-        "Phone" => [
-          "PhoneType" => 'DEFAULT',
-          "PhoneNumber" => $contact['phone'],
+      'Phones' => [
+        'Phone' => [
+          'PhoneType' => 'DEFAULT',
+          'PhoneNumber' => $contact['phone'],
         ],
       ],
     ];

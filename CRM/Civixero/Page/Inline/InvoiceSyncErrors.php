@@ -28,12 +28,12 @@ class CRM_Civixero_Page_Inline_InvoiceSyncErrors extends CRM_Core_Page {
         'connector_id' => ['IN' => array_keys($connectors)],
       ]);
 
-      $contributions = getContactContributions($account_contact["contact_id"]);
+      $contributions = getContactContributions($account_contact['contact_id']);
       if (count($contributions)) {
         $invoices = getErroredInvoicesOfContributions($contributions);
-        if ($invoices["count"]) {
+        if ($invoices['count']) {
           $hasInvoiceErrors = TRUE;
-          $page->assign('erroredInvoices_xero', $invoices["count"]);
+          $page->assign('erroredInvoices_xero', $invoices['count']);
         }
       }
 

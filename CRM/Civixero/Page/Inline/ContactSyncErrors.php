@@ -27,7 +27,7 @@ class CRM_Civixero_Page_Inline_ContactSyncErrors extends CRM_Core_Page {
         'connector_id' => ['IN' => array_keys($connectors)],
       ]);
 
-      if (!empty($account_contact["error_data"])) {
+      if (!empty($account_contact['error_data'])) {
         $hasContactErrors = TRUE;
       }
 

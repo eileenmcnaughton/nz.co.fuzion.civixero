@@ -193,10 +193,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $lineItems = [];
     foreach ($invoiceData['line_items'] as $lineItem) {
       $lineItems[] = [
-        "Description" => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
-        "Quantity" => $lineItem['qty'],
-        "UnitAmount" => $lineItem['unit_price'],
-        "AccountCode" => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
+        'Description' => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
+        'Quantity' => $lineItem['qty'],
+        'UnitAmount' => $lineItem['unit_price'],
+        'AccountCode' => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
       ];
       $total_amount += $lineItem['qty'] * $lineItem['unit_price'];
 
@@ -223,17 +223,17 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $prefix = '';
     }
     $new_invoice = [
-      "Type" => ($total_amount > 0) ? "ACCREC" : 'ACCPAY',
-      "Contact" => [
-        "ContactNumber" => $invoiceData['contact_id'],
+      'Type' => ($total_amount > 0) ? 'ACCREC' : 'ACCPAY',
+      'Contact' => [
+        'ContactNumber' => $invoiceData['contact_id'],
       ],
-      "Date" => substr($invoiceData['receive_date'], 0, 10),
-      "DueDate" => substr($invoiceData['receive_date'], 0, 10),
-      "Status" => $status,
-      "InvoiceNumber" => $prefix . $invoiceData['id'],
-      "CurrencyCode" => $invoiceData['currency'],
-      "Reference" => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
-      "LineAmountTypes" => $line_amount_types,
+      'Date' => substr($invoiceData['receive_date'], 0, 10),
+      'DueDate' => substr($invoiceData['receive_date'], 0, 10),
+      'Status' => $status,
+      'InvoiceNumber' => $prefix . $invoiceData['id'],
+      'CurrencyCode' => $invoiceData['currency'],
+      'Reference' => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
+      'LineAmountTypes' => $line_amount_types,
       'LineItems' => ['LineItem' => $lineItems],
     ];
 

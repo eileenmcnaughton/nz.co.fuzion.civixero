@@ -73,23 +73,23 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
         continue;
       }
       $lineItems[] = [
-        "Description" => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
-        "Quantity" => $lineItem['qty'],
-        "UnitAmount" => $lineItem['unit_price'],
-        "AccountCode" => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
+        'Description' => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
+        'Quantity' => $lineItem['qty'],
+        'UnitAmount' => $lineItem['unit_price'],
+        'AccountCode' => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
       ];
     }
 
     $new_invoice = [
-      "Type" => "RECEIVE",
-      "Contact" => [
-        "ContactNumber" => $invoiceData['contact_id'],
+      'Type' => 'RECEIVE',
+      'Contact' => [
+        'ContactNumber' => $invoiceData['contact_id'],
       ],
-      "Date" => substr($invoiceData['receive_date'], 0, 10),
-      "Status" => "AUTHORISED",
-      "CurrencyCode" => CRM_Core_Config::singleton()->defaultCurrency,
-      "Reference" => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
-      "LineAmountTypes" => "Inclusive",
+      'Date' => substr($invoiceData['receive_date'], 0, 10),
+      'Status' => 'AUTHORISED',
+      'CurrencyCode' => CRM_Core_Config::singleton()->defaultCurrency,
+      'Reference' => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
+      'LineAmountTypes' => 'Inclusive',
       'LineItems' => ['LineItem' => $lineItems],
       'BankAccount' => [
         'Code' => $invoiceData['payment_instrument_accounting_code'],

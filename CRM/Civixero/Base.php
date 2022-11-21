@@ -185,7 +185,7 @@ class CRM_Civixero_Base {
    *   Formatted date
    */
   protected function formatDateForXero($date) {
-    return date("Y-m-d H:m:s", strtotime(CRM_Utils_Date::mysqlToIso($date)));
+    return date('Y-m-d H:m:s', strtotime(CRM_Utils_Date::mysqlToIso($date)));
   }
 
   /**
@@ -232,7 +232,7 @@ class CRM_Civixero_Base {
                 'You need to set up the account code',
               ];
             }
-            $message .= " " . $errorMessage['Message'];
+            $message .= ' ' . $errorMessage['Message'];
           }
         }
         else {
@@ -240,15 +240,15 @@ class CRM_Civixero_Base {
           $message = $value['Message'];
         }
         switch (trim($message)) {
-          case "The Contact Name already exists. Please enter a different Contact Name.":
+          case 'The Contact Name already exists. Please enter a different Contact Name.':
             $contact = $response['Elements']['DataContractBase']['Contact'];
-            $message .= "<br>contact ID is " . $contact['ContactNumber'];
-            $message .= "<br>contact name is " . $contact['Name'];
-            $message .= "<br>contact email is " . $contact['EmailAddress'];
+            $message .= '<br>contact ID is ' . $contact['ContactNumber'];
+            $message .= '<br>contact name is ' . $contact['Name'];
+            $message .= '<br>contact email is ' . $contact['EmailAddress'];
             break;
 
-          case "The TaxType field is mandatory Account code must be specified":
-            $message = "Account code needs setting up";
+          case 'The TaxType field is mandatory Account code must be specified':
+            $message = 'Account code needs setting up';
         }
         $errors[] = $message;
       }
