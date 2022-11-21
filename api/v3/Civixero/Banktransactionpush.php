@@ -7,9 +7,9 @@
  *
  * @param array $spec description of fields supported by this API call
  *
- * @see http://wiki.civicrm.org/confluence/display/CRM/API+Architecture+Standards
+ * @noinspection PhpUnused
  */
-function _civicrm_api3_civixero_banktransactionpush_spec(&$spec) {
+function _civicrm_api3_civixero_banktransactionpush_spec(array &$spec) {
   $spec['contribution_id'] = [
     'type' => CRM_Utils_Type::T_INT,
     'name' => 'contribution_id',
@@ -27,14 +27,11 @@ function _civicrm_api3_civixero_banktransactionpush_spec(&$spec) {
  *
  * @param array $params
  *
- * @return array
- *   API result descriptor
- *
  * @throws API_Exception
- * @see civicrm_api3_create_error
- * @see civicrm_api3_create_success
+ *
+ * @noinspection PhpUnused
  */
-function civicrm_api3_civixero_banktransactionpush($params) {
+function civicrm_api3_civixero_banktransactionpush(array $params) {
   $xero = new CRM_Civixero_BankTransaction($params);
   $xero->push($params);
 }

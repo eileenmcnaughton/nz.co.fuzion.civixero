@@ -312,6 +312,7 @@ function _civixero_get_connectors(): array {
       $connectors = civicrm_api3('connector', 'get', ['connector_type_id' => 'CiviXero']);
       $connectors = $connectors['values'];
     }
+    /** @noinspection PhpUnusedLocalVariableInspection */
     catch (CiviCRM_API3_Exception $e) {
       $connectors = [0 => 0];
     }
@@ -323,6 +324,8 @@ function _civixero_get_connectors(): array {
  * @param string $objectName
  * @param array $headers
  * @param array $values
+ *
+ * @noinspection PhpUnusedParameterInspection
  */
 function civixero_civicrm_searchColumns(string $objectName, array &$headers, array &$values) {
   if ($objectName === 'contribution') {
