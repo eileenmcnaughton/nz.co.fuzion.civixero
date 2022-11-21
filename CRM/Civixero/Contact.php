@@ -162,7 +162,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             if (!$matching['is_error']) {
               if (empty($matching['contact_id']) ||
                 civicrm_api3('contact', 'getvalue', ['id' => $matching['contact_id'], 'return' => 'contact_is_deleted'])) {
-                CRM_Core_Error::debug_log_message(ts('Updating existing contact for %1', [1 => $record['contact_id']]));
+                Civi::log('civixero')->error(E::ts('Updating existing contact for %1', [1 => $record['contact_id']]));
                 civicrm_api3('AccountContact', 'delete', ['id' => $record['id']]);
                 $record['do_not_sync'] = 0;
                 $record['id'] = $matching['id'];
