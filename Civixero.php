@@ -92,11 +92,11 @@ function civixero_is_extension_installed(string $extension): bool {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsMetaData/
  */
-function civixero_alterSettingsMetaData(array &$settingsMetaData, int $domainID, $profile): void {
+function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData, int $domainID, $profile): void {
   $weight = 100;
-  foreach ($settingsMetaData as $index => $settingMetaData) {
-    if ($settingMetaData['group'] === 'accountsync') {
-      $settingMetaData[$index]['settings_pages'] = ['xero' => ['weight' => $weight]];
+  foreach ($settingsMetaData as $index => $setting) {
+    if ($setting['group'] === 'accountsync') {
+      $settingsMetaData[$index]['settings_pages'] = ['xero' => ['weight' => $weight]];
     }
     $weight++;
   }
