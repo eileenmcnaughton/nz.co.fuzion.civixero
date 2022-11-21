@@ -416,13 +416,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $cancelledStatuses = ['Failed', 'Cancelled'];
 
     if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
-      $accountsInvoice = $this->mapCancelled($contributionID, $accountsInvoiceID);
-      return $accountsInvoice;
+      return $this->mapCancelled($contributionID, $accountsInvoiceID);
     }
-    else {
-      $accountsInvoice = $this->mapToAccounts($civiCRMInvoice, $accountsInvoiceID);
-      return $accountsInvoice;
-    }
+
+    return $this->mapToAccounts($civiCRMInvoice, $accountsInvoiceID);
   }
 
   /**
@@ -432,11 +429,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   protected function getDefaultAccountCode() {
     if (empty($this->default_account_code)) {
-      $this->default_account_code = civicrm_api('setting', 'getvalue', [
-        'group' => 'Xero Settings',
-        'name' => 'xero_default_revenue_account',
-        'version' => 3,
-      ]);
+      $this->default_account_code = Civi::settings()->get('xero_default_revenue_account');
     }
     return $this->default_account_code;
   }
