@@ -9,7 +9,7 @@ require_once 'Civixero.civix.php';
  *
  * @param \CRM_Core_Config $config
  */
-function civixero_civicrm_config(&$config) {
+function civixero_civicrm_config(CRM_Core_Config $config) {
   _civixero_civix_civicrm_config($config);
   require_once __DIR__ . '/vendor/autoload.php';
   if (!function_exists('random_bytes')) {
@@ -58,12 +58,12 @@ function civixero_civicrm_disable() {
  * Implementation of hook_civicrm_upgrade
  *
  * @param $op string, the type of operation being performed; 'check' or 'enqueue'
- * @param $queue CRM_Queue_Queue, (for 'enqueue') the modifiable list of pending up upgrade tasks
+ * @param $queue CRM_Queue_Queue|null, (for 'enqueue') the modifiable list of pending up upgrade tasks
  *
  * @return mixed  based on op. for 'check', returns array(boolean) (TRUE if upgrades are pending)
  *                for 'enqueue', returns void
  */
-function civixero_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+function civixero_civicrm_upgrade($op, ?CRM_Queue_Queue $queue = NULL) {
   return _civixero_civix_civicrm_upgrade($op, $queue);
 }
 
@@ -188,14 +188,14 @@ function civixero_civicrm_navigationMenu(&$menu) {
 }
 
 /**
- * Gettings contributions of sinlge contact
+ * Get contributions for a single contact.
  *
  * @param int $contactid
  *
  * @return array
  * @throws \CiviCRM_API3_Exception
  */
-function getContactContributions($contactid) {
+function getContactContributions(int $contactid): array {
   $contributions = civicrm_api3('Contribution', 'get', [
     'contact_id' => $contactid,
     'return' => ['contribution_id'],
@@ -228,11 +228,11 @@ function getErroredInvoicesOfContributions($contributions) {
  *
  * Add a check to the status page. Check if there are any account contact or invoice sync errors.
  *
- * @param $page
+ * @param array $messages
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
-function civixero_civicrm_check(&$messages) {
+function civixero_civicrm_check(array &$messages) {
 
   $accountContactErrors = civicrm_api3("AccountContact", "getcount", [
     "error_data" => ["NOT LIKE" => "%error_cleared%"],
@@ -294,8 +294,6 @@ function civixero_civicrm_check(&$messages) {
  * Add Xero links to contact summary
  *
  * @param $page
- *
- * @throws \CRM_Core_Exception
  */
 function civixero_civicrm_pageRun(&$page) {
   $pageName = get_class($page);
@@ -323,9 +321,9 @@ function civixero_civicrm_pageRun(&$page) {
 /**
  * Get available connectors.
  *
- * @return string
+ * @return array
  */
-function _civixero_get_connectors() {
+function _civixero_get_connectors(): array {
   static $connectors = [];
   if (empty($connectors)) {
     try {
@@ -340,12 +338,11 @@ function _civixero_get_connectors() {
 }
 
 /**
- * @param $objectName
+ * @param string $objectName
  * @param array $headers
- * @param $values
- * @param $selector
+ * @param array $values
  */
-function civixero_civicrm_searchColumns($objectName, &$headers, &$values) {
+function civixero_civicrm_searchColumns(string $objectName, array &$headers, array &$values) {
   if ($objectName === 'contribution') {
     foreach ($values as &$value) {
       try {
@@ -370,7 +367,7 @@ function civixero_civicrm_searchColumns($objectName, &$headers, &$values) {
  * @param string $entity
  * @param string $plugin
  */
-function civixero_civicrm_mapAccountsData(&$accountsData, $entity, $plugin) {
+function civixero_civicrm_mapAccountsData(array &$accountsData, string $entity, string $plugin) {
   if ($plugin !== 'xero' || $entity !== 'contact') {
     return;
   }
