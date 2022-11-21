@@ -105,6 +105,9 @@ function civixero_civicrm_alterSettingsFolders(&$metaDataFolders) {
  * @param array $menu
  */
 function civixero_civicrm_navigationMenu(&$menu) {
+  // @todo - remove these in favour of using now-preferred method of adding via mgd.
+  // note the intent is to remove rather than migrate some of these - ie
+  // replace with search form.
   _Civixero_civix_insert_navigation_menu($menu, 'Administer', [
     'label' => 'Xero',
     'name' => 'Xero',
