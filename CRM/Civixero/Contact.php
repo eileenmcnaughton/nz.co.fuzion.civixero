@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\LocationType;
+
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
   /**
@@ -12,7 +14,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @throws API_Exception
    * @throws CRM_Core_Exception
    */
-  public function pull($params) {
+  public function pull(array $params): void {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     isset($params['xero_contact_id']) ?: $params['xero_contact_id'] = FALSE;
     try {
@@ -253,5 +255,23 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       return FALSE;
     }
     return $new_contact;
+  }
+
+  /**
+   * Get available location types.
+   *
+   * @return array
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public static function getLocationTypes(): array {
+    $locationTypes = LocationType::get(FALSE)
+      ->addSelect('id', 'display_name')
+      ->execute();
+    $locTypes = [0 => ts('- Primary -')];
+    foreach ($locationTypes as $locationType) {
+      $locTypes[$locationType['id']] = $locationType['display_name'];
+    }
+    return $locTypes;
   }
 }

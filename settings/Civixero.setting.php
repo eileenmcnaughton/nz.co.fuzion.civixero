@@ -1,19 +1,5 @@
 <?php
 
-$invoice_statuses = [
-  'DRAFT' => 'Draft',
-  'SUBMITTED' => 'Submitted',
-  'AUTHORISED' => 'Approved',
-];
-
-$locationTypes = \Civi\Api4\LocationType::get(FALSE)
-  ->addSelect('id', 'display_name')
-  ->execute();
-$locTypes = [0 => ts('- Primary -')];
-foreach ($locationTypes as $locationType) {
-  $locTypes[$locationType['id']] = $locationType['display_name'];
-}
-
 return [
   // Removed settings.
   // xero_key, xero_public_certificate.
@@ -101,6 +87,7 @@ return [
       'size' => 50,
     ],
     'quick_form_type' => 'Element',
+    'settings_pages' => ['xero' => ['weight' => 1]],
   ],
   'xero_invoice_number_prefix' => [
     'group_name' => 'Xero Settings',
@@ -118,6 +105,7 @@ return [
       'size' => 50,
     ],
     'quick_form_type' => 'Element',
+    'settings_pages' => ['xero' => ['weight' => 2]],
   ],
   'xero_default_invoice_status' => [
     'group_name' => 'Xero Settings',
@@ -132,7 +120,12 @@ return [
     'help_text' => '',
     'html_type' => 'Select',
     'quick_form_type' => 'Element',
-    'html_attributes' => $invoice_statuses,
+    'html_attributes' => [
+      'multiple' => 1,
+      'class' => 'crm-select2',
+    ],
+    'pseudoconstant' => ['callback' => 'CRM_Civixero_Invoice::getInvoiceStatuses'],
+    'settings_pages' => ['xero' => ['weight' => 3]],
   ],
   'xero_tax_mode' => [
     'group_name' => 'Xero Settings',
@@ -147,7 +140,12 @@ return [
     'help_text' => 'This setting is generally only useful if you track tax in xero but not CiviCRM',
     'html_type' => 'Select',
     'quick_form_type' => 'Element',
-    'html_attributes' => ['Inclusive' => 'Inclusive', 'Exclusive' => 'Exclusive'],
+    'html_attributes' => [
+      'multiple' => 1,
+      'class' => 'crm-select2',
+    ],
+    'pseudoconstant' => ['callback' => 'CRM_Civixero_Invoice::getTaxModes'],
+    'settings_pages' => ['xero' => ['weight' => 4]],
   ],
   'xero_sync_location_type' => [
     'group_name' => 'Xero Settings',
@@ -162,6 +160,11 @@ return [
     'help_text' => '',
     'html_type' => 'Select',
     'quick_form_type' => 'Element',
-    'html_attributes' => $locTypes,
+    'html_attributes' => [
+      'multiple' => 1,
+      'class' => 'crm-select2',
+    ],
+    'pseudoconstant' => ['callback' => 'CRM_Civixero_Contact::getLocationTypes'],
+    'settings_pages' => ['xero' => ['weight' => 4]],
   ],
 ];

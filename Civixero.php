@@ -85,15 +85,20 @@ function civixero_is_extension_installed(string $extension): bool {
 }
 
 /**
- * Implements hook_civicrm_config().
+ * Implements hook_civicrm_alterSettingsMetaData(().
  *
- * @param $metaDataFolders
+ * This hook sets the default for each setting to our preferred value.
+ * It can still be overridden by specifically setting the setting.
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsMetaData/
  */
-function civixero_civicrm_alterSettingsFolders(&$metaDataFolders) {
-  $extRoot = __DIR__ . DIRECTORY_SEPARATOR;
-  $extDir = $extRoot . 'settings';
-  if (!in_array($extDir, $metaDataFolders, TRUE)) {
-    $metaDataFolders[] = $extDir;
+function civixero_alterSettingsMetaData(array &$settingsMetaData, int $domainID, $profile): void {
+  $weight = 100;
+  foreach ($settingsMetaData as $index => $settingMetaData) {
+    if ($settingMetaData['group'] === 'accountsync') {
+      $settingMetaData[$index]['settings_pages'] = ['xero' => ['weight' => $weight]];
+    }
+    $weight++;
   }
 }
 
@@ -119,7 +124,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
     'label' => 'Xero Settings',
     'name' => 'Xero Settings',
-    'url' => 'civicrm/xero/settings',
+    'url' => 'civicrm/admin/setting/xero',
     'permission' => 'administer CiviCRM',
     'operator' => NULL,
     'separator' => 0,

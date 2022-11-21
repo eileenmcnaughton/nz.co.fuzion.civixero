@@ -550,7 +550,72 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @return bool
    */
-  protected function isSplitTransactions() {
+  protected function isSplitTransactions(): bool {
     return FALSE;
   }
+
+  /**
+   * Get the Xero invoice statuses.
+   *
+   * This is accessed from the settings.
+   *
+   * @return array[]
+   */
+  public static function getInvoiceStatuses(): array {
+    // @todo - can we get rid of the caps on 'id'?
+    $selectTwoStyleResult = [
+      [
+        'id' => 'DRAFT',
+        'name' => 'draft',
+        'label' => E::ts('Draft'),
+      ],
+      [
+        'id' => 'SUBMITTED',
+        'name' => 'submitted',
+        'label' => E::ts('Submitted'),
+      ],
+
+      [
+        'id' => 'APPROVED',
+        'name' => 'approved',
+        'label' => E::ts('Approved'),
+      ],
+    ];
+    // But we can't use that yet - see https://github.com/civicrm/civicrm-core/pull/25014
+    $return = [];
+    foreach ($selectTwoStyleResult as $result) {
+      $return[$result['id']] = $result['label'];
+    }
+    return $return;
+  }
+
+  /**
+   * Get the Xero tax modes.
+   *
+   * This is accessed from the settings.
+   *
+   * @return array[]
+   */
+  public static function getTaxModes(): array {
+    // @todo - can we get rid of the caps on 'id'?
+    $selectTwoStyleResult = [
+      [
+        'id' => 'Inclusive',
+        'name' => 'inclusive',
+        'label' => E::ts('Inclusive'),
+      ],
+      [
+        'id' => 'Exclusive',
+        'name' => 'exclusive',
+        'label' => E::ts('Exclusive'),
+      ],
+    ];
+    // But we can't use that yet - see https://github.com/civicrm/civicrm-core/pull/25014
+    $return = [];
+    foreach ($selectTwoStyleResult as $result) {
+      $return[$result['id']] = $result['label'];
+    }
+    return $return;
+  }
+
 }

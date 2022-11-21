@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <menu>
   <item>
-    <path>civicrm/xero/settings</path>
-    <page_callback>CRM_Civixero_Form_XeroSettings</page_callback>
+    <path>civicrm/admin/setting/xero</path>
+    <page_callback>CRM_Admin_Form_Generic</page_callback>
     <title>Xero Settings</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
