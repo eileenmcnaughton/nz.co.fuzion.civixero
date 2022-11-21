@@ -184,8 +184,7 @@ function getContactContributions(int $contactid): array {
     'return' => ['contribution_id'],
     'sequential' => TRUE,
   ])['values'];
-  $contributions = array_column($contributions, 'id');
-  return $contributions;
+  return array_column($contributions, 'id');
 }
 
 /**

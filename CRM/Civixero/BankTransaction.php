@@ -40,8 +40,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
     if ($accountsInvoice === FALSE) {
       return FALSE;
     }
-    $result = $this->getSingleton($connector_id)->BankTransactions($accountsInvoice);
-    return $result;
+    return $this->getSingleton($connector_id)->BankTransactions($accountsInvoice);
   }
 
   /**
@@ -111,10 +110,9 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
     }
 
     $this->validatePrerequisites($new_invoice);
-    $new_invoice = [
+    return [
       $new_invoice,
     ];
-    return $new_invoice;
   }
 
   /**
