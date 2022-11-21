@@ -1,5 +1,6 @@
 <?php
 
+$entities = [];
 if (civixero_is_extension_installed('nz.co.fuzion.connectors')) {
   $entities[] = [
     'name' => 'CiviXero connector Type',
@@ -19,3 +20,4 @@ if (civixero_is_extension_installed('nz.co.fuzion.connectors')) {
     ],
   ];
 }
+return $entities;
