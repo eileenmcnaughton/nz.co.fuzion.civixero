@@ -80,13 +80,8 @@ function civixero_civicrm_upgrade($op, ?CRM_Queue_Queue $queue = NULL) {
  * @todo - test using CRM_Extension_System::singleton()->getManager()->getStatus($key)
  *
  */
-function civixero_is_extension_installed($extension) {
-  if ($extension === 'nz.co.fuzion.connectors') {
-    if (function_exists('connectors_civicrm_entityTypes')) {
-      return TRUE;
-    }
-  }
-  return FALSE;
+function civixero_is_extension_installed($extension): bool {
+  return ($extension === 'nz.co.fuzion.connectors') && function_exists('connectors_civicrm_entityTypes');
 }
 
 /**
