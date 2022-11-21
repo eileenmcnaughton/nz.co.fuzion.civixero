@@ -238,18 +238,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     ];
 
     /* Use due date and period from the invoice settings when available. */
-    try {
-      $invoice_settings = civicrm_api3(
-        'Setting',
-        'getvalue',
-        ['name' => 'contribution_invoice_settings']
-      );
-
-      if (!empty($invoice_settings['due_date']) && $invoice_settings['due_date_period'] != 'select') {
-        $new_invoice['DueDate'] = strftime('%Y-%m-%d', strtotime($invoiceData['receive_date'] . ' + ' . $invoice_settings['due_date'] . ' ' . $invoice_settings['due_date_period']));
-      }
-    }
-    catch (Exception $e) {
+    $invoiceDueDate = Civi::settings()->get('invoice_due_date');
+    $invoiceDueDatePeriod = Civi::settings()->get('invoice_due_date_period');
+    if ($invoiceDueDate && $invoiceDueDatePeriod !== 'select') {
+      $new_invoice['DueDate'] = strftime('%Y-%m-%d', strtotime($invoiceData['receive_date'] . ' + ' . $invoiceDueDate . ' ' . $invoiceDueDatePeriod));
     }
 
     $proceed = TRUE;
@@ -259,10 +251,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     $this->validatePrerequisites($new_invoice);
-    $new_invoice = [
-      $new_invoice,
-    ];
-    return $new_invoice;
+    return [$new_invoice];
   }
 
   /**
