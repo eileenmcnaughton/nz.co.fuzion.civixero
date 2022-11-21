@@ -18,7 +18,6 @@ return [
     'html_attributes' => [
       'size' => 50,
     ],
-    'quick_form_type' => 'Element',
   ],
   // OAuth 2.0 xero (Client) Secret
   'xero_client_secret' => [
@@ -36,7 +35,6 @@ return [
     'html_attributes' => [
       'size' => 50,
     ],
-    'quick_form_type' => 'Element',
   ],
   // OAuth 2.0, No UI. Retrieved and stored on Authentication/Refresh.
   // Temporary, lifespan 30 mins.
@@ -82,11 +80,10 @@ return [
     'title' => 'Xero Default Revenue Account',
     'description' => 'Account to code contributions to',
     'help_text' => 'For more complex rules you will need to add a custom extension',
-    'html_type' => 'Text',
+    'html_type' => 'text',
     'html_attributes' => [
       'size' => 50,
     ],
-    'quick_form_type' => 'Element',
     'settings_pages' => ['xero' => ['weight' => 1]],
   ],
   'xero_invoice_number_prefix' => [
@@ -100,11 +97,10 @@ return [
     'description' => 'Optionally define a string to prefix invoice numbers when pushing to Xero.',
     'title' => 'Xero invoice number prefix',
     'help_text' => '',
-    'html_type' => 'Text',
+    'html_type' => 'text',
     'html_attributes' => [
       'size' => 50,
     ],
-    'quick_form_type' => 'Element',
     'settings_pages' => ['xero' => ['weight' => 2]],
   ],
   'xero_default_invoice_status' => [
@@ -118,8 +114,7 @@ return [
     'title' => 'Xero Default Invoice Status',
     'description' => 'Default Invoice status to push to Xero.',
     'help_text' => '',
-    'html_type' => 'Select',
-    'quick_form_type' => 'Element',
+    'html_type' => 'select',
     'html_attributes' => [
       'multiple' => 1,
       'class' => 'crm-select2',
@@ -138,8 +133,7 @@ return [
     'title' => 'Xero Tax mode',
     'description' => 'Are CiviCRM contributions inclusive or exclusive of tax',
     'help_text' => 'This setting is generally only useful if you track tax in xero but not CiviCRM',
-    'html_type' => 'Select',
-    'quick_form_type' => 'Element',
+    'html_type' => 'select',
     'html_attributes' => [
       'multiple' => 1,
       'class' => 'crm-select2',
@@ -158,8 +152,7 @@ return [
     'title' => 'CiviCRM location type to sync to Xero (will fallback to - Primary - if location type is empty)',
     'description' => 'Select the preferred location type to sync to Xero. Will fallback to "Primary" if not set.',
     'help_text' => '',
-    'html_type' => 'Select',
-    'quick_form_type' => 'Element',
+    'html_type' => 'select',
     'html_attributes' => [
       'multiple' => 1,
       'class' => 'crm-select2',
