@@ -95,7 +95,7 @@ function civixero_is_extension_installed(string $extension): bool {
 function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData, int $domainID, $profile): void {
   $weight = 100;
   foreach ($settingsMetaData as $index => $setting) {
-    if ($setting['group'] === 'accountsync') {
+    if (($setting['group'] ?? '') === 'accountsync') {
       $settingsMetaData[$index]['settings_pages'] = ['xero' => ['weight' => $weight]];
     }
     $weight++;
