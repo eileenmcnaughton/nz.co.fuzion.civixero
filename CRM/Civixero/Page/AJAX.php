@@ -2,6 +2,11 @@
 
 use CRM_Civixero_ExtensionUtil as E;
 
+/**
+ * @deprecated
+ *
+ * @todo Remove in favour of actions on search kit displays
+ */
 class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
 
   /**
