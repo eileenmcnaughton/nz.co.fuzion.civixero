@@ -284,7 +284,7 @@ function civixero_civicrm_pageRun(&$page) {
     return;
   }
 
-  if (($contactID = $page->getVar('_contactId')) != FALSE) {
+  if (($contactID = $page->getVar('_contactId')) !== FALSE) {
 
     CRM_Civixero_Page_Inline_ContactSyncStatus::addContactSyncStatusBlock($page, $contactID);
     CRM_Civixero_Page_Inline_ContactSyncLink::addContactSyncLinkBlock($page, $contactID);
