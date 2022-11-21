@@ -199,7 +199,7 @@ class CRM_Civixero_Base {
    *
    * @return array|bool
    * @throws \CRM_Civixero_Exception_XeroThrottle
-   * @throws \Exception
+   * @throws \CRM_Core_Exception
    */
   protected function validateResponse($response) {
     $message = '';
@@ -208,11 +208,11 @@ class CRM_Civixero_Base {
     if (is_string($response)) {
       $responseParts = explode('&', urldecode($response));
       $problem = str_replace('oauth_problem=', '', CRM_Utils_Array::value(0, $responseParts));
-      if ($problem == 'oauth_problem=token_rejected') {
-        throw new Exception('Invalid credentials');
+      if ($problem === 'oauth_problem=token_rejected') {
+        throw new CRM_Core_Exception('Invalid credentials');
       }
-      if ($problem == 'signature_invalid') {
-        throw new Exception('Invalid signature - your key may be invalid');
+      if ($problem === 'signature_invalid') {
+        throw new CRM_Core_Exception('Invalid signature - your key may be invalid');
       }
       throw new CRM_Civixero_Exception_XeroThrottle($problem);
     }
@@ -227,7 +227,7 @@ class CRM_Civixero_Base {
         // this is all a bit of a hackathon @ the moment
         if (is_array($value[0])) {
           foreach ($value as $errorMessage) {
-            if (trim($errorMessage['Message']) == 'Account code must be specified') {
+            if (trim($errorMessage['Message']) === 'Account code must be specified') {
               return [
                 'You need to set up the account code',
               ];
