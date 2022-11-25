@@ -333,11 +333,11 @@ function _civixero_get_connectors(): array {
 /**
  * @param string $objectName
  * @param array $headers
- * @param array $values
+ * @param array|null $values
  *
  * @noinspection PhpUnusedParameterInspection
  */
-function civixero_civicrm_searchColumns(string $objectName, array &$headers, array &$values) {
+function civixero_civicrm_searchColumns(string $objectName, array &$headers, ?array &$values) {
   if ($objectName === 'contribution') {
     foreach ($values as &$value) {
       try {
