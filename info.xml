@@ -21,7 +21,7 @@
   <version>2.1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.54</ver>
+    <ver>5.56</ver>
   </compatibility>
   <comments>This module requires nz.co.fuzion.accountsync</comments>
   <classloader>
