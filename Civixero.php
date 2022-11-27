@@ -115,14 +115,14 @@ function civixero_civicrm_navigationMenu(&$menu) {
   // replace with search form.
   _Civixero_civix_insert_navigation_menu($menu, 'Administer', [
     'label' => 'Xero',
-    'name' => 'legacy-Xero',
+    'name' => 'legacyxero',
     'url' => NULL,
     'permission' => 'administer CiviCRM',
     'operator' => NULL,
     'separator' => NULL,
   ]);
   // @todo - replace with the search kit display
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero', [
     'label' => 'Xero Error Logs',
     'name' => 'XeroErrorLogs',
     'url' => NULL,
@@ -131,7 +131,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'separator' => 1,
   ]);
 
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero', [
     'label' => 'Synchronize contacts',
     'name' => 'Contact Sync',
     'url' => 'civicrm/a/#/accounts/contact/sync',
@@ -141,7 +141,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
   ]);
 
   // @todo - replace with the search kit display
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/XeroErrorLogs', [
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/XeroErrorLogs', [
     'label' => 'Contact Errors',
     'name' => 'Contact Errors',
     'url' => 'civicrm/xero/errorlog',
@@ -151,7 +151,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
   ]);
 
   // @todo - replace with the search kit display
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/XeroErrorLogs', [
+  _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/XeroErrorLogs', [
     'label' => 'Invoice Errors',
     'name' => 'Invoice Errors',
     'url' => 'civicrm/xero/errorlog?for=invoice',
@@ -161,7 +161,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
   ]);
   $connectors = _civixero_get_connectors();
   foreach ($connectors as $connectorID => $details) {
-    _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero/', [
+    _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/', [
       'label' => 'Xero Authorize ' . $details['name'],
       'name' => 'Xero Authorize ' . $details['name'],
       'url' => 'civicrm/xero/authorize?connector_id=' . $connectorID,
