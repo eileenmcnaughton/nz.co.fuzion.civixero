@@ -1,3 +1,0 @@
-{if $authorizeLink}
-  {$authorizeLink}
-{/if}
