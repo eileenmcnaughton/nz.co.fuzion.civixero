@@ -1,16 +1,19 @@
 <?php
+
+use Civi\Api4\Job;
+use Civi\Api4\Setting;
 use CRM_Civixero_ExtensionUtil as E;
+use League\OAuth2\Client\Token\AccessToken;
+
 /**
  *
  * Controls page for handling OAuth 2.0 Authorization with Xero.
  *
  * TODO: Refactor reusable functionality into a separate class.
  *
+ * @noinspection PhpUnused
  */
-
 class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
-
-  private $redirectURL;
 
   private $clientID;
 
@@ -18,24 +21,23 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
 
   private $hasValidTokens = FALSE;
 
-  private $tenantID;
-
-  /**
-   *
-   * @var []
-   */
-  private $accessTokenData;
-
   public $provider;
 
-  public function preProcess() {
-    $this->connector_id = CRM_Utils_Request::retrieveValue('connector_id', 'Integer', 0);
+  /**
+   * @var int
+   */
+  private $connectorID;
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function preProcess(): void {
+    $this->connectorID = CRM_Utils_Request::retrieveValue('connector_id', 'Integer', 0);
     $this->clientID = $this->getSetting('xero_client_id');
     $this->clientSecret = $this->getSetting('xero_client_secret');
-    $this->accessTokenData = $this->getSetting('xero_access_token');
-    $this->tenantID = $this->getSetting('xero_tenant_id');
-    $this->redirectURL = CRM_Utils_System::url('civicrm/xero/authorize',
-      $this->connector_id > 0 ? ['connector_id' => $this->connector_id] : NULL,
+    $accessTokenData = $this->getSetting('xero_access_token');
+    $redirectURL = CRM_Utils_System::url('civicrm/xero/authorize',
+      $this->connectorID > 0 ? ['connector_id' => $this->connectorID] : NULL,
       TRUE,
       NULL,
       FALSE,
@@ -46,12 +48,12 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
     $this->provider = new CRM_Civixero_OAuth2_Provider_Xero([
       'clientId' => $this->getSetting('xero_client_id'),
       'clientSecret' => $this->getSetting('xero_client_secret'),
-      'redirectUri' => $this->redirectURL,
+      'redirectUri' => $redirectURL,
       ]
     );
     $refresh_token = NULL;
-    if (!empty($this->accessTokenData['refresh_token'])) {
-      $access_token = new \League\OAuth2\Client\Token\AccessToken($this->accessTokenData);
+    if (!empty($accessTokenData['refresh_token'])) {
+      $access_token = new AccessToken($accessTokenData);
       $refresh_token = $access_token->getRefreshToken();
     }
     // We may or may not have valid tokens at this point.
@@ -65,11 +67,11 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
         // Save the new tokens.
         $refresh_token = $newAccessToken->getRefreshToken();
         if ($refresh_token) {
-          $this->accessTokenData = $newAccessToken->jsonSerialize();
-          $this->tenantID = $this->provider->getConnectedTenantID($newAccessToken->getToken());
-          if ($this->tenantID) {
-            $this->saveSetting('xero_access_token', $this->accessTokenData);
-            $this->saveSetting('xero_tenant_id', $this->tenantID);
+          $accessTokenData = $newAccessToken->jsonSerialize();
+          $tenantID = $this->provider->getConnectedTenantID($newAccessToken->getToken());
+          if ($tenantID) {
+            $this->saveSetting('xero_access_token', $accessTokenData);
+            $this->saveSetting('xero_tenant_id', $tenantID);
             $this->hasValidTokens = TRUE;
           }
         }
@@ -81,14 +83,17 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
   }
 
 
-  private function processAuthCode() {
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function processAuthCode(): void {
     // Have we been redirected back from an authorization?
     $code = CRM_Utils_Request::retrieveValue('code', 'String', '', FALSE, 'GET');
     $state = CRM_Utils_Request::retrieveValue('state', 'String', '', FALSE, 'GET');
     if ($code) {
       // Check state to mitigate against CSRF attacks.
-      if ($state != $this->getOauth2State()) {
-        throw new Exception('Invalid state.');
+      if ($state !== $this->getOauth2State()) {
+        throw new CRM_Core_Exception('Invalid state.');
       }
 
       // Try to get an access token using the authorization code grant.
@@ -119,7 +124,6 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
         CRM_Core_Session::setStatus(E::ts('Xero Authorization Not Successful, try again.'));
         CRM_Core_Error::debug_var('XeroAuthorization Error', [
           'token' => $token->jsonSerialize(),
-          'tenant_id' => $tenant_id,
         ]);
       }
     }
@@ -130,7 +134,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
    *
    * @return string
    */
-  public function getAuthURL() {
+  public function getAuthURL(): string {
     $options = [
       'state' => $this->getOauth2State(), // If empty, the provider will generate one.
     ];
@@ -143,24 +147,27 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
 
   /**
    * Gets the state used during  authorization.
+   *
    * @return string
    */
-  protected function getOauth2State() {
+  protected function getOauth2State(): string {
     return CRM_Core_Session::singleton()->get('oauth2state', 'xero');
   }
 
   /**
    * Stores the state used during authorization.
    *
-   * @param string $state
+   * @param ?string $state
    */
-  protected function setOauth2State($state = NULL) {
+  protected function setOauth2State(?string $state = NULL): void {
     CRM_Core_Session::singleton()->set('oauth2state', $state, 'xero');
   }
 
-
-  public function buildQuickForm() {
-    $fields = \Civi\Api4\Setting::getFields(FALSE)
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function buildQuickForm(): void {
+    $fields = Setting::getFields(FALSE)
       ->setLoadOptions(TRUE)
       ->addWhere('name', 'IN', ['xero_client_id', 'xero_client_secret'])
       ->execute();
@@ -197,12 +204,13 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
           'subname' => 'auth',
         ];
       }
+      // @todo - is this really doing nothing - or just a bad code smell?
       $url = $this->getAuthURL();
     }
     $this->assign('statusMessage', $statusMessage);
     $this->assign('statusIcon', $statusIcon);
 
-    $xeroJobs = \Civi\Api4\Job::get(FALSE)
+    $xeroJobs = Job::get(FALSE)
       ->addWhere('parameters', 'LIKE', '%plugin=xero%')
       ->execute();
     foreach ($xeroJobs as $xeroJob) {
@@ -214,41 +222,49 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
     $this->addButtons($buttons);
   }
 
-  public function setDefaultValues() {
-    $defaults['xero_client_id'] = \Civi::settings()->get('xero_client_id') ?? '';
-    $defaults['xero_client_secret'] = \Civi::settings()->get('xero_client_secret') ?? '';
+  public function setDefaultValues(): array {
+    $defaults['xero_client_id'] = Civi::settings()->get('xero_client_id') ?? '';
+    $defaults['xero_client_secret'] = Civi::settings()->get('xero_client_secret') ?? '';
     return $defaults;
   }
 
-  public function postProcess() {
+  /**
+   * Post process form.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function postProcess(): void {
     if ($this->getSubmitValue('_qf_XeroAuthorize_next') !== NULL) {
       $action = 'authorize';
     }
     elseif ($this->getSubmitValue('_qf_XeroAuthorize_submit') !== NULL) {
       $action = 'save';
     }
+    else {
+      throw new CRM_Core_Exception('no idea what you are trying to do....');
+    }
 
     // Check / update clientID/Secret
     $authChanged = FALSE;
     $newXeroClientID = $this->getSubmittedValue('xero_client_id');
     $newXeroClientSecret = $this->getSubmittedValue('xero_client_secret');
-    $xeroClientID = \Civi::settings()->get('xero_client_id');
-    $xeroClientSecret = \Civi::settings()->get('xero_client_secret');
+    $xeroClientID = Civi::settings()->get('xero_client_id');
+    $xeroClientSecret = Civi::settings()->get('xero_client_secret');
 
     if ($xeroClientID !== $newXeroClientID) {
-      \Civi::settings()->set('xero_client_id', $newXeroClientID);
+      Civi::settings()->set('xero_client_id', $newXeroClientID);
       $this->clientID = $newXeroClientID;
       $authChanged = TRUE;
     }
     if ($xeroClientSecret !== $newXeroClientSecret) {
-      \Civi::settings()->set('xero_client_secret', $newXeroClientSecret);
+      Civi::settings()->set('xero_client_secret', $newXeroClientSecret);
       $this->clientSecret = $newXeroClientSecret;
       $authChanged = TRUE;
     }
 
     if ($authChanged) {
-      \Civi::settings()->set('xero_tenant_id', '');
-      \Civi::settings()->set('xero_access_token', '');
+      Civi::settings()->set('xero_tenant_id', '');
+      Civi::settings()->set('xero_access_token', '');
     }
 
     if ($action === 'authorize') {
@@ -257,11 +273,17 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
     }
   }
 
-  protected function saveSetting($name, $value) {
-    if ($this->connector_id > 0) {
+  /**
+   * @param string $name
+   * @param mixed $value
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function saveSetting(string $name, $value): void {
+    if ($this->connectorID > 0) {
       static $connectors = [];
-      if (!empty($connectors[$this->connector_id])) {
-        unset($connectors[$this->connector_id]);
+      if (!empty($connectors[$this->connectorID])) {
+        unset($connectors[$this->connectorID]);
       }
       $mapping = [
         'xero_client_id' => 'field1',
@@ -272,7 +294,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
       if (is_array($value)) {
         $value = serialize($value);
       }
-      $params = ['id' => $this->connector_id, $mapping[$name] => $value];
+      $params = ['id' => $this->connectorID, $mapping[$name] => $value];
       civicrm_api3('Connector', 'create', $params);
     }
     else {
@@ -285,28 +307,30 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
    *
    * @param string $var
    *
-   * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @return array|string
+   *
+   * @throws CRM_Core_Exception
+   *
    */
-  protected function getSetting($var) {
-    if ($this->connector_id > 0) {
+  protected function getSetting(string $var) {
+    if ($this->connectorID > 0) {
       static $connectors = [];
-      if (empty($connectors[$this->connector_id])) {
-        $connector = civicrm_api3('connector', 'getsingle', ['id' => $this->connector_id]);
-        $connectors[$this->connector_id] = [
+      if (empty($connectors[$this->connectorID])) {
+        $connector = civicrm_api3('Connector', 'getsingle', ['id' => $this->connectorID]);
+        $connectors[$this->connectorID] = [
           'xero_client_id' => $connector['field1'],
           'xero_client_secret' => $connector['field2'],
           'xero_tenant_id' => $connector['field3'],
-          'xero_access_token' => unserialize($connector['field4']),
+          'xero_access_token' => unserialize($connector['field4'], ['allowOptions' => FALSE]),
           // @todo not yet configurable per selector.
           'xero_default_invoice_status' => 'SUBMITTED',
         ];
       }
 
-      $value = $connectors[$this->connector_id][$var];
+      $value = $connectors[$this->connectorID][$var];
     }
     else {
-      $value = civicrm_api3('setting', 'getvalue', [
+      $value = civicrm_api3('Setting', 'getvalue', [
         'name' => $var,
         'group' => 'Xero Settings',
       ]);
