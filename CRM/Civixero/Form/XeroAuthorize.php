@@ -10,11 +10,6 @@ use CRM_Civixero_ExtensionUtil as E;
 
 class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
 
-
-  private $resourceOwnerURL = 'https://api.xero.com/api.xro/2.0/Organisation';
-
-  private $connectionsURL = 'https://api.xero.com/connections';
-
   private $redirectURL;
 
   private $clientID;
