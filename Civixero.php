@@ -121,14 +121,6 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'operator' => NULL,
     'separator' => NULL,
   ]);
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
-    'label' => 'Xero Settings',
-    'name' => 'Xero Settings',
-    'url' => 'civicrm/admin/setting/xero',
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
-    'separator' => 0,
-  ]);
   // @todo - replace with the search kit display
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/Xero', [
     'label' => 'Xero Error Logs',
