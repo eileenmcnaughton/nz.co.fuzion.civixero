@@ -82,7 +82,6 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
     }
   }
 
-
   /**
    * @throws \CRM_Core_Exception
    */
