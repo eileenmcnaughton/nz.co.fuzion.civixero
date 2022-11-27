@@ -115,7 +115,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
   // replace with search form.
   _Civixero_civix_insert_navigation_menu($menu, 'Administer', [
     'label' => 'Xero',
-    'name' => 'Xero',
+    'name' => 'legacy-Xero',
     'url' => NULL,
     'permission' => 'administer CiviCRM',
     'operator' => NULL,

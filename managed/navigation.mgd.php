@@ -29,7 +29,7 @@ return [
   [
     'name' => 'Navigation_Xero_Navigation_Xero_Settings',
     'entity' => 'Navigation',
-    'cleanup' => 'unused',
+    'cleanup' => 'always',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
