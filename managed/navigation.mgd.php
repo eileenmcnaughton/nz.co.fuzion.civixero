@@ -61,7 +61,31 @@ return [
         'domain_id' => 'current_domain',
         'label' => 'Xero Invoice Errors',
         'name' => 'XeroInvoiceErrors',
-        'url' => NULL,
+        'url' => 'civicrm/accounting/errors/invoices',
+        'icon' => NULL,
+        'permission' => [
+          'administer CiviCRM system',
+        ],
+        'permission_operator' => 'OR',
+        'parent_id.name' => 'XeroErrors',
+        'is_active' => TRUE,
+        'has_separator' => 0,
+        'weight' => 19,
+      ],
+    ],
+  ],
+  [
+    'name' => 'Navigation_Xero_Contact_Errors',
+    'entity' => 'Navigation',
+    'cleanup' => 'always',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'domain_id' => 'current_domain',
+        'label' => 'Xero Contact Errors',
+        'name' => 'XeroContactErrors',
+        'url' => 'civicrm/accounting/errors/contacts',
         'icon' => NULL,
         'permission' => [
           'administer CiviCRM system',
