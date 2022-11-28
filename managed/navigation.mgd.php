@@ -1,4 +1,5 @@
 <?php
+use CRM_Civixero_ExtensionUtil as E;
 
 return [
   [
@@ -35,7 +36,7 @@ return [
       'version' => 4,
       'values' => [
         'domain_id' => 'current_domain',
-        'label' => 'Xero Errors',
+        'label' => E::ts('Xero Errors'),
         'name' => 'XeroErrors',
         'url' => NULL,
         'icon' => NULL,
@@ -59,7 +60,7 @@ return [
       'version' => 4,
       'values' => [
         'domain_id' => 'current_domain',
-        'label' => 'Xero Invoice Errors',
+        'label' => E::ts('Xero Invoice Errors'),
         'name' => 'XeroInvoiceErrors',
         'url' => 'civicrm/accounting/errors/invoices',
         'icon' => NULL,
@@ -83,7 +84,7 @@ return [
       'version' => 4,
       'values' => [
         'domain_id' => 'current_domain',
-        'label' => 'Xero Contact Errors',
+        'label' => E::ts('Xero Contact Errors'),
         'name' => 'XeroContactErrors',
         'url' => 'civicrm/accounting/errors/contacts',
         'icon' => NULL,
@@ -107,9 +108,32 @@ return [
       'version' => 4,
       'values' => [
         'domain_id' => 'current_domain',
-        'label' => 'Xero Settings',
+        'label' => E::ts('Xero Settings'),
         'name' => 'Xero Settings',
         'url' => 'civicrm/admin/setting/xero',
+        'icon' => NULL,
+        'permission' => [
+          'administer CiviCRM system',
+        ],
+        'permission_operator' => 'AND',
+        'parent_id.name' => 'Xero',
+        'is_active' => TRUE,
+        'has_separator' => 0,
+      ],
+    ],
+  ],
+  [
+    'name' => 'Navigation_Xero_Synchronize_Contacts',
+    'entity' => 'Navigation',
+    'cleanup' => 'always',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'domain_id' => 'current_domain',
+        'label' => E::ts('Xero Contact Syncronization'),
+        'name' => 'Xero Contact Syncronization',
+        'url' => 'civicrm/a/#/accounts/contact/sync',
         'icon' => NULL,
         'permission' => [
           'administer CiviCRM system',

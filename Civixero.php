@@ -131,15 +131,6 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'separator' => 1,
   ]);
 
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero', [
-    'label' => 'Synchronize contacts',
-    'name' => 'Contact Sync',
-    'url' => 'civicrm/a/#/accounts/contact/sync',
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
-    'separator' => 1,
-  ]);
-
   // @todo - replace with the search kit display
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/XeroErrorLogs', [
     'label' => 'Contact Errors',
