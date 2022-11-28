@@ -49,7 +49,7 @@ class CRM_Civixero_Page_AJAX extends CRM_Core_Page {
 
   /**
    * Function to retry the contact sync on fail by id
-   *
+   * @deprecated move to action in accountsync
    */
   public static function retryContactError() {
     $id = CRM_Utils_Request::retrieve('id', 'Integer');

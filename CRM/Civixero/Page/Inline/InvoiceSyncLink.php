@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @deprecated
+ */
 class CRM_Civixero_Page_Inline_InvoiceSyncLink extends CRM_Core_Page {
 
   public function run() {
@@ -12,6 +15,7 @@ class CRM_Civixero_Page_Inline_InvoiceSyncLink extends CRM_Core_Page {
   }
 
   /**
+   * @deprecated
    * @param CRM_Core_Page $page
    * @param int $contactID
    */
