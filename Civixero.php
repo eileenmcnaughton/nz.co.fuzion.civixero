@@ -107,6 +107,8 @@ function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData, int $d
  *
  * Adds entries to the navigation menu.
  *
+ * @deprecated
+ *
  * @param array $menu
  */
 function civixero_civicrm_navigationMenu(&$menu) {
@@ -121,7 +123,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'operator' => NULL,
     'separator' => NULL,
   ]);
-  // @todo - replace with the search kit display
+  // @todo - remove this - alternative in place (but need to remove the form)
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero', [
     'label' => 'Xero Error Logs',
     'name' => 'XeroErrorLogs',
@@ -131,7 +133,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'separator' => 1,
   ]);
 
-  // @todo - replace with the search kit display
+  // @todo - remove this - alternative in place (but need to remove the form)
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/XeroErrorLogs', [
     'label' => 'Contact Errors',
     'name' => 'Contact Errors',
@@ -141,7 +143,7 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'separator' => 0,
   ]);
 
-  // @todo - replace with the search kit display
+  // @todo - remove this - alternative in place (but need to remove the form)
   _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/XeroErrorLogs', [
     'label' => 'Invoice Errors',
     'name' => 'Invoice Errors',
@@ -150,17 +152,6 @@ function civixero_civicrm_navigationMenu(&$menu) {
     'operator' => NULL,
     'separator' => 0,
   ]);
-  $connectors = _civixero_get_connectors();
-  foreach ($connectors as $connectorID => $details) {
-    _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/', [
-      'label' => 'Xero Authorize ' . $details['name'],
-      'name' => 'Xero Authorize ' . $details['name'],
-      'url' => 'civicrm/xero/authorize?connector_id=' . $connectorID,
-      'permission' => 'administer CiviCRM',
-      'operator' => NULL,
-      'separator' => 0,
-    ]);
-  }
 }
 
 /**

@@ -1,7 +1,7 @@
 <?php
 use CRM_Civixero_ExtensionUtil as E;
 
-return [
+$entities = [
   [
     'name' => 'Navigation_Xero',
     'entity' => 'Navigation',
@@ -146,3 +146,30 @@ return [
     ],
   ],
 ];
+$connectors = _civixero_get_connectors();
+foreach ($connectors as $connectorID => $details) {
+  $entities[] = [
+    'name' => 'Xero Authorize ' . $details['name'],
+    'entity' => 'Navigation',
+    'cleanup' => 'always',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'domain_id' => 'current_domain',
+        'label' => E::ts('Xero Authorize') . ' ' . $details['name'],
+        'name' => 'Xero Authorize ' . $details['name'],
+        'url' => 'civicrm/xero/authorize?connector_id=' . $connectorID,
+        'icon' => NULL,
+        'permission' => [
+          'administer CiviCRM system',
+        ],
+        'permission_operator' => 'AND',
+        'parent_id.name' => 'Xero',
+        'is_active' => TRUE,
+        'has_separator' => 0,
+      ],
+    ],
+  ];
+}
+return $entities;
