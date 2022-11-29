@@ -56,22 +56,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             ]);
           }
           catch (CiviCRM_API3_Exception $e) {
-            // this is an update - but lets just check the contact id doesn't exist in the account_contact table first
-            // e.g if a list has been generated but not yet pushed
-            try {
-              $existing = civicrm_api3('AccountContact', 'getsingle', [
-                'return' => 'id',
-                'contact_id' => $contact['ContactNumber'],
-                'plugin' => $this->_plugin,
-              ]);
-              if (!empty($existing['accounts_contact_id']) && $existing['accounts_contact_id'] !== (int) $contact['ContactID']) {
-                // no idea how this happened or what it means - calling function can catch & deal with it
-                throw new CRM_Core_Exception(E::ts('Cannot update contact'), 'data_error', $contact);
-              }
-            }
-            catch (CRM_Core_Exception $e) {
-              // ok - it IS an update
-            }
           }
           try {
             civicrm_api3('AccountContact', 'create', $params);
