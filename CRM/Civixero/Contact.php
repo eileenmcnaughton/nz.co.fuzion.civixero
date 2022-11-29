@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\AccountContact;
 use Civi\Api4\Email;
 use CRM_Civixero_ExtensionUtil as E;
 use Civi\Api4\LocationType;
@@ -49,16 +50,16 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             continue;
           }
           try {
-            $params['id'] = civicrm_api3('AccountContact', 'getvalue', [
-              'return' => 'id',
-              'accounts_contact_id' => $contact['ContactID'],
-              'plugin' => $this->_plugin,
-            ]);
+            $params['id'] = AccountContact::get(FALSE)
+              ->addSelect('id')
+              ->addWhere('accounts_contact_id', '=', $contact['ContactID'])
+              ->addWhere('plugin', '=', $this->_plugin)
+              ->execute()->first()['id'];
           }
-          catch (CiviCRM_API3_Exception $e) {
+          catch (CRM_Core_Exception $e) {
           }
           try {
-            civicrm_api3('AccountContact', 'create', $params);
+            AccountContact::save(FALSE)->setRecords([$params])->execute();
           }
           catch (CRM_Core_Exception $e) {
             CRM_Core_Session::setStatus(E::ts('Failed to store ') . $params['accounts_display_name']
@@ -86,23 +87,25 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    */
   public function push(array $params): bool {
     try {
-      $accountContactParams = [
-        'accounts_needs_update' => 1,
-        'plugin' => $this->_plugin,
-        'api.contact.get' => 1,
-        'connector_id' => $params['connector_id'],
-      ];
+      $accountContacts = AccountContact::get(FALSE)
+        ->addWhere('plugin', '=', $this->_plugin)
+        ->addWhere('accounts_needs_update', '=', TRUE)
+        ->addWhere('connector_id', '=', $params['connector_id']);
+
       // If we specified a CiviCRM contact ID just push that contact.
       if (!empty($params['contact_id'])) {
-        $accountContactParams['contact_id'] = $params['contact_id'];
-        $accountContactParams['accounts_needs_update'] = 0;
+        $accountContacts->addWhere('contact_id', '=', $params['contact_id']);
       }
-      $records = civicrm_api3('AccountContact', 'get', $accountContactParams);
+      else {
+        $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
+      }
+
+      $records = $accountContacts->execute();
 
       $errors = [];
 
       //@todo pass limit through from params to get call
-      foreach ($records['values'] as $record) {
+      foreach ($records as $record) {
         try {
           // Get the contact data. This includes the "Primary" email as $contact['email'] if set.
           $contact = civicrm_api3('Contact', 'get', ['id' => $record['contact_id']]);
@@ -121,7 +124,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           }
 
           $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
-          $accountsContact = $this->mapToAccounts($record['api.contact.get']['values'][0], $accountsContactID);
+          $accountsContact = $this->mapToAccounts($contact['values'][0], $accountsContactID);
           if ($accountsContact === FALSE) {
             $result = FALSE;
             $responseErrors = [];
