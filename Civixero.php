@@ -209,16 +209,15 @@ function civixero_civicrm_check(array &$messages) {
     'plugin' => 'xero',
   ]);
   $errorMessage = '';
-  $errorsPageUrl = CRM_Utils_System::url('civicrm/xero/errorlog');
 
   if ($accountContactErrors > 0) {
-    $errorMessage .= 'Found ' . $accountContactErrors . ' contact sync errors. <a href="' . $errorsPageUrl . '" target="_blank">Click here</a> to resolve them.';
+    $errorMessage .= 'Found ' . $accountContactErrors . ' contact sync errors. <a href="' . CRM_Utils_System::url('civicrm/accounting/errors/contacts') . '" target="_blank">Click here</a> to resolve them.';
     if ($accountInvoiceErrors > 0) {
       $errorMessage .= '<br><br>';
     }
   }
   if ($accountInvoiceErrors > 0) {
-    $errorMessage .= 'Found ' . $accountInvoiceErrors . ' invoice sync errors. <a href="' . $errorsPageUrl . '?for=invoice" target="_blank">Click here</a> to resolve them.';
+    $errorMessage .= 'Found ' . $accountInvoiceErrors . ' invoice sync errors. <a href="' . CRM_Utils_System::url('civicrm/accounting/errors/invoices') . '" target="_blank">Click here</a> to resolve them.';
   }
 
   if ($accountInvoiceErrors > 0 || $accountContactErrors > 0) {
