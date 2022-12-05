@@ -108,7 +108,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       foreach ($records as $record) {
         try {
           // Get the contact data. This includes the "Primary" email as $contact['email'] if set.
-          $contact = civicrm_api3('Contact', 'get', ['id' => $record['contact_id']]);
+          $contact = civicrm_api3('Contact', 'getsingle', ['id' => $record['contact_id']]);
           // See if we have an email for the preferred location type?
           $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
           if ($locationTypeToSync !== 0) {
@@ -124,7 +124,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           }
 
           $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
-          $accountsContact = $this->mapToAccounts($contact['values'][0], $accountsContactID);
+          $accountsContact = $this->mapToAccounts($contact, $accountsContactID);
           if ($accountsContact === FALSE) {
             $result = FALSE;
             $responseErrors = [];
