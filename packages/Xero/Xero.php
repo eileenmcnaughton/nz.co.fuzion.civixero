@@ -1,5 +1,7 @@
 <?php
 
+use GuzzleHttp\Client;
+
 /**
  * From the README file:
  *
@@ -243,19 +245,21 @@ class Xero {
       if ($order) {
         $xero_url .= "&order=$order";
       }
-      $ch = curl_init();
-      if ($acceptHeader == 'pdf') {
+      if ($acceptHeader === 'pdf') {
         $headers[] = "Accept: application/" . $acceptHeader;
       }
-      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-      curl_setopt($ch, CURLOPT_URL, $xero_url);
       if (isset($modified_after) && $modified_after != FALSE) {
         $headers[] = "If-Modified-Since: $modified_after";
       }
-      curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-      $temp_xero_response = curl_exec($ch);
-      curl_close($ch);
+      $temp_xero_response = (string) $this->getGuzzleClient()->post($xero_url, [
+        'body' => $nvpreq,
+        'curl' => [
+          CURLOPT_RETURNTRANSFER => TRUE,
+          // Seems bad, historically set to this.
+          CURLOPT_SSL_VERIFYPEER => FALSE,
+          CURLOPT_HTTPHEADER => $headers,
+        ],
+      ])->getBody();
       if ($acceptHeader == 'pdf') {
         return $temp_xero_response;
       }
@@ -365,6 +369,13 @@ class Xero {
       return FALSE;
     }
     return TRUE;
+  }
+
+  /**
+   * @return \GuzzleHttp\Client
+   */
+  public function getGuzzleClient(): Client {
+    return $this->guzzleClient ?? new Client();
   }
 
   protected function build_http_query($params) {
