@@ -9,7 +9,7 @@ use Civi\Xero\ConnectorInterface;
  */
 class CRM_Civixero_Base {
 
-  private static $singleton;
+  private static $singleton = [];
 
   private $_xero_access_token;
 
