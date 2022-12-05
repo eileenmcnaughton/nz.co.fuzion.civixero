@@ -1,5 +1,8 @@
 <?php
 
+use Civi\API\Exception\UnauthorizedException;
+use Civi\Api4\AccountContact;
+use Civi\Api4\AccountInvoice;
 use Psr\Log\LogLevel;
 
 require_once 'Civixero.civix.php';
@@ -200,15 +203,28 @@ function getErroredInvoicesOfContributions($contributions) {
  */
 function civixero_civicrm_check(array &$messages) {
 
-  $accountContactErrors = civicrm_api3('AccountContact', 'getcount', [
-    'error_data' => ['NOT LIKE' => '%error_cleared%'],
-    'plugin' => 'xero',
-  ]);
-  $accountInvoiceErrors = civicrm_api3('AccountInvoice', 'getcount', [
-    'error_data' => ['NOT LIKE' => '%error_cleared%'],
-    'plugin' => 'xero',
-  ]);
-  $errorMessage = '';
+  try {
+    $accountContactErrors = AccountContact::get()
+      ->selectRowCount()
+      ->addWhere('error_data', 'IS NOT NULL')
+      ->addWhere('plugin', '=', 'xero')
+      ->addWhere('is_error_resolved', '=', FALSE)
+      ->execute()->count();
+
+    $accountInvoiceErrors = AccountInvoice::get()
+      ->selectRowCount()
+      ->addWhere('error_data', 'IS NOT NULL')
+      ->addWhere('plugin', '=', 'xero')
+      ->addWhere('is_error_resolved', '=', FALSE)
+      ->execute()->count();
+
+    $errorMessage = '';
+  }
+  catch (UnauthorizedException $e) {
+    // Fine - skip the check. We want ACLs to apply but not to
+    // error out if they don't have any permissions
+    return;
+  }
 
   if ($accountContactErrors > 0) {
     $errorMessage .= 'Found ' . $accountContactErrors . ' contact sync errors. <a href="' . CRM_Utils_System::url('civicrm/accounting/errors/contacts') . '" target="_blank">Click here</a> to resolve them.';
@@ -234,7 +250,7 @@ function civixero_civicrm_check(array &$messages) {
   $accessTokenData = Civi::settings()->get('xero_access_token');
   if (!$clientID || !$clientSecret) {
     $messages[] = new CRM_Utils_Check_Message(
-      'civixero_clientrequired',
+      'civixero_client_required',
       ts('Please configure a Client ID and Client Secret from your Xero app.'),
       ts('Missing Xero App Details'),
       LogLevel::WARNING,
@@ -243,7 +259,7 @@ function civixero_civicrm_check(array &$messages) {
   }
   elseif (empty($accessTokenData['access_token'])) {
     $messages[] = new CRM_Utils_Check_Message(
-      'civixero_authorizationrequired',
+      'civixero_authorization_required',
       ts('Please Authorize with Xero to enable a connection.'),
       ts('Xero Authorization Required'),
       LogLevel::WARNING,
