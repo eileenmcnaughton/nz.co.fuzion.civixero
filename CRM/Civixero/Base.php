@@ -119,7 +119,7 @@ class CRM_Civixero_Base {
    * @return \CRM_Extension_System
    */
   protected function singleton($token, $tenant_id, $connector_id, $force = FALSE) {
-    if (!self::$singleton[$connector_id] || $force) {
+    if (!isset(self::$singleton[$connector_id]) || $force) {
       require_once 'packages/Xero/Xero.php';
       self::$singleton[$connector_id] = new Xero($token, $tenant_id);
     }
