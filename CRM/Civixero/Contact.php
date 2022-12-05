@@ -143,13 +143,12 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           }
 
           /* When Xero returns an ID that matches an existing account_contact, update it instead. */
-          $matching = civicrm_api('AccountContact', 'getsingle', [
-              'accounts_contact_id' => $result['Contacts']['Contact']['ContactID'],
-              'plugin' => $this->_plugin,
-              'version' => 3,
-            ]
-          );
-          if (!$matching['is_error']) {
+          $matching = AccountContact::get()
+            ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
+            ->addWhere('plugin', '=', $this->_plugin)
+            ->execute()->first();
+
+          if (count($matching)) {
             if (empty($matching['contact_id']) ||
               civicrm_api3('contact', 'getvalue', ['id' => $matching['contact_id'], 'return' => 'contact_is_deleted'])) {
               Civi::log('civixero')->error(E::ts('Updating existing contact for %1', [1 => $record['contact_id']]));
