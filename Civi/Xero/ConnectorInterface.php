@@ -1,8 +1,6 @@
 <?php
 namespace Civi\Xero;
 
-use League\OAuth2\Client\Token\AccessTokenInterface;
-
 interface ConnectorInterface {
 
   /**

@@ -1,5 +1,8 @@
 <?php
 
+// This require once should not be needed - but need to figure out how to remove
+// without breakage.
+require_once __DIR__ . '/../../../Civi/Xero/ConnectorInterface.php';
 use Civi\Xero\ConnectorInterface;
 use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Token\AccessTokenInterface;
