@@ -143,7 +143,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           }
 
           /* When Xero returns an ID that matches an existing account_contact, update it instead. */
-          $matching = AccountContact::get()
+          $matching = AccountContact::get(FALSE)
             ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
             ->addWhere('plugin', '=', $this->_plugin)
             ->execute()->first();
