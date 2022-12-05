@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Xero\ConnectorInterface;
+
 /**
  * Class CRM_Civixero_Base
  *
@@ -38,13 +40,7 @@ class CRM_Civixero_Base {
     $force = FALSE;
     $this->connector_id = $parameters['connector_id'] ?? 0;
 
-    $xeroConnect = CRM_Civixero_OAuth2_Xero::singleton(
-      $this->connector_id,
-      trim($parameters['xero_client_id'] ?? $this->getSetting('xero_client_id')),
-      trim($parameters['xero_client_secret'] ?? $this->getSetting('xero_client_secret')),
-      trim($parameters['xero_tenant_id'] ?? $this->getSetting('xero_tenant_id')),
-      $parameters['xero_access_token'] ?? $this->getSetting('xero_access_token')
-    );
+    $xeroConnect = $this->getXeroConnector($parameters);
     $this->_xero_access_token = $xeroConnect->getToken();
     $this->saveToken($this->_xero_access_token);
     $this->_xero_tenant_id = $xeroConnect->getTenantID();
@@ -254,6 +250,27 @@ class CRM_Civixero_Base {
       }
     }
     return is_array($errors) ? $errors : FALSE;
+  }
+
+  /**
+   * @param array $parameters
+   *
+   * @return ConnectorInterface
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function getXeroConnector(array $parameters): ConnectorInterface {
+    if (isset(Civi::$statics['civixero_connector'])) {
+      // A bit of a hack to allow us to use a test specific connector.
+      return Civi::$statics['civixero_connector'];
+    }
+    return CRM_Civixero_OAuth2_Xero::singleton(
+      $this->connector_id,
+      trim($parameters['xero_client_id'] ?? $this->getSetting('xero_client_id')),
+      trim($parameters['xero_client_secret'] ?? $this->getSetting('xero_client_secret')),
+      trim($parameters['xero_tenant_id'] ?? $this->getSetting('xero_tenant_id')),
+      $parameters['xero_access_token'] ?? $this->getSetting('xero_access_token')
+    );
   }
 
 }

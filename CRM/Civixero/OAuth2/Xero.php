@@ -1,4 +1,9 @@
 <?php
+
+use Civi\Xero\ConnectorInterface;
+use League\OAuth2\Client\Token\AccessToken;
+use League\OAuth2\Client\Token\AccessTokenInterface;
+
 /**
  * Manages OAuth tokens and requests with CiviCRM settings.
  *
@@ -6,7 +11,7 @@
  *
  *
  */
-class CRM_Civixero_OAuth2_Xero {
+class CRM_Civixero_OAuth2_Xero implements ConnectorInterface {
   private static $_instances = [];
 
   /**
@@ -87,10 +92,10 @@ class CRM_Civixero_OAuth2_Xero {
    * If the current access token has expired get a new one from
    * Xero and store it.
    *
-   * @return \League\OAuth2\Client\Token\AccessToken
+   * @return \League\OAuth2\Client\Token\AccessTokenInterface
    * @throws \CRM_Core_Exception
    */
-  public function getToken() {
+  public function getToken(): AccessTokenInterface {
     $accessToken = $this->store->fetch();
     if (!$accessToken) {
       throw new CRM_Core_Exception('No token in store.');
@@ -98,15 +103,14 @@ class CRM_Civixero_OAuth2_Xero {
     if (!$accessToken->hasExpired()) {
       return $accessToken;
     }
-    $newToken = $this->renewToken($accessToken);
-    return $newToken;
+    return $this->renewToken($accessToken);
   }
 
-  public function getTenantID() {
+  public function getTenantID(): string {
     return $this->tenantID;
   }
 
-  public function renewToken(\League\OAuth2\Client\Token\AccessToken $token) {
+  public function renewToken(AccessToken $token) {
     $newToken = $this->provider->getAccessToken('refresh_token', [
       'refresh_token' => $token->getRefreshToken()
     ]);
