@@ -17,11 +17,11 @@
     <author>eileen</author>
     <email>eileen@fuzion.co.nz</email>
   </maintainer>
-  <releaseDate>2023-12-08</releaseDate>
+  <releaseDate>2023-12-10</releaseDate>
   <version>99.MJW.2.1.4</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.56</ver>
+    <ver>5.58</ver>
   </compatibility>
   <comments>This module requires nz.co.fuzion.accountsync</comments>
   <classloader>
@@ -30,7 +30,7 @@
   </classloader>
   <civix>
     <namespace>CRM/Civixero</namespace>
-    <format>23.02.0</format>
+    <format>23.02.1</format>
   </civix>
   <mixins>
     <mixin>menu-xml@1.0.0</mixin>
