@@ -160,4 +160,13 @@ return [
     'pseudoconstant' => ['callback' => 'CRM_Civixero_Contact::getLocationTypes'],
     'settings_pages' => ['xero' => ['weight' => 4]],
   ],
+  'xero_oauth_rate_exceeded' => [
+    'name' => 'xero_oauth_rate_exceeded',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'default' => '',
+    'title' => 'Xero OAuth Rate Exceeded',
+    'description' => 'Timestamp when OAuth Rate was exceeded. Cleared after one hour',
+  ],
 ];

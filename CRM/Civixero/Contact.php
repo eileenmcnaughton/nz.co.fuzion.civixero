@@ -21,8 +21,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
     try {
+      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
+
       /** @noinspection PhpUndefinedMethodInspection */
-      $result = $this->getSingleton($params['connector_id'])
+      $result = $this
+        ->getSingleton($params['connector_id'])
         ->Contacts($params['xero_contact_id'], $this->formatDateForXero($params['start_date']));
       if (!is_array($result)) {
         throw new CRM_Core_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
@@ -87,6 +90,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    */
   public function push(array $params): bool {
     try {
+      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
       $accountContacts = AccountContact::get(FALSE)
         ->addWhere('plugin', '=', $this->_plugin)
         ->addWhere('accounts_needs_update', '=', TRUE)
