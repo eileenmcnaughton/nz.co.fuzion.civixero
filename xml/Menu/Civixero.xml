@@ -31,12 +31,6 @@
     <access_arguments>access CiviContribute</access_arguments>
   </item>
   <item>
-    <path>civicrm/xero/errorlog</path>
-    <page_callback>CRM_Civixero_Page_XeroErrorLogs</page_callback>
-    <title>XeroErrorLogs</title>
-    <access_arguments>access CiviContribute</access_arguments>
-  </item>
-  <item>
     <path>civicrm/xero/authorize</path>
     <page_callback>CRM_Civixero_Form_XeroAuthorize</page_callback>
     <title>XeroAuthorize</title>
