@@ -106,58 +106,6 @@ function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData, int $d
 }
 
 /**
- * Implements hook_civicrm_navigationMenu().
- *
- * Adds entries to the navigation menu.
- *
- * @deprecated
- *
- * @param array $menu
- */
-function civixero_civicrm_navigationMenu(&$menu) {
-  // @todo - remove these in favour of using now-preferred method of adding via mgd.
-  // note the intent is to remove rather than migrate some of these - ie
-  // replace with search form.
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer', [
-    'label' => 'Xero',
-    'name' => 'legacyxero',
-    'url' => NULL,
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
-    'separator' => NULL,
-  ]);
-  // @todo - remove this - alternative in place (but need to remove the form)
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero', [
-    'label' => 'Xero Error Logs',
-    'name' => 'XeroErrorLogs',
-    'url' => NULL,
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
-    'separator' => 1,
-  ]);
-
-  // @todo - remove this - alternative in place (but need to remove the form)
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/XeroErrorLogs', [
-    'label' => 'Contact Errors',
-    'name' => 'Contact Errors',
-    'url' => 'civicrm/xero/errorlog',
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
-    'separator' => 0,
-  ]);
-
-  // @todo - remove this - alternative in place (but need to remove the form)
-  _Civixero_civix_insert_navigation_menu($menu, 'Administer/legacyxero/XeroErrorLogs', [
-    'label' => 'Invoice Errors',
-    'name' => 'Invoice Errors',
-    'url' => 'civicrm/xero/errorlog?for=invoice',
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
-    'separator' => 0,
-  ]);
-}
-
-/**
  * Get contributions for a single contact.
  *
  * @param int $contactid
