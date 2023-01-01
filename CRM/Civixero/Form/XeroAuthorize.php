@@ -149,7 +149,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
    *
    * @return string
    */
-  protected function getOauth2State(): string {
+  protected function getOauth2State(): ?string {
     return CRM_Core_Session::singleton()->get('oauth2state', 'xero');
   }
 
