@@ -26,6 +26,9 @@ class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_Token
    * @param \League\OAuth2\Client\Token\AccessToken $token
    */
   public function save(AccessToken $token): void {
+    Civi::settings()->set('xero_access_token_refresh_token', $token->getRefreshToken());
+    Civi::settings()->set('xero_access_token_expires', $token->getExpires());
+    Civi::settings()->set('xero_access_token_access', $token->getToken());
     Civi::settings()->set('xero_access_token', $token->jsonSerialize());
   }
 

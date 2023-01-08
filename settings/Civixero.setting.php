@@ -38,9 +38,12 @@ return [
   ],
   // OAuth 2.0, No UI. Retrieved and stored on Authentication/Refresh.
   // Temporary, lifespan 30 mins.
-  // Stored as serialized array.
+  // Stored as serialized array  - @todo CHANGE THIS - should be
+  // several separate settings!
   // Can be used to initialize League\OAuth2\Client\Token\AccessToken().
-  // Includes refresh_token property so should always be stored even if expired.
+  // Includes refresh_token property so should always be stored even if expired
+  // but of course that should be a separate setting!
+  // @deprecated
   'xero_access_token' => [
     'group_name' => 'Xero Settings',
     'group' => 'xero',
@@ -51,6 +54,44 @@ return [
     'is_contact' => 0,
     'description' => 'Xero Access Token',
     'title' => 'Xero Access Token',
+    'help_text' => '',
+    // No form element
+  ],
+  'xero_access_token_access_token' => [
+    'group_name' => 'Xero OAuth Settings',
+    'group' => 'xero',
+    'name' => 'xero_access_token_access_token',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => 'Xero Access Token Access token',
+    'title' => 'Xero Access Token Access token',
+    'help_text' => '',
+    // No form element
+  ],
+  'xero_access_token_refresh_token' => [
+    'group_name' => 'Xero OAuth Settings',
+    'group' => 'xero',
+    'name' => 'xero_access_token_refresh_token',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => 'Xero Access Token Refresh token',
+    'title' => 'Xero Access Token Refresh token',
+    'help_text' => '',
+    // No form element
+  ],
+  'xero_access_token_expires' => [
+    'group_name' => 'Xero OAuth Settings',
+    'group' => 'xero',
+    'name' => 'xero_access_token_expires',
+    // Type is really timestamp - I haven't checked if that would work
+    // but would be good to make it visible as such
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => 'Xero Access Token Expires',
+    'title' => 'Xero Access Token Expires',
     'help_text' => '',
     // No form element
   ],
@@ -160,8 +201,8 @@ return [
     'pseudoconstant' => ['callback' => 'CRM_Civixero_Contact::getLocationTypes'],
     'settings_pages' => ['xero' => ['weight' => 4]],
   ],
-  'xero_oauth_rate_exceeded' => [
-    'name' => 'xero_oauth_rate_exceeded',
+  'xero_OAuth_rate_exceeded' => [
+    'name' => 'xero_OAuth_rate_exceeded',
     'type' => 'String',
     'is_domain' => 1,
     'is_contact' => 0,
