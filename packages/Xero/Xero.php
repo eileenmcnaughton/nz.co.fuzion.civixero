@@ -66,7 +66,7 @@ class Xero {
 
   private $public_cert;
 
-  private $private_key;
+  private $guzzleClient;
 
   private $consumer;
 
@@ -251,7 +251,7 @@ class Xero {
       if (isset($modified_after) && $modified_after != FALSE) {
         $headers[] = "If-Modified-Since: $modified_after";
       }
-      $temp_xero_response = (string) $this->getGuzzleClient()->post($xero_url, [
+      $temp_xero_response = (string) $this->getGuzzleClient()->get($xero_url, [
         'body' => $nvpreq,
         'curl' => [
           CURLOPT_RETURNTRANSFER => TRUE,
