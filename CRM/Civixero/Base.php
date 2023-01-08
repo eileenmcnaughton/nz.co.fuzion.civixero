@@ -275,6 +275,7 @@ class CRM_Civixero_Base {
 
   /**
    * @param bool $throwException
+   *  Deprecated parameter - should return true or false
    *
    * @return bool
    * @throws \CRM_Core_Exception

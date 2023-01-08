@@ -21,7 +21,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
     try {
-      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
+      if (CRM_Civixero_Base::isApiRateLimitExceeded()) {
+        throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again in 1 hour');
+      }
 
       /** @noinspection PhpUndefinedMethodInspection */
       $result = $this

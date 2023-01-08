@@ -1,5 +1,7 @@
 <?php
 
+use League\OAuth2\Client\Token\AccessToken;
+
 /**
  *
  * Default class for token storage.
@@ -12,7 +14,7 @@ class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_Token
   protected $token;
 
   public function __construct($tokenData) {
-    $this->token = new \League\OAuth2\Client\Token\AccessToken($tokenData);
+    $this->token = new AccessToken($tokenData);
   }
 
   /**
@@ -23,7 +25,7 @@ class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_Token
    *
    * @param \League\OAuth2\Client\Token\AccessToken $token
    */
-  public function save(\League\OAuth2\Client\Token\AccessToken $token) {
+  public function save(AccessToken $token): void {
     Civi::settings()->set('xero_access_token', $token->jsonSerialize());
   }
 
