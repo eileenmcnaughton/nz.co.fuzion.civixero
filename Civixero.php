@@ -28,15 +28,6 @@ function civixero_civicrm_install() {
 }
 
 /**
- * Implements hook_civicrm_postInstall().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
- */
-function Civixero_civicrm_postInstall() {
-  _Civixero_civix_civicrm_postInstall();
-}
-
-/**
  * Implementation of hook_civicrm_uninstall
  */
 function civixero_civicrm_uninstall() {
