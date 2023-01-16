@@ -108,7 +108,7 @@ class CRM_Civixero_Base {
    *   Accounts contact ID. This is recorded in the civicrm_financial_type table
    *   and in the civicrm_connector table.
    */
-  protected function setAccountsContact($contact_id) {
+  protected function setAccountsContact($contact_id): void {
     $this->accounts_contact = $contact_id;
   }
 
@@ -214,7 +214,7 @@ class CRM_Civixero_Base {
    *
    * http://developer.xero.com/documentation/getting-started/http-requests-and-responses/#post-put-creating-many
    *
-   * @param array $response Response From Xero
+   * @param array|string $response Response From Xero
    *
    * @return array|bool
    * @throws \CRM_Civixero_Exception_XeroThrottle
@@ -233,6 +233,8 @@ class CRM_Civixero_Base {
       if ($problem === 'signature_invalid') {
         throw new CRM_Core_Exception('Invalid signature - your key may be invalid');
       }
+      Civi::log('civixero')->error('Xero Oauth rate exceeded: ' . $message);
+      CRM_Civixero_Base::setApiRateLimitExceeded();
       throw new CRM_Civixero_Exception_XeroThrottle($problem);
     }
     if (!empty($response['ErrorNumber'])) {
@@ -304,7 +306,7 @@ class CRM_Civixero_Base {
    * @throws \CRM_Core_Exception
    */
   public static function isApiRateLimitExceeded($throwException = FALSE) {
-    $rateLimitExceeded = \Civi::settings()->get('xero_oauth_rate_exceeded');
+    $rateLimitExceeded = Civi::settings()->get('xero_oauth_rate_exceeded');
     if (!$rateLimitExceeded) {
       return FALSE;
     }
@@ -322,15 +324,15 @@ class CRM_Civixero_Base {
   /**
    * @return void
    */
-  public static function setApiRateLimitExceeded() {
-    \Civi::settings()->set('xero_oauth_rate_exceeded', time());
+  public static function setApiRateLimitExceeded(): void {
+    Civi::settings()->set('xero_oauth_rate_exceeded', time());
   }
 
   /**
    * @return void
    */
-  public static function resetApiRateLimitExceeded() {
-    \Civi::settings()->set('xero_oauth_rate_exceeded', NULL);
+  public static function resetApiRateLimitExceeded(): void {
+    Civi::settings()->set('xero_oauth_rate_exceeded', NULL);
   }
 
 }
