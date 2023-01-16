@@ -202,7 +202,7 @@ return [
     'settings_pages' => ['xero' => ['weight' => 4]],
   ],
   'xero_OAuth_rate_exceeded' => [
-    'name' => 'xero_OAuth_rate_exceeded',
+    'name' => 'xero_oAuth_rate_exceeded',
     'type' => 'String',
     'is_domain' => 1,
     'is_contact' => 0,
