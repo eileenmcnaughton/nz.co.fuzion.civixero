@@ -29,13 +29,18 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
   private $connectorID;
 
   /**
+   * @var array
+   */
+  private $accessTokenData;
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function preProcess(): void {
     $this->connectorID = CRM_Utils_Request::retrieveValue('connector_id', 'Integer', 0);
     $this->clientID = $this->getSetting('xero_client_id');
     $this->clientSecret = $this->getSetting('xero_client_secret');
-    $accessTokenData = $this->getSetting('xero_access_token');
+    $this->accessTokenData = $this->getSetting('xero_access_token');
     $redirectURL = CRM_Utils_System::url('civicrm/xero/authorize',
       $this->connectorID > 0 ? ['connector_id' => $this->connectorID] : NULL,
       TRUE,
@@ -52,8 +57,8 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
       ]
     );
     $refresh_token = NULL;
-    if (!empty($accessTokenData['refresh_token'])) {
-      $access_token = new AccessToken($accessTokenData);
+    if (!empty($this->accessTokenData['refresh_token'])) {
+      $access_token = new AccessToken($this->accessTokenData);
       $refresh_token = $access_token->getRefreshToken();
     }
     // We may or may not have valid tokens at this point.
@@ -67,10 +72,10 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
         // Save the new tokens.
         $refresh_token = $newAccessToken->getRefreshToken();
         if ($refresh_token) {
-          $accessTokenData = $newAccessToken->jsonSerialize();
+          $this->accessTokenData = $newAccessToken->jsonSerialize();
           $tenantID = $this->provider->getConnectedTenantID($newAccessToken->getToken());
           if ($tenantID) {
-            $this->saveSetting('xero_access_token', $accessTokenData);
+            $this->saveSetting('xero_access_token', $this->accessTokenData);
             $this->saveSetting('xero_tenant_id', $tenantID);
             $this->hasValidTokens = TRUE;
           }
@@ -180,6 +185,10 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
       'isDefault' => TRUE,
     ];
 
+    $accessTokenExpired = ($this->accessTokenData['expires'] < time());
+    $this->assign('accesstoken_expiry_date', $this->accessTokenData['expires']);
+    $this->assign('accesstoken_expired', $accessTokenExpired);
+
     //Check if we have returned from authorization and process data.
     // Do we have a client id
     if (empty($this->clientID) || empty($this->clientSecret)) {
@@ -194,7 +203,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
         $statusIcon = CRM_Core_Page::crmIcon('fa-check');
       }
       else {
-        $statusMessage = E::ts('You need to Authorize with Xero by clicking the button below.');
+        $statusMessage = ($accessTokenExpired ? E::ts('You need to Re-authorize with Xero by clicking the button below.') : E::ts('You need to Authorize with Xero by clicking the button below.'));
         $statusIcon = CRM_Core_Page::crmIcon('fa-exclamation-triangle');
         $buttons[] = [
           'type' => 'next',
@@ -204,7 +213,8 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
         ];
       }
       // @todo - is this really doing nothing - or just a bad code smell?
-      $url = $this->getAuthURL();
+      //   It is setting oauth2state on the session - not sure if that is needed.
+      $this->getAuthURL();
     }
     $this->assign('statusMessage', $statusMessage);
     $this->assign('statusIcon', $statusIcon);
