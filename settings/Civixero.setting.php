@@ -195,7 +195,6 @@ return [
     'help_text' => '',
     'html_type' => 'select',
     'html_attributes' => [
-      'multiple' => 1,
       'class' => 'crm-select2',
     ],
     'pseudoconstant' => ['callback' => 'CRM_Civixero_Contact::getLocationTypes'],
