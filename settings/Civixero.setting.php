@@ -38,25 +38,6 @@ return [
   ],
   // OAuth 2.0, No UI. Retrieved and stored on Authentication/Refresh.
   // Temporary, lifespan 30 mins.
-  // Stored as serialized array  - @todo CHANGE THIS - should be
-  // several separate settings!
-  // Can be used to initialize League\OAuth2\Client\Token\AccessToken().
-  // Includes refresh_token property so should always be stored even if expired
-  // but of course that should be a separate setting!
-  // @deprecated
-  'xero_access_token' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
-    'name' => 'xero_access_token',
-    'type' => 'String',
-    'add' => '4.4',
-    'is_domain' => 1,
-    'is_contact' => 0,
-    'description' => 'Xero Access Token',
-    'title' => 'Xero Access Token',
-    'help_text' => '',
-    // No form element
-  ],
   'xero_access_token_access_token' => [
     'group_name' => 'Xero OAuth Settings',
     'group' => 'xero',
