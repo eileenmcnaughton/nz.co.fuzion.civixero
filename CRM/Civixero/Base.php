@@ -30,6 +30,11 @@ class CRM_Civixero_Base {
   protected $connector_id;
 
   /**
+   * @var \CRM_Civixero_Settings
+   */
+  protected $settings;
+
+  /**
    * Class constructor.
    *
    * @param array $parameters
@@ -40,34 +45,12 @@ class CRM_Civixero_Base {
   public function __construct($parameters = []) {
     $force = FALSE;
     $this->connector_id = $parameters['connector_id'] ?? 0;
-
+    $this->settings = new CRM_Civixero_Settings($this->connector_id);
     $xeroConnect = $this->getXeroConnector($parameters);
     $this->_xero_access_token = $xeroConnect->getToken();
-    $this->saveToken($this->_xero_access_token);
+    $this->settings->saveToken($this->_xero_access_token);
     $this->_xero_tenant_id = $xeroConnect->getTenantID();
     $this->singleton($this->_xero_access_token->getToken(), $this->_xero_tenant_id, $this->connector_id, $force);
-  }
-
-  /**
-   * Save the token.
-   *
-   * The token is already saved - but by a non-connector aware class.
-   *
-   * Doing it here is a quick-for-now-fix
-   *
-   * @param \League\OAuth2\Client\Token\AccessToken $token
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function saveToken(AccessToken $token): void {
-    if ($this->connector_id === 0) {
-      Civi::settings()->set('xero_access_token_refresh_token', $token->getRefreshToken());
-      Civi::settings()->set('xero_access_token_access_token', $token->getToken());
-      Civi::settings()->set('xero_access_token_expires', $token->getExpires());
-    }
-    else {
-      civicrm_api3('Connector', 'create', ['id' => $this->connector_id, 'field4' => serialize($token->jsonSerialize())]);
-    }
   }
 
   /**
@@ -142,42 +125,6 @@ class CRM_Civixero_Base {
   protected function getSingleton($connector_id) {
     $this->connector_id = $connector_id;
     return self::$singleton[$connector_id];
-  }
-
-  /**
-   * Get Xero Setting.
-   *
-   * @param string $var
-   *
-   * @return mixed
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function getSetting(string $var) {
-    if ($this->connector_id > 0) {
-      static $connectors = [];
-      if (empty($connectors[$this->connector_id])) {
-        $connector = civicrm_api3('connector', 'getsingle', ['id' => $this->connector_id]);
-        $connectors[$this->connector_id] = [
-          'xero_client_id' => $connector['field1'],
-          'xero_client_secret' => $connector['field2'],
-          'xero_tenant_id' => $connector['field3'],
-          'xero_access_token' => unserialize($connector['field4']),
-          // @todo not yet configurable per selector.
-          'xero_default_invoice_status' => 'SUBMITTED',
-        ];
-      }
-
-      return $connectors[$this->connector_id][$var];
-    }
-    if ($var === 'xero_access_token') {
-      return [
-        'access_token' => \Civi::settings()->get('xero_access_token_access_token'),
-        'refresh_token' => \Civi::settings()->get('xero_access_token_refresh_token'),
-        'expires' => \Civi::settings()->get('xero_access_token_expires'),
-        'token_type' => 'Bearer',
-      ];
-    }
-    return \Civi::settings()->get($var);
   }
 
   /**
@@ -276,10 +223,10 @@ class CRM_Civixero_Base {
     }
     return CRM_Civixero_OAuth2_Xero::singleton(
       $this->connector_id,
-      trim($parameters['xero_client_id'] ?? $this->getSetting('xero_client_id')),
-      trim($parameters['xero_client_secret'] ?? $this->getSetting('xero_client_secret')),
-      trim($parameters['xero_tenant_id'] ?? $this->getSetting('xero_tenant_id')),
-      $parameters['xero_access_token'] ?? $this->getSetting('xero_access_token')
+      trim($parameters['xero_client_id'] ?? $this->settings->get('xero_client_id')),
+      trim($parameters['xero_client_secret'] ?? $this->settings->get('xero_client_secret')),
+      trim($parameters['xero_tenant_id'] ?? $this->settings->get('xero_tenant_id')),
+      $parameters['xero_access_token'] ?? $this->settings->get('xero_access_token')
     );
   }
 

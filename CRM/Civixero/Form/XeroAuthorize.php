@@ -29,6 +29,11 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
   private $connectorID;
 
   /**
+   * @var \CRM_Civixero_Settings
+   */
+  private $settings;
+
+  /**
    * @var array
    */
   private $accessTokenData;
@@ -38,9 +43,10 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
    */
   public function preProcess(): void {
     $this->connectorID = CRM_Utils_Request::retrieveValue('connector_id', 'Integer', 0);
-    $this->clientID = $this->getSetting('xero_client_id');
-    $this->clientSecret = $this->getSetting('xero_client_secret');
-    $this->accessTokenData = $this->getSetting('xero_access_token');
+    $this->settings = new CRM_Civixero_Settings($this->connectorID);
+    $this->clientID = $this->settings->get('xero_client_id');
+    $this->clientSecret = $this->settings->get('xero_client_secret');
+    $this->accessTokenData = $this->settings->get('xero_access_token');
     $redirectURL = CRM_Utils_System::url('civicrm/xero/authorize',
       $this->connectorID > 0 ? ['connector_id' => $this->connectorID] : NULL,
       TRUE,
@@ -51,8 +57,8 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
     );
 
     $this->provider = new CRM_Civixero_OAuth2_Provider_Xero([
-      'clientId' => $this->getSetting('xero_client_id'),
-      'clientSecret' => $this->getSetting('xero_client_secret'),
+      'clientId' => $this->settings->get('xero_client_id'),
+      'clientSecret' => $this->settings->get('xero_client_secret'),
       'redirectUri' => $redirectURL,
       ]
     );
@@ -75,8 +81,8 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
           $this->accessTokenData = $newAccessToken->jsonSerialize();
           $tenantID = $this->provider->getConnectedTenantID($newAccessToken->getToken());
           if ($tenantID) {
-            $this->saveSetting('xero_access_token', $this->accessTokenData);
-            $this->saveSetting('xero_tenant_id', $tenantID);
+            $this->settings->save('xero_access_token', $this->accessTokenData);
+            $this->settings->save('xero_tenant_id', $tenantID);
             $this->hasValidTokens = TRUE;
           }
         }
@@ -115,8 +121,8 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
         $tenant_id = $this->provider->getConnectedTenantID($access_token);
         if ($tenant_id) {
           // Save to Settings.
-          $this->saveSetting('xero_access_token', $token->jsonSerialize());
-          $this->saveSetting('xero_tenant_id', $tenant_id);
+          $this->settings->save('xero_access_token', $token->jsonSerialize());
+          $this->settings->save('xero_tenant_id', $tenant_id);
          // Signal success.
           $success = TRUE;
           CRM_Core_Session::setStatus(E::ts('Xero Authorization Successful'));
@@ -280,74 +286,6 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
       $url = $this->getAuthURL();
       CRM_Utils_System::redirect($url);
     }
-  }
-
-  /**
-   * @param string $name
-   * @param mixed $value
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function saveSetting(string $name, $value): void {
-    if ($this->connectorID > 0) {
-      static $connectors = [];
-      if (!empty($connectors[$this->connectorID])) {
-        unset($connectors[$this->connectorID]);
-      }
-      $mapping = [
-        'xero_client_id' => 'field1',
-        'xero_client_secret' => 'field2',
-        'xero_tenant_id' => 'field3',
-        'xero_access_token' => 'field4',
-      ];
-      if (is_array($value)) {
-        $value = serialize($value);
-      }
-      $params = ['id' => $this->connectorID, $mapping[$name] => $value];
-      civicrm_api3('Connector', 'create', $params);
-    }
-    else {
-      Civi::settings()->set($name, $value);
-    }
-  }
-
-  /**
-   * Get Xero Setting.
-   *
-   * @param string $var
-   *
-   * @return array|string
-   *
-   * @throws CRM_Core_Exception
-   *
-   */
-  protected function getSetting(string $var) {
-    if ($this->connectorID > 0) {
-      static $connectors = [];
-      if (empty($connectors[$this->connectorID])) {
-        $connector = civicrm_api3('Connector', 'getsingle', ['id' => $this->connectorID]);
-        $connectors[$this->connectorID] = [
-          'xero_client_id' => $connector['field1'],
-          'xero_client_secret' => $connector['field2'],
-          'xero_tenant_id' => $connector['field3'],
-          'xero_access_token' => unserialize($connector['field4'], ['allowOptions' => FALSE]),
-          // @todo not yet configurable per selector.
-          'xero_default_invoice_status' => 'SUBMITTED',
-        ];
-      }
-
-      $value = $connectors[$this->connectorID][$var];
-    }
-    else {
-      $value = civicrm_api3('Setting', 'getvalue', [
-        'name' => $var,
-        'group' => 'Xero Settings',
-      ]);
-    }
-    if (is_array($value)) {
-      return $value;
-    }
-    return trim($value);
   }
 
 }
