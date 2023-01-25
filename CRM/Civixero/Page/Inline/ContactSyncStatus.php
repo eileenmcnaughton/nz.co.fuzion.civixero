@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\AccountContact;
 use CRM_Civixero_ExtensionUtil as E;
 
 class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
@@ -20,26 +21,20 @@ class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
   public static function addContactSyncStatusBlock(CRM_Core_Page $page, int $contactID): void {
     $syncStatus = 0;
 
-    try {
-      $connectors = _civixero_get_connectors();
-      $account_contact = civicrm_api3('AccountContact', 'getsingle', [
-        'contact_id' => $contactID,
-        'return' => 'accounts_contact_id, accounts_needs_update, connector_id, error_data, id, contact_id',
-        'plugin' => 'xero',
-        'connector_id' => ['IN' => array_keys($connectors)],
-      ]);
+    $connectors = _civixero_get_connectors();
+    $account_contact = AccountContact::get(FALSE)
+      ->addSelect('accounts_contact_id', 'accounts_needs_update', 'connector_id', 'error_data', 'id', 'contact_id')
+      ->addWhere('contact_id', '=', $contactID)
+      ->addWhere('plugin', '=', 'xero')
+      ->addWhere('connector_id', 'IN', array_keys($connectors))
+      ->execute()
+      ->first();
 
-      if (!empty($account_contact['accounts_contact_id'])) {
-        $syncStatus = 1;
-      }
-      elseif (!empty($account_contact['accounts_needs_update'])) {
-        $syncStatus = 2;
-      }
-
+    if (!empty($account_contact['accounts_contact_id'])) {
+      $syncStatus = 1;
     }
-    catch (Exception $e) {
-      \Civi::log(E::SHORT_NAME)->error('Error getting sync status for contactID: ' . $contactID . ': ' . $e->getMessage());
-      $syncStatus = 3;
+    elseif (!empty($account_contact['accounts_needs_update'])) {
+      $syncStatus = 2;
     }
 
     $page->assign('syncStatus_xero', $syncStatus);
