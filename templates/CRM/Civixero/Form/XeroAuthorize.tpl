@@ -9,6 +9,11 @@
   <div class="content">{$form.xero_client_secret.html}</div>
   <div class="clear"></div>
 </div>
+<div class="crm-section">
+  <div class="label">{ts}Access token expiry date{/ts}</div>
+  <div class="content">{$accesstoken_expiry_date|crmDate}</div>
+  <p class="help">The access token is valid for 30 minutes. It is automatically renewed.</p>
+</div>
 
 <h3>{ts}Status{/ts}</h3>
 <div class="crm-section">

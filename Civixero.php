@@ -184,6 +184,7 @@ function civixero_civicrm_check(array &$messages) {
       'fa-refresh'
     );
   }
+
   $clientID = Civi::settings()->get('xero_client_id');
   $clientSecret = Civi::settings()->get('xero_client_secret');
   $accessTokenData = Civi::settings()->get('xero_access_token');
@@ -204,7 +205,15 @@ function civixero_civicrm_check(array &$messages) {
       LogLevel::WARNING,
       'fa-flag'
     );
-
+  }
+  elseif (isset($accessTokenData['expires']) && ($accessTokenData['expires'] <= time())) {
+    $messages[] = new CRM_Utils_Check_Message(
+      'civixero_authorization_required',
+      ts('Xero access token has expired. You need to re-authorize with Xero to re-enable the connection.'),
+      ts('Xero Authorization Required'),
+      LogLevel::CRITICAL,
+      'fa-flag'
+    );
   }
 }
 
