@@ -266,7 +266,6 @@ class Xero {
       try {
         if (@simplexml_load_string($temp_xero_response) == FALSE) {
           throw new XeroException($temp_xero_response);
-          $xero_xml = FALSE;
         }
         else {
           $xero_xml = simplexml_load_string($temp_xero_response);

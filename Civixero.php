@@ -59,7 +59,7 @@ function civixero_is_extension_installed(string $extension): bool {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsMetaData/
  */
-function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData, int $domainID, $profile): void {
+function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData): void {
   $weight = 100;
   foreach ($settingsMetaData as $index => $setting) {
     if (($setting['group'] ?? '') === 'accountsync') {
@@ -72,14 +72,14 @@ function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData, int $d
 /**
  * Get contributions for a single contact.
  *
- * @param int $contactid
+ * @param int $contactID
  *
  * @return array
  * @throws \CiviCRM_API3_Exception
  */
-function getContactContributions(int $contactid): array {
+function getContactContributions(int $contactID): array {
   $contributions = civicrm_api3('Contribution', 'get', [
-    'contact_id' => $contactid,
+    'contact_id' => $contactID,
     'return' => ['contribution_id'],
     'sequential' => TRUE,
   ])['values'];
@@ -95,7 +95,7 @@ function getContactContributions(int $contactid): array {
  *
  * @throws \CiviCRM_API3_Exception
  */
-function getErroredInvoicesOfContributions($contributions) {
+function getErroredInvoicesOfContributions(array $contributions): array {
   return civicrm_api3('AccountInvoice', 'get', [
     'plugin' => 'xero',
     'sequential' => TRUE,
@@ -231,8 +231,7 @@ function _civixero_get_connectors(): array {
       $connectors = civicrm_api3('connector', 'get', ['connector_type_id' => 'CiviXero']);
       $connectors = $connectors['values'];
     }
-    /** @noinspection PhpUnusedLocalVariableInspection */
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       $connectors = [0 => 0];
     }
   }
