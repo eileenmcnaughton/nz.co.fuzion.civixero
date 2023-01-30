@@ -220,9 +220,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     // Get default Invoice status
-    $status = $this->getSetting('xero_default_invoice_status');
+    $status = $this->settings->get('xero_default_invoice_status');
 
-    $prefix = $this->getSetting('xero_invoice_number_prefix');
+    $prefix = $this->settings->get('xero_invoice_number_prefix');
     if (empty($prefix)) {
       $prefix = '';
     }
