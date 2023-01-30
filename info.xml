@@ -18,7 +18,7 @@
     <email>eileen@fuzion.co.nz</email>
   </maintainer>
   <releaseDate>2023-01-30</releaseDate>
-  <version>2.2</version>
+  <version>2.1.0</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.56</ver>
