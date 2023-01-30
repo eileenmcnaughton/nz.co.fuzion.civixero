@@ -64,7 +64,6 @@ class CRM_Civixero_Base {
       Civi::settings()->set('xero_access_token_refresh_token', $token->getRefreshToken());
       Civi::settings()->set('xero_access_token_access_token', $token->getToken());
       Civi::settings()->set('xero_access_token_expires', $token->getExpires());
-      Civi::settings()->set('xero_access_token', $token->jsonSerialize());
     }
     else {
       civicrm_api3('Connector', 'create', ['id' => $this->connector_id, 'field4' => serialize($token->jsonSerialize())]);
@@ -171,28 +170,14 @@ class CRM_Civixero_Base {
       return $connectors[$this->connector_id][$var];
     }
     if ($var === 'xero_access_token') {
-      $token = civicrm_api3('setting', 'getvalue', [
-        'name' => 'xero_access_token',
-        'group' => 'Xero Settings',
-      ]);
-      $oauthToken =
-        civicrm_api3('setting', 'get', [
-          'name' => 'xero_access_token_refresh_token',
-          'group' => 'Xero OAuth Settings',
-        ])['values'][CRM_Core_Config::domainID()];
-      if (!empty($oauthToken['xero_access_token_refresh_token'])) {
-        $token['refresh_token'] = $oauthToken['xero_access_token_refresh_token'];
-      }
-      if (!empty($oauthToken['xero_access_token_expires'])) {
-        $token['expires'] = $oauthToken['xero_access_token_expires'];
-      }
-      $token['token_type'] = 'Bearer';
-      return $token;
+      return [
+        'access_token' => \Civi::settings()->get('xero_access_token_access_token'),
+        'refresh_token' => \Civi::settings()->get('xero_access_token_refresh_token'),
+        'expires' => \Civi::settings()->get('xero_access_token_expires'),
+        'token_type' => 'Bearer',
+      ];
     }
-    return civicrm_api3('setting', 'getvalue', [
-      'name' => $var,
-      'group' => 'Xero Settings',
-    ]);
+    return \Civi::settings()->get($var);
   }
 
   /**

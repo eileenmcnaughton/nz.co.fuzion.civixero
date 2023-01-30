@@ -9,7 +9,7 @@ interface ConnectorInterface {
    * If the current access token has expired get a new one from
    * Xero and store it.
    *
-   * @return \League\OAuth2\Client\Token\AccessTokenInterface
+   * @return \League\OAuth2\Client\Token\AccessToken
    *
    * @throws \CRM_Core_Exception
    */
