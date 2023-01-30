@@ -15,7 +15,7 @@ class CRM_Civixero_Page_Inline_ContactSyncErrors extends CRM_Core_Page {
    * @param CRM_Core_Page $page
    * @param int $contactID
    */
-  public static function addContactSyncErrorsBlock(&$page, $contactID) {
+  public static function addContactSyncErrorsBlock($page, $contactID) {
     $hasContactErrors = FALSE;
 
     try {

@@ -10,43 +10,37 @@ use League\OAuth2\Client\Provider\GenericProvider;
 /**
  */
 class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\GenericProvider {
-  
+
   /**
    *
    * @var string
    */
   private $tenantID = null;
-  
+
   /**
    *
    * @var string
    */
   private $authorizeURL = 'https://login.xero.com/identity/connect/authorize';
-  
+
   /**
    *
    * @var string
    */
   private $tokenURL = 'https://identity.xero.com/connect/token';
-  
+
   /**
    *
    * @var string
    */
   private $resourceOwnerURL = 'https://api.xero.com/api.xro/2.0/Organisation';
-  
+
   /**
    *
    * @var string
    */
   private $connectionsURL = 'https://api.xero.com/connections';
-  
-  /**
-   *
-   * @var string
-   */
-  private $urlBaseAuthorize;
-  
+
   /**
    *
    * @var array
@@ -60,7 +54,7 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
     'accounting.journals.read',
     'accounting.reports.read'
   ];
-  
+
   /**
    *
    * {@inheritdoc}
@@ -69,7 +63,7 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
   public function getDefaultScopes() {
     return is_array($this->defaultScopes) ? implode($this->getScopeSeparator(), $this->defaultScopes) : $this->defaultScopes;
   }
-  
+
   /**
    *
    * {@inheritdoc}
@@ -78,13 +72,13 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
   public function getScopeSeparator() {
     return ' ';
   }
-  
+
   /**
    *
    * @param array $options
    *        If being used for authorization then options should include:
    *        - redirectUri
-   *        
+   *
    * @param array $collaborators
    */
   public function __construct($options = [], $collaborators = []) {
@@ -94,10 +88,10 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
       'urlResourceOwnerDetails' => $this->resourceOwnerURL,
       'scopes' => $this->getDefaultScopes()
     ]);
-    
+
     parent::__construct($options, $collaborators);
   }
-  
+
   /**
    *
    * {@inheritdoc}
@@ -108,7 +102,7 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
     ], $options);
     return parent::getAuthorizationUrl($options);
   }
-  
+
   /**
    * Get headers for authenticated request to Xero.
    *
@@ -123,11 +117,11 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
     }
     return $headers;
   }
-  
-  public function getTenantID($access_token) {
-    return $this->tenantID ? $this->tenantID : $this->getConnectedTenantID($access_token);
+
+  public function getTenantID($access_token): ?string {
+    return $this->tenantID ?: $this->getConnectedTenantID($access_token);
   }
-  
+
   /**
    * Gets the Tenant ID for the connected tenant.
    *
@@ -146,5 +140,5 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
       return !empty($connection['tenantId']) ? $connection['tenantId'] : NULL;
     }
   }
-  
+
 }

@@ -15,7 +15,7 @@ class CRM_Civixero_Page_Inline_InvoiceSyncErrors extends CRM_Core_Page {
    * @param CRM_Core_Page $page
    * @param int $contactID
    */
-  public static function addInvoiceSyncErrorsBlock(&$page, $contactID) {
+  public static function addInvoiceSyncErrorsBlock($page, int $contactID): void {
 
     $hasInvoiceErrors = FALSE;
 

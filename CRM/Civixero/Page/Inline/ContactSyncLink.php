@@ -15,7 +15,7 @@ class CRM_Civixero_Page_Inline_ContactSyncLink extends CRM_Core_Page {
    * @param CRM_Core_Page $page
    * @param int $contactID
    */
-  public static function addContactSyncLinkBlock(&$page, $contactID) {
+  public static function addContactSyncLinkBlock($page, int $contactID) {
 
     $isContactSynced = 0;
 

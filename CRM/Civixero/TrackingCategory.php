@@ -10,8 +10,6 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
    *  - I can't think of a reason why they would but it seems consistent
    *
    * @param array $params
-   *
-   * @throws API_Exception
    */
   function pull($params) {
     static $trackingOptions = [];

@@ -126,7 +126,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    *
    * @return bool
    */
-  protected function isSplitTransactions() {
+  protected function isSplitTransactions(): bool {
     return TRUE;
   }
 

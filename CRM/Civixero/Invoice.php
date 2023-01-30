@@ -65,9 +65,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         foreach ($invoices as $invoice) {
           $save = TRUE;
           // Strip out the invoice number prefix if present.
-          $contributionId = preg_replace("/^\Q{$prefix}\E/", '', CRM_Utils_Array::value('InvoiceNumber', $invoice));
+          $contributionID = preg_replace("/^\Q{$prefix}\E/", '', CRM_Utils_Array::value('InvoiceNumber', $invoice));
           $params = [
-            'contribution_id' => $contributionId,
+            'contribution_id' => $contributionID,
             'accounts_modified_date' => $invoice['UpdatedDateUTC'],
             'plugin' => 'xero',
             'accounts_invoice_id' => $invoice['InvoiceID'],
@@ -94,7 +94,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             try {
               $existing = civicrm_api3('AccountInvoice', 'getsingle', [
                 'return' => 'id',
-                'contribution_id' => $contributionId,
+                'contribution_id' => $contributionID,
                 'plugin' => $this->_plugin,
               ]);
               $params['id'] = $existing['id'];
@@ -160,7 +160,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         }
         catch (CiviCRM_API3_Exception $e) {
           $errors[] = E::ts('Failed to store %1 (%2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
-            . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
+            . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
             . E::ts('%1 Push failed', [1 => $this->xero_entity]);
         }
       }
@@ -266,15 +266,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @return array
    */
-  protected function mapCancelled($contributionID, $accounts_invoice_id) {
-    $newInvoice = [
+  protected function mapCancelled(int $contributionID, int $accounts_invoice_id): array {
+    return [
       'Invoice' => [
         'InvoiceID' => $accounts_invoice_id,
         'InvoiceNumber' => $contributionID,
         'Type' => 'ACCREC',
         'Reference' => 'Cancelled',
-        'Date' => date('Y-m-d', strtotime('now')),
-        'DueDate' => date('Y-m-d', strtotime('now')),
+        'Date' => date('Y-m-d'),
+        'DueDate' => date('Y-m-d'),
         'Status' => 'DRAFT',
         'LineAmountTypes' => 'Exclusive',
         'LineItems' => [
@@ -287,7 +287,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         ],
       ],
     ];
-    return $newInvoice;
   }
 
   /**
