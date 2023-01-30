@@ -9,8 +9,6 @@
           {ts}Contact is synced with Xero{/ts}
       {elseif $syncStatus_xero == 2}
           {ts}Contact is queued for sync with Xero{/ts}
-      {elseif $syncStatus_xero == 3}
-          {ts}Error getting sync status{/ts}
       {/if}
   </div>
 
