@@ -121,7 +121,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
         $tenant_id = $this->provider->getConnectedTenantID($access_token);
         if ($tenant_id) {
           // Save to Settings.
-          $this->settings->save('xero_access_token', $token->jsonSerialize());
+          $this->settings->saveToken($token);
           $this->settings->save('xero_tenant_id', $tenant_id);
          // Signal success.
           $success = TRUE;
