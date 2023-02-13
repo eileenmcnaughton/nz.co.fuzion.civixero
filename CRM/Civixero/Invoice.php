@@ -154,6 +154,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       foreach ($records['values'] as $record) {
         try {
           $accountsInvoice = $this->getAccountsInvoice($record);
+          if ($accountsInvoice === FALSE) {
+            // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
+            continue;
+          }
           $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
           $responseErrors = $this->savePushResponse($result, $record);
           $count++;
