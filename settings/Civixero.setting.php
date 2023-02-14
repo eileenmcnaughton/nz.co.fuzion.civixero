@@ -1,11 +1,11 @@
 <?php
 
+use CRM_Civixero_ExtensionUtil as E;
+
 return [
   // Removed settings.
   // xero_key, xero_public_certificate.
   'xero_client_id' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
     'name' => 'xero_client_id',
     'type' => 'String',
     'add' => '4.4',
@@ -21,8 +21,6 @@ return [
   ],
   // OAuth 2.0 xero (Client) Secret
   'xero_client_secret' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
     'name' => 'xero_client_secret',
     'type' => 'String',
     'add' => '4.4',
@@ -39,8 +37,6 @@ return [
   // OAuth 2.0, No UI. Retrieved and stored on Authentication/Refresh.
   // Temporary, lifespan 30 mins.
   'xero_access_token_access_token' => [
-    'group_name' => 'Xero OAuth Settings',
-    'group' => 'xero',
     'name' => 'xero_access_token_access_token',
     'type' => 'String',
     'is_domain' => 1,
@@ -51,8 +47,6 @@ return [
     // No form element
   ],
   'xero_access_token_refresh_token' => [
-    'group_name' => 'Xero OAuth Settings',
-    'group' => 'xero',
     'name' => 'xero_access_token_refresh_token',
     'type' => 'String',
     'is_domain' => 1,
@@ -63,8 +57,6 @@ return [
     // No form element
   ],
   'xero_access_token_expires' => [
-    'group_name' => 'Xero OAuth Settings',
-    'group' => 'xero',
     'name' => 'xero_access_token_expires',
     // Type is really timestamp - I haven't checked if that would work
     // but would be good to make it visible as such
@@ -78,8 +70,6 @@ return [
   ],
   // OAuth 2.0. Obtained during Xero authentication.
   'xero_tenant_id' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
     'name' => 'xero_tenant_id',
     'type' => 'String',
     'add' => '4.4',
@@ -91,8 +81,6 @@ return [
     // No form element
   ],
   'xero_default_revenue_account' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
     'name' => 'xero_default_revenue_account',
     'type' => 'String',
     'add' => '4.4',
@@ -109,8 +97,6 @@ return [
     'settings_pages' => ['xero' => ['weight' => 1]],
   ],
   'xero_invoice_number_prefix' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
     'name' => 'xero_invoice_number_prefix',
     'type' => 'String',
     'add' => '4.6',
@@ -126,8 +112,6 @@ return [
     'settings_pages' => ['xero' => ['weight' => 2]],
   ],
   'xero_default_invoice_status' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
     'name' => 'xero_default_invoice_status',
     'type' => 'Array',
     'is_domain' => 1,
@@ -145,15 +129,13 @@ return [
     'settings_pages' => ['xero' => ['weight' => 3]],
   ],
   'xero_tax_mode' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
     'name' => 'xero_tax_mode',
     'type' => 'String',
     'is_domain' => 1,
     'is_contact' => 0,
     'default' => 'Inclusive',
     'title' => 'Xero Tax mode',
-    'description' => 'Are CiviCRM contributions inclusive or exclusive of tax',
+    'description' => 'Are CiviCRM contributions inclusive or exclusive of tax.',
     'help_text' => 'This setting is generally only useful if you track tax in xero but not CiviCRM',
     'html_type' => 'select',
     'html_attributes' => [
@@ -164,8 +146,6 @@ return [
     'settings_pages' => ['xero' => ['weight' => 4]],
   ],
   'xero_sync_location_type' => [
-    'group_name' => 'Xero Settings',
-    'group' => 'xero',
     'name' => 'xero_sync_location_type',
     'type' => 'Int',
     'is_domain' => 1,
@@ -181,8 +161,8 @@ return [
     'pseudoconstant' => ['callback' => 'CRM_Civixero_Contact::getLocationTypes'],
     'settings_pages' => ['xero' => ['weight' => 4]],
   ],
-  'xero_OAuth_rate_exceeded' => [
-    'name' => 'xero_oAuth_rate_exceeded',
+  'xero_oauth_rate_exceeded' => [
+    'name' => 'xero_oauth_rate_exceeded',
     'type' => 'String',
     'is_domain' => 1,
     'is_contact' => 0,
