@@ -113,16 +113,15 @@ return [
   ],
   'xero_default_invoice_status' => [
     'name' => 'xero_default_invoice_status',
-    'type' => 'Array',
+    'type' => 'String',
     'is_domain' => 1,
     'is_contact' => 0,
-    'default' => ['SUBMITTED'],
+    'default' => 'SUBMITTED',
     'title' => 'Xero Default Invoice Status',
     'description' => 'Default Invoice status to push to Xero.',
     'help_text' => '',
     'html_type' => 'select',
     'html_attributes' => [
-      'multiple' => 1,
       'class' => 'crm-select2',
     ],
     'pseudoconstant' => ['callback' => 'CRM_Civixero_Invoice::getInvoiceStatuses'],
@@ -139,7 +138,6 @@ return [
     'help_text' => 'This setting is generally only useful if you track tax in xero but not CiviCRM',
     'html_type' => 'select',
     'html_attributes' => [
-      'multiple' => 1,
       'class' => 'crm-select2',
     ],
     'pseudoconstant' => ['callback' => 'CRM_Civixero_Invoice::getTaxModes'],
