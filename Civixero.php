@@ -4,6 +4,7 @@ use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\AccountContact;
 use Civi\Api4\AccountInvoice;
 use Psr\Log\LogLevel;
+use CRM_Civixero_ExtensionUtil as E;
 
 require_once 'Civixero.civix.php';
 
@@ -164,8 +165,8 @@ function civixero_civicrm_check(array &$messages) {
   if (!$clientID || !$clientSecret) {
     $messages[] = new CRM_Utils_Check_Message(
       'civixero_client_required',
-      ts('Please configure a Client ID and Client Secret from your Xero app.'),
-      ts('Missing Xero App Details'),
+    E::ts('Please configure a Client ID and Client Secret from your Xero app.'),
+    E::ts('Missing Xero App Details'),
       LogLevel::WARNING,
       'fa-flag'
     );
@@ -173,8 +174,8 @@ function civixero_civicrm_check(array &$messages) {
   elseif (empty($accessTokenData['access_token'])) {
     $messages[] = new CRM_Utils_Check_Message(
       'civixero_authorization_required',
-      ts('Please Authorize with Xero to enable a connection.'),
-      ts('Xero Authorization Required'),
+    E::ts('Please Authorize with Xero to enable a connection.'),
+    E::ts('Xero Authorization Required'),
       LogLevel::WARNING,
       'fa-flag'
     );
@@ -182,8 +183,8 @@ function civixero_civicrm_check(array &$messages) {
   elseif (isset($accessTokenData['expires']) && ($accessTokenData['expires'] <= time())) {
     $messages[] = new CRM_Utils_Check_Message(
       'civixero_authorization_required',
-      ts('Xero access token has expired. You need to re-authorize with Xero to re-enable the connection.'),
-      ts('Xero Authorization Required'),
+    E::ts('Xero access token has expired. You need to re-authorize with Xero to re-enable the connection.'),
+    E::ts('Xero Authorization Required'),
       LogLevel::CRITICAL,
       'fa-flag'
     );
@@ -342,32 +343,32 @@ function civixero_civicrm_accountsync_plugins(&$plugins) {
 function civixero_civicrm_contactSummaryBlocks(&$blocks) {
   $blocks += [
     'civixeroblock' => [
-      'title' => ts('Civi Xero'),
+      'title' => E::ts('Civi Xero'),
       'blocks' => [],
     ],
   ];
   $blocks['civixeroblock']['blocks']['contactsyncstatus'] = [
-    'title' => ts('Contact Sync Status'),
+    'title' => E::ts('Contact Sync Status'),
     'tpl_file' => 'CRM/Civixero/Page/Inline/ContactSyncStatus.tpl',
     'edit' => FALSE,
   ];
   $blocks['civixeroblock']['blocks']['contactsyncerrors'] = [
-    'title' => ts('Contact Sync Errors'),
+    'title' => E::ts('Contact Sync Errors'),
     'tpl_file' => 'CRM/Civixero/Page/Inline/ContactSyncErrors.tpl',
     'edit' => FALSE,
   ];
   $blocks['civixeroblock']['blocks']['invoicesyncerrors'] = [
-    'title' => ts('Invoice Sync Errors'),
+    'title' => E::ts('Invoice Sync Errors'),
     'tpl_file' => 'CRM/Civixero/Page/Inline/InvoiceSyncErrors.tpl',
     'edit' => FALSE,
   ];
   $blocks['civixeroblock']['blocks']['invoicesynclink'] = [
-    'title' => ts('Invoice Sync Link'),
+    'title' => E::ts('Invoice Sync Link'),
     'tpl_file' => 'CRM/Civixero/Page/Inline/InvoiceSyncLink.tpl',
     'edit' => FALSE,
   ];
   $blocks['civixeroblock']['blocks']['contactsynclink'] = [
-    'title' => ts('Contact Sync Link'),
+    'title' => E::ts('Contact Sync Link'),
     'tpl_file' => 'CRM/Civixero/Page/Inline/ContactSyncLink.tpl',
     'edit' => FALSE,
   ];

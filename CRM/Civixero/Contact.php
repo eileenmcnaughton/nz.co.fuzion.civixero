@@ -164,7 +164,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
               $record['id'] = $matching['id'];
             }
             elseif ($matching['contact_id'] !== $record['contact_id']) {
-              throw new CRM_Core_Exception(ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2. ', [
+              throw new CRM_Core_Exception(E::ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2. ', [
                 1 => $record['contact_id'],
                 2 => $matching['contact_id'],
               ]), 'xero_dup_contact');
@@ -191,7 +191,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       }
       if ($errors) {
         // since we expect this to wind up in the job log we'll print the errors
-        throw new CRM_Core_Exception(ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
+        throw new CRM_Core_Exception(E::ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
       }
       return TRUE;
     }
