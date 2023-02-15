@@ -225,6 +225,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       try {
         $accountsInvoice = $this->getAccountsInvoice($record);
         if ($accountsInvoice === FALSE) {
+          // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
+          AccountInvoice::update(FALSE)
+            ->addWhere('id', '=', $record['id'])
+            ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
+            ->execute();
           // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
           continue;
         }
@@ -232,9 +237,20 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         $responseErrors = $this->savePushResponse($result, $record);
       }
       catch (Exception $e) {
-        $errors[] = E::ts('Failed to store %1 (%2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
-          . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors, TRUE)
+        $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsContactID: %2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
+          . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors, TRUE)
           . E::ts('%1 Push failed', [1 => $this->xero_entity]);
+
+        AccountInvoice::update(FALSE)
+          ->addWhere('id', '=', $record['id'])
+          ->addValue('is_error_resolved', FALSE)
+          ->addValue('error_data', json_encode([
+            'error' => $e->getMessage(),
+            'error_data' => $record['error_data']
+          ]))
+          ->addValue('accounts_data', json_encode($record))
+          ->execute();
+        $errors[] = $errorMessage;
       }
       $contributionIDsPushed[] = $record['contribution_id'];
     }
