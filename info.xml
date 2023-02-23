@@ -30,13 +30,14 @@
   </classloader>
   <civix>
     <namespace>CRM/Civixero</namespace>
-    <format>22.12.1</format>
+    <format>23.02.0</format>
   </civix>
   <mixins>
     <mixin>menu-xml@1.0.0</mixin>
     <mixin>ang-php@1.0.0</mixin>
     <mixin>mgd-php@1.0.0</mixin>
     <mixin>setting-php@1.0.0</mixin>
+    <mixin>smarty-v2@1.0.0</mixin>
   </mixins>
   <upgrader>CRM_Civixero_Upgrader</upgrader>
 </extension>
