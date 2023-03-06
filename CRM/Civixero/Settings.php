@@ -78,7 +78,7 @@ class CRM_Civixero_Settings {
    * @param string $var
    *
    * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function get(string $var) {
     if ($this->getConnectorID() > 0) {

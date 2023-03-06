@@ -223,10 +223,10 @@ class CRM_Civixero_Base {
     }
     return CRM_Civixero_OAuth2_Xero::singleton(
       $this->connector_id,
-      trim($parameters['xero_client_id'] ?? $this->settings->get('xero_client_id')),
-      trim($parameters['xero_client_secret'] ?? $this->settings->get('xero_client_secret')),
-      trim($parameters['xero_tenant_id'] ?? $this->settings->get('xero_tenant_id')),
-      $parameters['xero_access_token'] ?? $this->settings->get('xero_access_token')
+      trim($parameters['xero_client_id'] ?? $this->getSetting('xero_client_id')),
+      trim($parameters['xero_client_secret'] ?? $this->getSetting('xero_client_secret')),
+      trim($parameters['xero_tenant_id'] ?? $this->getSetting('xero_tenant_id')),
+      $parameters['xero_access_token'] ?? $this->getSetting('xero_access_token')
     );
   }
 
@@ -265,6 +265,14 @@ class CRM_Civixero_Base {
    */
   public static function resetApiRateLimitExceeded(): void {
     Civi::settings()->set('xero_oauth_rate_exceeded', NULL);
+  }
+
+  /**
+   * @return array|mixed
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function getSetting($setting) {
+   return $this->settings->get($setting);
   }
 
 }

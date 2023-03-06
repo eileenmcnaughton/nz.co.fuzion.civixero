@@ -34,10 +34,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param array $params
    *
    * @return int
-   * @throws API_Exception
    * @throws CRM_Core_Exception
    */
-  public function pull($params) {
+  public function pull(array $params): int {
     $xeroParams = ['Type' => 'ACCREC'];
     $filter = $params['invoice_number'] ?? FALSE;
     try {
@@ -403,10 +402,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $record
    *
-   * @return array
+   * @return array|false
    * @throws \CiviCRM_API3_Exception
    */
-  protected function getAccountsInvoice($record) {
+  protected function getAccountsInvoice(array $record) {
     if ($record['accounts_status_id'] == 3) {
       return FALSE;
     }
