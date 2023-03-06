@@ -266,11 +266,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * Map fields for a cancelled contribution to be updated to Xero.
    *
    * @param int $contributionID
-   * @param int $accounts_invoice_id
+   * @param string|null $accounts_invoice_id
    *
    * @return array
    */
-  protected function mapCancelled(int $contributionID, int $accounts_invoice_id): array {
+  protected function mapCancelled(int $contributionID, ?string $accounts_invoice_id): array {
     return [
       'Invoice' => [
         'InvoiceID' => $accounts_invoice_id,
