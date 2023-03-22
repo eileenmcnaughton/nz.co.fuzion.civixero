@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '699e1f49559d8ff47df8c5130b0e43b1011a67a0',
+    'reference' => '1e63319902bb861161a015fe50220dd4e8535e4c',
     'name' => '__root__',
   ),
   'versions' => 
@@ -18,7 +18,14 @@
       'aliases' => 
       array (
       ),
-      'reference' => '699e1f49559d8ff47df8c5130b0e43b1011a67a0',
+      'reference' => '1e63319902bb861161a015fe50220dd4e8535e4c',
+    ),
+    'firebase/php-jwt' => 
+    array (
+      'replaced' => 
+      array (
+        0 => '^5.2',
+      ),
     ),
     'guzzlehttp/guzzle' => 
     array (
@@ -51,6 +58,15 @@
       array (
       ),
       'reference' => '996434e5492cb4c3edcb9168db6fbb1359ef965a',
+    ),
+    'xeroapi/xero-php-oauth2' => 
+    array (
+      'pretty_version' => '2.21.0',
+      'version' => '2.21.0.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '3162bcf4c9928da92104bc9668515444c9fb0ee0',
     ),
   ),
 );

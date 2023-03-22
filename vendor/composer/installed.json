@@ -125,6 +125,69 @@
                 "source": "https://github.com/paragonie/random_compat"
             },
             "install-path": "../paragonie/random_compat"
+        },
+        {
+            "name": "xeroapi/xero-php-oauth2",
+            "version": "2.21.0",
+            "version_normalized": "2.21.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/XeroAPI/xero-php-oauth2.git",
+                "reference": "3162bcf4c9928da92104bc9668515444c9fb0ee0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/XeroAPI/xero-php-oauth2/zipball/3162bcf4c9928da92104bc9668515444c9fb0ee0",
+                "reference": "3162bcf4c9928da92104bc9668515444c9fb0ee0",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "firebase/php-jwt": "^5.0 | ^6.0",
+                "guzzlehttp/guzzle": "^6.2 | ^7.0",
+                "league/oauth2-client": "^2.5.0",
+                "php": ">=5.6"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "~2.12",
+                "phpunit/phpunit": "^4.8",
+                "squizlabs/php_codesniffer": "~2.6"
+            },
+            "time": "2023-02-17T11:49:23+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "XeroAPI\\XeroPHP\\": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Xero API Team",
+                    "homepage": "https://developer.xero.com"
+                }
+            ],
+            "description": "Xero official PHP SDK for oAuth2 generated with OpenAPI spec 3",
+            "homepage": "https://github.com/xeroapi/xero-php-oauth2",
+            "keywords": [
+                "api",
+                "openapispec",
+                "php",
+                "rest",
+                "sdk",
+                "xero"
+            ],
+            "support": {
+                "issues": "https://github.com/XeroAPI/xero-php-oauth2/issues",
+                "source": "https://github.com/XeroAPI/xero-php-oauth2/tree/2.21.0"
+            },
+            "install-path": "../xeroapi/xero-php-oauth2"
         }
     ],
     "dev": true,
