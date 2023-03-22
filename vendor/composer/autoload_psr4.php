@@ -6,5 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'XeroAPI\\XeroPHP\\' => array($vendorDir . '/xeroapi/xero-php-oauth2/lib'),
     'League\\OAuth2\\Client\\' => array($vendorDir . '/league/oauth2-client/src'),
 );
