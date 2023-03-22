@@ -36,7 +36,26 @@ class CRM_Civixero_OAuth2_Xero implements ConnectorInterface {
 
   private $tenantID;
 
+  /**
+   * @var int The CiviCRM AccountSync connector ID
+   */
+  private $connectorID;
+
   private $redirectURL;
+
+  /**
+   * @return string
+   */
+  public function getTenantID(): string {
+    return $this->tenantID;
+  }
+
+  /**
+   * @return int
+   */
+  public function getConnectorID(): int {
+    return $this->connectorID;
+  }
 
   /**
    * Get Xero instance.
@@ -50,27 +69,17 @@ class CRM_Civixero_OAuth2_Xero implements ConnectorInterface {
    *
    * @return CRM_Civixero_OAuth2_Xero
    */
-  public static function singleton(
-      $connector_id = 0,
-      $client_id = '',
-      $client_secret = '',
-      $tenant_id = '',
-      $accessToken = ''
-    ) {
+  public static function singleton($connector_id = 0, $client_id = '', $client_secret = '', $tenant_id = '', $accessToken = '') {
     if (empty(self::$_instances[$connector_id])) {
-      self::$_instances[$connector_id] = new CRM_Civixero_OAuth2_Xero($accessToken, $client_id, $client_secret, $tenant_id);
+      self::$_instances[$connector_id] = new CRM_Civixero_OAuth2_Xero($accessToken, $client_id, $client_secret, $tenant_id, $connector_id);
     }
     return self::$_instances[$connector_id];
   }
 
-  public function __construct(
-      $accessToken,
-      $client_id,
-      $client_secret,
-      $tenant_id
-    ) {
+  public function __construct($accessToken, $client_id, $client_secret, $tenant_id, $connector_id) {
     $this->store = new CRM_Civixero_OAuth2_TokenStoreDefault($accessToken);
     $this->tenantID = $tenant_id;
+    $this->connectorID = $connector_id;
     $this->redirectURL = CRM_Utils_System::url('civicrm/xero/authorize',
         NULL,
         TRUE,
@@ -97,35 +106,22 @@ class CRM_Civixero_OAuth2_Xero implements ConnectorInterface {
    *
    * @return \League\OAuth2\Client\Token\AccessTokenInterface
    * @throws \CRM_Core_Exception
+   * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
    */
   public function getToken(): AccessTokenInterface {
     $accessToken = $this->store->fetch();
     if (!$accessToken) {
       throw new CRM_Core_Exception('No token in store.');
     }
-    if (!$accessToken->hasExpired()) {
-      return $accessToken;
+    if ($accessToken->hasExpired()) {
+      // \Civi::log()->debug('CiviXero: Access token expired: ' . json_encode($accessToken->jsonSerialize()));
+      $accessToken = $this->provider->getAccessToken('refresh_token', [
+        'refresh_token' => $accessToken->getRefreshToken()
+      ]);
+      // \Civi::log()->debug('CiviXero: New access token: ' . json_encode($accessToken->jsonSerialize()));
+      $this->store->save($accessToken);
     }
-    return $this->renewToken($accessToken);
-  }
-
-  public function getTenantID(): string {
-    return $this->tenantID;
-  }
-
-  public function renewToken(AccessToken $token) {
-    $newToken = $this->provider->getAccessToken('refresh_token', [
-      'refresh_token' => $token->getRefreshToken()
-    ]);
-    // todo check token before saving.
-    // Try again if failed?
-    if ($newToken) {
-      $this->store->save($newToken);
-      return $newToken;
-    }
-    else {
-      \Civi::log()->warning('Xero renewToken failed - no new token.');
-    }
+    return $accessToken;
   }
 
 }

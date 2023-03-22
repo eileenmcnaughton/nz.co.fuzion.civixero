@@ -48,7 +48,6 @@ class CRM_Civixero_Base {
     $this->settings = new CRM_Civixero_Settings($this->connector_id);
     $xeroConnect = $this->getXeroConnector($parameters);
     $this->_xero_access_token = $xeroConnect->getToken();
-    $this->settings->saveToken($this->_xero_access_token);
     $this->_xero_tenant_id = $xeroConnect->getTenantID();
     $this->singleton($this->_xero_access_token->getToken(), $this->_xero_tenant_id, $this->connector_id, $force);
   }

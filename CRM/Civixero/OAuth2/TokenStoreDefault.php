@@ -13,6 +13,26 @@ class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_Token
 
   protected $token;
 
+  protected $connectorID;
+
+  /**
+   * Get the CiviCRM AccountSync Connector ID
+   * @return mixed
+   */
+  public function getConnectorID() {
+    return $this->connectorID;
+  }
+
+  /**
+   * Set the CiviCRM AccountSync Connector ID
+   * @param int $connectorID
+   *
+   * @return void
+   */
+  public function setConnectorID(int $connectorID) {
+    $this->connectorID = $connectorID;
+  }
+
   public function __construct($tokenData) {
     $this->token = new AccessToken($tokenData);
   }
@@ -20,15 +40,12 @@ class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_Token
   /**
    * Save token to persistent storage.
    *
-   * @todo remove this - this is overwritten by a connector-aware class or
-   * make this connector-aware
-   *
    * @param \League\OAuth2\Client\Token\AccessToken $token
    */
   public function save(AccessToken $token): void {
-    Civi::settings()->set('xero_access_token_refresh_token', $token->getRefreshToken());
-    Civi::settings()->set('xero_access_token_expires', $token->getExpires());
-    Civi::settings()->set('xero_access_token_access_token', $token->getToken());
+    $settings = new CRM_Civixero_Settings($this->getConnectorID());
+    $settings->saveToken($token);
+    $this->token = $token;
   }
 
   /**
