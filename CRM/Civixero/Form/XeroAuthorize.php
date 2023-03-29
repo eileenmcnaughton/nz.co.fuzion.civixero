@@ -3,6 +3,7 @@
 use Civi\Api4\Job;
 use Civi\Api4\Setting;
 use CRM_Civixero_ExtensionUtil as E;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 
 /**
@@ -21,6 +22,9 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
 
   private $hasValidTokens = FALSE;
 
+  /**
+   * @var CRM_Civixero_OAuth2_Provider_Xero
+   */
   public $provider;
 
   /**
@@ -42,7 +46,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   public function preProcess(): void {
-    $this->connectorID = CRM_Utils_Request::retrieveValue('connector_id', 'Integer', 0);
+    $this->connectorID = CRM_Utils_Request::retrieve('connector_id', 'Integer', $this, FALSE, 0);
     $this->settings = new CRM_Civixero_Settings($this->connectorID);
     $this->clientID = $this->settings->get('xero_client_id');
     $this->clientSecret = $this->settings->get('xero_client_secret');
@@ -67,26 +71,25 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
       $this->connectorID,
       $this->clientID,
       $this->clientSecret,
-      trim($parameters['xero_tenant_id'] ?? $this->settings->get('xero_tenant_id')),
-      $this->accessTokenData,
+      $this->settings->get('xero_tenant_id'),
+      $this->accessTokenData
     );
+    try {
+      $accessToken = $civiXeroOAuth->getToken();
 
-    $accessToken = $civiXeroOAuth->getToken();
-
-    // We may or may not have valid tokens at this point.
-    // If we have a refresh token, test it by getting a new access token
-    // and use them to get the tenant ID.
-    if ($accessToken->getRefreshToken()) {
-      try {
+      // We may or may not have valid tokens at this point.
+      // If we have a refresh token, test it by getting a new access token
+      // and use them to get the tenant ID.
+      if ($accessToken->getRefreshToken()) {
         $tenantID = $this->provider->getConnectedTenantID($accessToken->getToken());
         if ($tenantID) {
           $this->settings->save('xero_tenant_id', $tenantID);
           $this->hasValidTokens = TRUE;
         }
       }
-      catch (Exception $e) {
-        // Expected invalid_grant. Continue to let user authorize.
-      }
+    }
+    catch (IdentityProviderException $e) {
+      // Expected invalid_grant. Continue to let user authorize.
     }
   }
 
@@ -213,9 +216,6 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
           'subname' => 'auth',
         ];
       }
-      // @todo - is this really doing nothing - or just a bad code smell?
-      //   It is setting oauth2state on the session - not sure if that is needed.
-      $this->getAuthURL();
     }
     $this->assign('statusMessage', $statusMessage);
     $this->assign('statusIcon', $statusIcon);
@@ -233,8 +233,8 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
   }
 
   public function setDefaultValues(): array {
-    $defaults['xero_client_id'] = Civi::settings()->get('xero_client_id') ?? '';
-    $defaults['xero_client_secret'] = Civi::settings()->get('xero_client_secret') ?? '';
+    $defaults['xero_client_id'] = $this->settings->get('xero_client_id') ?? '';
+    $defaults['xero_client_secret'] = $this->settings->get('xero_client_secret') ?? '';
     return $defaults;
   }
 
@@ -258,23 +258,23 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
     $authChanged = FALSE;
     $newXeroClientID = $this->getSubmittedValue('xero_client_id');
     $newXeroClientSecret = $this->getSubmittedValue('xero_client_secret');
-    $xeroClientID = Civi::settings()->get('xero_client_id');
-    $xeroClientSecret = Civi::settings()->get('xero_client_secret');
+    $xeroClientID = $this->settings->get('xero_client_id');
+    $xeroClientSecret = $this->settings->get('xero_client_secret');
 
     if ($xeroClientID !== $newXeroClientID) {
-      Civi::settings()->set('xero_client_id', $newXeroClientID);
+      $this->settings->save('xero_client_id', $newXeroClientID);
       $this->clientID = $newXeroClientID;
       $authChanged = TRUE;
     }
     if ($xeroClientSecret !== $newXeroClientSecret) {
-      Civi::settings()->set('xero_client_secret', $newXeroClientSecret);
+      $this->settings->save('xero_client_secret', $newXeroClientSecret);
       $this->clientSecret = $newXeroClientSecret;
       $authChanged = TRUE;
     }
 
     if ($authChanged) {
-      Civi::settings()->set('xero_tenant_id', '');
-      Civi::settings()->set('xero_access_token_access_token', '');
+      $this->settings->save('xero_tenant_id', '');
+      $this->settings->save('xero_access_token_access_token', '');
     }
 
     if ($action === 'authorize') {
