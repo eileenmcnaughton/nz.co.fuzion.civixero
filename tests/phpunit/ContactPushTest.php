@@ -1,9 +1,7 @@
 <?php
 
-use Civi\Api4\AccountContact;
 use Civi\MockConnector;
 use Civi\Test\Api3TestTrait;
-use CRM_Civixero_ExtensionUtil as E;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
