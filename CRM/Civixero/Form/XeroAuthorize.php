@@ -62,29 +62,26 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
       'redirectUri' => $redirectURL,
       ]
     );
-    $refresh_token = NULL;
-    if (!empty($this->accessTokenData['refresh_token'])) {
-      $access_token = new AccessToken($this->accessTokenData);
-      $refresh_token = $access_token->getRefreshToken();
-    }
+
+    $civiXeroOAuth = CRM_Civixero_OAuth2_Xero::singleton(
+      $this->connectorID,
+      $this->clientID,
+      $this->clientSecret,
+      trim($parameters['xero_tenant_id'] ?? $this->settings->get('xero_tenant_id')),
+      $this->accessTokenData,
+    );
+
+    $accessToken = $civiXeroOAuth->getToken();
+
     // We may or may not have valid tokens at this point.
     // If we have a refresh token, test it by getting a new access token
     // and use them to get the tenant ID.
-    if ($refresh_token) {
+    if ($accessToken->getRefreshToken()) {
       try {
-        $newAccessToken = $this->provider->getAccessToken('refresh_token', [
-          'refresh_token' => $refresh_token,
-        ]);
-        // Save the new tokens.
-        $refresh_token = $newAccessToken->getRefreshToken();
-        if ($refresh_token) {
-          $this->accessTokenData = $newAccessToken->jsonSerialize();
-          $tenantID = $this->provider->getConnectedTenantID($newAccessToken->getToken());
-          if ($tenantID) {
-            $this->settings->save('xero_access_token', $this->accessTokenData);
-            $this->settings->save('xero_tenant_id', $tenantID);
-            $this->hasValidTokens = TRUE;
-          }
+        $tenantID = $this->provider->getConnectedTenantID($accessToken->getToken());
+        if ($tenantID) {
+          $this->settings->save('xero_tenant_id', $tenantID);
+          $this->hasValidTokens = TRUE;
         }
       }
       catch (Exception $e) {
@@ -132,9 +129,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
       }
       if (!$success) {
         CRM_Core_Session::setStatus(E::ts('Xero Authorization Not Successful, try again.'));
-        CRM_Core_Error::debug_var('XeroAuthorization Error', [
-          'token' => $token->jsonSerialize(),
-        ]);
+        \Civi::log()->error('XeroAuthorization Error: ' . json_encode($token->jsonSerialize()));
       }
     }
   }
@@ -279,7 +274,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
 
     if ($authChanged) {
       Civi::settings()->set('xero_tenant_id', '');
-      Civi::settings()->set('xero_access_token', '');
+      Civi::settings()->set('xero_access_token_access_token', '');
     }
 
     if ($action === 'authorize') {
