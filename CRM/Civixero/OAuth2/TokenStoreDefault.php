@@ -11,30 +11,36 @@ use League\OAuth2\Client\Token\AccessToken;
  */
 class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_TokenStoreInterface {
 
+  /**
+   * @var \League\OAuth2\Client\Token\AccessToken
+   */
   protected $token;
 
+  /**
+   * @var int
+   */
   protected $connectorID;
+
+  public function __construct($tokenData) {
+    $this->token = new AccessToken($tokenData);
+  }
 
   /**
    * Get the CiviCRM AccountSync Connector ID
-   * @return mixed
+   *
+   * @return int
    */
-  public function getConnectorID() {
+  public function getConnectorID(): int {
     return $this->connectorID;
   }
 
   /**
    * Set the CiviCRM AccountSync Connector ID
-   * @param int $connectorID
    *
-   * @return void
+   * @param int $connectorID
    */
   public function setConnectorID(int $connectorID) {
     $this->connectorID = $connectorID;
-  }
-
-  public function __construct($tokenData) {
-    $this->token = new AccessToken($tokenData);
   }
 
   /**
@@ -53,7 +59,7 @@ class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_Token
    *
    * @return \League\OAuth2\Client\Token\AccessToken
    */
-  public function fetch() {
+  public function fetch(): AccessToken {
     return $this->token;
   }
 
