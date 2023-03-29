@@ -41,8 +41,9 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
    */
   public function setUpHeadless(): CiviEnvBuilder {
     return \Civi\Test::headless()
-      ->installMe(__DIR__)
+      ->install('org.civicrm.search_kit')
       ->install('nz.co.fuzion.accountsync')
+      ->installMe(__DIR__)
       ->apply();
   }
 
