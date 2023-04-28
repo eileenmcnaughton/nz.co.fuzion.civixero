@@ -14,7 +14,7 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
   function pull($params) {
     static $trackingOptions = [];
     if (empty($trackingOptions)) {
-      $tc = $this->getSingleton()->TrackingCategories();
+      $tc = $this->getSingleton($this->connector_id)->TrackingCategories();
       foreach ($tc['TrackingCategories']['TrackingCategory'] as $trackingCategory) {
         foreach ($trackingCategory['Options']['Option'] as $key => $value) {
           $trackingOptions[$trackingCategory['Name']][] = $value['Name'];
