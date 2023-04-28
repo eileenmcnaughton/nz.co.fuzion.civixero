@@ -523,19 +523,18 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   /**
    * Push record to Xero.
    *
-   * @param array $accountsInvoice
+   * @param array|false $accountsInvoice
    *
    * @param int $connector_id
    *   ID of the connector (0 if nz.co.fuzion.connectors not installed.
    *
-   * @return array
+   * @return array|false
    */
   protected function pushToXero($accountsInvoice, $connector_id) {
     if ($accountsInvoice === FALSE) {
       return FALSE;
     }
-    $result = $this->getSingleton($connector_id)->Invoices($accountsInvoice);
-    return $result;
+    return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
   }
 
   /**

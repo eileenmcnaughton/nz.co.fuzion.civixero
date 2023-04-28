@@ -30,7 +30,7 @@ class CRM_Civixero_Settings {
    *
    * @param \League\OAuth2\Client\Token\AccessToken $token
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function saveToken(AccessToken $token): void {
     if ($this->getConnectorID() === 0) {

@@ -29,12 +29,12 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
   /**
    * Push record to Xero.
    *
-   * @param array $accountsInvoice
+   * @param array|false $accountsInvoice
    *
    * @param int $connector_id
    *   ID of the connector (0 if nz.co.fuzion.connectors not installed.
    *
-   * @return array
+   * @return array|false
    */
   protected function pushToXero($accountsInvoice, $connector_id) {
     if ($accountsInvoice === FALSE) {
