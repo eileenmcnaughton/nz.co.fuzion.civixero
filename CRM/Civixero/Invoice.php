@@ -513,7 +513,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @return array
    */
-  protected function getNotUpdateCandidateResponses() {
+  protected function getNotUpdateCandidateResponses(): array {
     return [
       'Invoice not of valid status for modification',
       ' Invoice not of valid status for modification This document cannot be edited as it has a payment or credit note allocated to it.',

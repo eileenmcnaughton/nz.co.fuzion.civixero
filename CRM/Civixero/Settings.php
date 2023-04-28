@@ -17,7 +17,7 @@ class CRM_Civixero_Settings {
     $this->connectorID = $connectorID;
   }
 
-  private function getConnectorID() {
+  private function getConnectorID(): int {
     return $this->connectorID ?? 0;
   }
 
