@@ -40,7 +40,7 @@ class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_Token
    *
    * @param int $connectorID
    */
-  public function setConnectorID(int $connectorID) {
+  public function setConnectorID(int $connectorID): void {
     $this->connectorID = $connectorID;
   }
 

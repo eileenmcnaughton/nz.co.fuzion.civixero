@@ -203,7 +203,7 @@ function civixero_civicrm_check(array &$messages) {
  *
  * @param $page
  */
-function civixero_civicrm_pageRun(&$page) {
+function civixero_civicrm_pageRun($page) {
   $pageName = get_class($page);
   if ($pageName !== 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
     return;
