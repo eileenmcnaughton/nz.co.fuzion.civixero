@@ -505,7 +505,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return bool
    */
   protected function isNotUpdateCandidate($responseErrors) {
-    return count(array_intersect($responseErrors, $this->getNotUpdateCandidateResponses()));
+    return (bool) count(array_intersect($responseErrors, $this->getNotUpdateCandidateResponses()));
   }
 
   /**
