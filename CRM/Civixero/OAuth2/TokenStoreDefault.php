@@ -21,8 +21,9 @@ class CRM_Civixero_OAuth2_TokenStoreDefault implements CRM_Civixero_OAuth2_Token
    */
   protected $connectorID;
 
-  public function __construct($tokenData) {
+  public function __construct($tokenData, $connectorID) {
     $this->token = new AccessToken($tokenData);
+    $this->connectorID = $connectorID;
   }
 
   /**

@@ -77,7 +77,7 @@ class CRM_Civixero_OAuth2_Xero implements ConnectorInterface {
   }
 
   public function __construct($accessToken, $client_id, $client_secret, $tenant_id, $connector_id) {
-    $this->store = new CRM_Civixero_OAuth2_TokenStoreDefault($accessToken);
+    $this->store = new CRM_Civixero_OAuth2_TokenStoreDefault($accessToken, $connector_id);
     $this->tenantID = $tenant_id;
     $this->connectorID = $connector_id;
     $this->redirectURL = CRM_Utils_System::url('civicrm/xero/authorize',
