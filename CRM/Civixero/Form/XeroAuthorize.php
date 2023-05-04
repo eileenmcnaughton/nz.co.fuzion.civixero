@@ -88,6 +88,9 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
         }
       }
     }
+    catch (CRM_Core_Exception $e) {
+      // Token not yet configured.
+    }
     catch (IdentityProviderException $e) {
       // Expected invalid_grant. Continue to let user authorize.
     }

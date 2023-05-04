@@ -77,7 +77,9 @@ class CRM_Civixero_OAuth2_Xero implements ConnectorInterface {
   }
 
   public function __construct($accessToken, $client_id, $client_secret, $tenant_id, $connector_id) {
-    $this->store = new CRM_Civixero_OAuth2_TokenStoreDefault($accessToken, $connector_id);
+    if ($accessToken['access_token']) {
+      $this->store = new CRM_Civixero_OAuth2_TokenStoreDefault($accessToken, $connector_id);
+    }
     $this->tenantID = $tenant_id;
     $this->connectorID = $connector_id;
     $this->redirectURL = CRM_Utils_System::url('civicrm/xero/authorize',
@@ -109,6 +111,9 @@ class CRM_Civixero_OAuth2_Xero implements ConnectorInterface {
    * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
    */
   public function getToken(): AccessTokenInterface {
+    if (!$this->store) {
+      throw new CRM_Core_Exception('No token configured.');
+    }
     $accessToken = $this->store->fetch();
     if (!$accessToken) {
       throw new CRM_Core_Exception('No token in store.');
