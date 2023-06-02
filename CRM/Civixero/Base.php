@@ -3,6 +3,7 @@
 use Civi\API\Event\PrepareEvent;
 use Civi\Xero\ConnectorInterface;
 use League\OAuth2\Client\Token\AccessToken;
+use XeroAPI\XeroPHP\Api\AccountingApi;
 
 /**
  * Class CRM_Civixero_Base
@@ -13,7 +14,10 @@ class CRM_Civixero_Base {
 
   private static array $singleton = [];
 
-  private $_xero_access_token;
+  /**
+   * @var \League\OAuth2\Client\Token\AccessToken
+   */
+  private AccessToken $_xero_access_token;
 
   private string $_xero_tenant_id;
 
