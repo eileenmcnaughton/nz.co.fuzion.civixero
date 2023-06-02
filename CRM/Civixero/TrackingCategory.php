@@ -12,12 +12,17 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
    * @param array $params
    */
   function pull($params) {
+    CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
+
     static $trackingOptions = [];
     if (empty($trackingOptions)) {
       $tc = $this->getSingleton($this->connector_id)->TrackingCategories();
-      foreach ($tc['TrackingCategories']['TrackingCategory'] as $trackingCategory) {
+      foreach ($tc['TrackingCategories'] as $trackingCategory) {
+        $trackingOptions[$trackingCategory['Name']]['Name'] = $trackingCategory['Name'];
+        $trackingOptions[$trackingCategory['Name']]['Status'] = $trackingCategory['Status'];
+        $trackingOptions[$trackingCategory['Name']]['TrackingCategoryID'] = $trackingCategory['TrackingCategoryID'];
         foreach ($trackingCategory['Options']['Option'] as $key => $value) {
-          $trackingOptions[$trackingCategory['Name']][] = $value['Name'];
+          $trackingOptions[$trackingCategory['Name']]['Options'][$value['TrackingOptionID']] = $value['Name'];
         }
       }
     }
