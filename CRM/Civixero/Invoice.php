@@ -315,7 +315,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $new_invoice = [
       'Type' => ($total_amount > 0) ? 'ACCREC' : 'ACCPAY',
       'Contact' => [
-        'ContactNumber' => $invoiceData['contact_id'],
+        'ContactID' => $invoiceData['accounts_contact_id'],
       ],
       'Date' => substr($invoiceData['receive_date'], 0, 10),
       'DueDate' => substr($invoiceData['receive_date'], 0, 10),
@@ -466,7 +466,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ->addWhere('plugin', '=', 'xero')
       ->addWhere('connector_id', '=', $params['connector_id'])
       ->addWhere('accounts_status_id', 'NOT IN', [CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')])
-      ->addWhere('error_data', 'IS NULL')
+      ->addClause('OR', ['error_data', 'IS NULL'], ['is_error_resolved', '=', TRUE])
       ->setLimit($limit);
 
     if (!empty($params['contribution_id'])) {
