@@ -229,6 +229,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           AccountInvoice::update(FALSE)
             ->addWhere('id', '=', $record['id'])
             ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
+            ->addValue('accounts_needs_update', FALSE)
             ->execute();
           // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
           continue;
