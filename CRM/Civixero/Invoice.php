@@ -574,7 +574,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ],
 
       [
-        'id' => 'APPROVED',
+        'id' => 'AUTHORISED',
         'name' => 'approved',
         'label' => E::ts('Approved'),
       ],
