@@ -20,7 +20,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @return int
    * @throws \CRM_Core_Exception
    */
-  public function pull(array $params): int {
+  public function pull(array $params): array {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
     CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
@@ -42,26 +42,27 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $contacts = [$contacts];
       }
       foreach ($contacts as $contact) {
-        $save = TRUE;
         $or = [];
-        $params = [
+        $accountContactParams = [
+          'plugin' => $this->_plugin,
+          'connector_id' => $params['connector_id'],
           'accounts_display_name' => $contact['Name'],
-          'accounts_modified_date' => $contact['UpdatedDateUTC'],
-          'plugin' => 'xero',
+          'accounts_modified_date' => date('Y-m-d H:i:s', strtotime($contact['UpdatedDateUTC'])),
           'accounts_contact_id' => $contact['ContactID'],
           'accounts_data' => json_encode($contact),
-          'connector_id' => $params['connector_id'],
+          'accounts_needs_update' => FALSE,
         ];
 
         // Xero sets ContactNumber = ContactID (accounts_contact_id) if not set by CiviCRM.
         // We can only use it if it is an integer (map it to CiviCRM contact_id).
         $contactID = CRM_Utils_Type::validate($contact['ContactNumber'], 'Integer', FALSE);
         if ($contactID) {
-          $params['contact_id'] = $contactID;
+          $accountContactParams['contact_id'] = $contactID;
           $or[] = ['contact_id', '=', $contactID];
         }
 
-        CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save, $params);
+        $save = TRUE;
+        CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save, $accountContactParams);
         if (!$save) {
           continue;
         }
@@ -71,13 +72,13 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         // Find accountContact records matching accounts_contact_id (Xero ContactID) or contact_id (Xero ContactNumber)
         $accountContacts = AccountContact::get(FALSE)
           ->addWhere('plugin', '=', $this->_plugin)
-          ->addWhere('connector_id', '=', $params['connector_id'])
+          ->addWhere('connector_id', '=', $accountContactParams['connector_id'])
           ->addClause('OR', $or)
           ->execute()
           ->indexBy('id');
         if ($accountContacts->count() === 1) {
           // We have exactly one match. Update existing
-          $params['id'] = $accountContacts->first()['id'];
+          $accountContactParams['id'] = $accountContacts->first()['id'];
         }
         elseif ($accountContacts->count() > 1) {
           // We found more than one matching record
@@ -104,16 +105,46 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             ->execute()
             ->first();
           if (empty($contact)) {
-            unset($params['contact_id']);
+            unset($accountContactParams['contact_id']);
           }
         }
 
         try {
-          AccountContact::save(FALSE)->setRecords([$params])->execute();
-          $count++;
+          if ($accountContacts->count() === 0) {
+            // Create new AccountContact record
+            $newAccountContact = AccountContact::create(FALSE)
+              ->setValues($accountContactParams)
+              ->execute()
+              ->first();
+            $ids[] = $newAccountContact['id'];
+          }
+          else {
+            // Update existing AccountInvoice record
+            $modifiedFieldKeys = [
+              'accounts_display_name',
+              'accounts_modified_date',
+              'accounts_contact_id',
+              'accounts_needs_update',
+              'accounts_data',
+            ];
+            foreach ($modifiedFieldKeys as $key) {
+              // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
+              // So check if anything actually changed before updating.
+              if ($accountContactParams[$key] !== $accountContacts->first()[$key]) {
+                // Something changed, update AccountContact in DB
+                $newAccountContact = AccountContact::update(FALSE)
+                  ->setValues($accountContactParams)
+                  ->addWhere('id', '=', $accountContacts->first()['id'])
+                  ->execute()
+                  ->first();
+                $ids[] = $newAccountContact['id'];
+                break;
+              }
+            }
+          }
         }
         catch (Exception $e) {
-          $errors[] = E::ts('Failed to store %1 (%2)', [1 => $params['accounts_display_name'], 2 => $contact['ContactID']])
+          $errors[] = E::ts('Failed to store %1 (%2)', [1 => $contact['Name'], 2 => $contact['ContactID']])
             . E::ts(' with error ') . $e->getMessage();
         }
       }
@@ -122,7 +153,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    return $count;
+    return ['AccountContactIDs' => $ids ?? []];
   }
 
   /**
