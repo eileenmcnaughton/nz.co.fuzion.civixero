@@ -28,9 +28,12 @@ $entities = [
   ],
 ];
 $connectors = _civixero_get_connectors();
+if (empty($connectors)) {
+  return $entities;
+}
 foreach ($connectors as $connectorID => $details) {
   $entities[] = [
-    'name' => 'Xero Authorize ' . $details['name'],
+    'name' => 'Xero Authorize ' . ($details['name'] ?? ''),
     'entity' => 'Navigation',
     'cleanup' => 'always',
     'update' => 'unmodified',
@@ -38,8 +41,8 @@ foreach ($connectors as $connectorID => $details) {
       'version' => 4,
       'values' => [
         'domain_id' => 'current_domain',
-        'label' => E::ts('Xero Authorize') . ' ' . $details['name'],
-        'name' => 'Xero Authorize ' . $details['name'],
+        'label' => E::ts('Xero Authorize') . ' ' . ($details['name'] ?? ''),
+        'name' => 'Xero Authorize ' . ($details['name'] ?? ''),
         'url' => 'civicrm/xero/authorize?connector_id=' . $connectorID,
         'icon' => NULL,
         'permission' => [
