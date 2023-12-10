@@ -11,20 +11,12 @@ class ComposerStaticInit65b15d65cd479acd14e32cf4926ccd68
         array (
             'XeroAPI\\XeroPHP\\' => 16,
         ),
-        'L' => 
-        array (
-            'League\\OAuth2\\Client\\' => 21,
-        ),
     );
 
     public static $prefixDirsPsr4 = array (
         'XeroAPI\\XeroPHP\\' => 
         array (
             0 => __DIR__ . '/..' . '/xeroapi/xero-php-oauth2/lib',
-        ),
-        'League\\OAuth2\\Client\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/league/oauth2-client/src',
         ),
     );
 

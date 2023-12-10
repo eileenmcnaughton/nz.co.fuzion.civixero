@@ -296,10 +296,10 @@ class TaxRate implements ModelInterface, ArrayAccess
     const REPORT_TAX_TYPE_IGDSINPUT3 = 'IGDSINPUT3';
     const REPORT_TAX_TYPE_SROVR = 'SROVR';
     const REPORT_TAX_TYPE_TOURISTREFUND = 'TOURISTREFUND';
-    const REPORT_TAX_TYPE_TXRCN33_INPUT = 'TXRCN33INPUT';
-    const REPORT_TAX_TYPE_TXRCREINPUT = 'TXRCREINPUT';
-    const REPORT_TAX_TYPE_TXRCESSINPUT = 'TXRCESSINPUT';
-    const REPORT_TAX_TYPE_TXRCTSINPUT = 'TXRCTSINPUT';
+    const REPORT_TAX_TYPE_TXRCN33 = 'TXRCN33';
+    const REPORT_TAX_TYPE_TXRCRE = 'TXRCRE';
+    const REPORT_TAX_TYPE_TXRCESS = 'TXRCESS';
+    const REPORT_TAX_TYPE_TXRCTS = 'TXRCTS';
     const REPORT_TAX_TYPE_CAPEXINPUT = 'CAPEXINPUT';
     const REPORT_TAX_TYPE_UNDEFINED = 'UNDEFINED';
     const REPORT_TAX_TYPE_CAPEXOUTPUT = 'CAPEXOUTPUT';
@@ -310,6 +310,11 @@ class TaxRate implements ModelInterface, ArrayAccess
     const REPORT_TAX_TYPE_SROVRRS = 'SROVRRS';
     const REPORT_TAX_TYPE_SROVRLVG = 'SROVRLVG';
     const REPORT_TAX_TYPE_SRLVG = 'SRLVG';
+    const REPORT_TAX_TYPE_IM = 'IM';
+    const REPORT_TAX_TYPE_IMESS = 'IMESS';
+    const REPORT_TAX_TYPE_IMN33 = 'IMN33';
+    const REPORT_TAX_TYPE_IMRE = 'IMRE';
+    const REPORT_TAX_TYPE_BADDEBTRECOVERY = 'BADDEBTRECOVERY';
     
 
     
@@ -414,10 +419,10 @@ class TaxRate implements ModelInterface, ArrayAccess
             self::REPORT_TAX_TYPE_IGDSINPUT3,
             self::REPORT_TAX_TYPE_SROVR,
             self::REPORT_TAX_TYPE_TOURISTREFUND,
-            self::REPORT_TAX_TYPE_TXRCN33_INPUT,
-            self::REPORT_TAX_TYPE_TXRCREINPUT,
-            self::REPORT_TAX_TYPE_TXRCESSINPUT,
-            self::REPORT_TAX_TYPE_TXRCTSINPUT,
+            self::REPORT_TAX_TYPE_TXRCN33,
+            self::REPORT_TAX_TYPE_TXRCRE,
+            self::REPORT_TAX_TYPE_TXRCESS,
+            self::REPORT_TAX_TYPE_TXRCTS,
             self::REPORT_TAX_TYPE_CAPEXINPUT,
             self::REPORT_TAX_TYPE_UNDEFINED,
             self::REPORT_TAX_TYPE_CAPEXOUTPUT,
@@ -428,6 +433,11 @@ class TaxRate implements ModelInterface, ArrayAccess
             self::REPORT_TAX_TYPE_SROVRRS,
             self::REPORT_TAX_TYPE_SROVRLVG,
             self::REPORT_TAX_TYPE_SRLVG,
+            self::REPORT_TAX_TYPE_IM,
+            self::REPORT_TAX_TYPE_IMESS,
+            self::REPORT_TAX_TYPE_IMN33,
+            self::REPORT_TAX_TYPE_IMRE,
+            self::REPORT_TAX_TYPE_BADDEBTRECOVERY,
         ];
     }
     
