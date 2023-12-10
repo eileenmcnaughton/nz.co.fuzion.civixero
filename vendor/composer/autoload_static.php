@@ -15,6 +15,10 @@ class ComposerStaticInit65b15d65cd479acd14e32cf4926ccd68
         array (
             'League\\OAuth2\\Client\\' => 21,
         ),
+        'F' => 
+        array (
+            'Firebase\\JWT\\' => 13,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -25,6 +29,10 @@ class ComposerStaticInit65b15d65cd479acd14e32cf4926ccd68
         'League\\OAuth2\\Client\\' => 
         array (
             0 => __DIR__ . '/..' . '/league/oauth2-client/src',
+        ),
+        'Firebase\\JWT\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
         ),
     );
 

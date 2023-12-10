@@ -4,20 +4,83 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8efd80a7af27e25aba42f3d7f64e913c",
+    "content-hash": "2548d31c55c99b63765b433d5c63e263",
     "packages": [
         {
-            "name": "league/oauth2-client",
-            "version": "2.6.1",
+            "name": "firebase/php-jwt",
+            "version": "v6.10.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/thephpleague/oauth2-client.git",
-                "reference": "2334c249907190c132364f5dae0287ab8666aa19"
+                "url": "https://github.com/firebase/php-jwt.git",
+                "reference": "a49db6f0a5033aef5143295342f1c95521b075ff"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/oauth2-client/zipball/2334c249907190c132364f5dae0287ab8666aa19",
-                "reference": "2334c249907190c132364f5dae0287ab8666aa19",
+                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/a49db6f0a5033aef5143295342f1c95521b075ff",
+                "reference": "a49db6f0a5033aef5143295342f1c95521b075ff",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4||^8.0"
+            },
+            "require-dev": {
+                "guzzlehttp/guzzle": "^6.5||^7.4",
+                "phpspec/prophecy-phpunit": "^2.0",
+                "phpunit/phpunit": "^9.5",
+                "psr/cache": "^1.0||^2.0",
+                "psr/http-client": "^1.0",
+                "psr/http-factory": "^1.0"
+            },
+            "suggest": {
+                "ext-sodium": "Support EdDSA (Ed25519) signatures",
+                "paragonie/sodium_compat": "Support EdDSA (Ed25519) signatures when libsodium is not present"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Firebase\\JWT\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Neuman Vong",
+                    "email": "neuman+pear@twilio.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Anant Narayanan",
+                    "email": "anant@php.net",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A simple library to encode and decode JSON Web Tokens (JWT) in PHP. Should conform to the current spec.",
+            "homepage": "https://github.com/firebase/php-jwt",
+            "keywords": [
+                "jwt",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/firebase/php-jwt/issues",
+                "source": "https://github.com/firebase/php-jwt/tree/v6.10.0"
+            },
+            "time": "2023-12-01T16:26:39+00:00"
+        },
+        {
+            "name": "league/oauth2-client",
+            "version": "2.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thephpleague/oauth2-client.git",
+                "reference": "160d6274b03562ebeb55ed18399281d8118b76c8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thephpleague/oauth2-client/zipball/160d6274b03562ebeb55ed18399281d8118b76c8",
+                "reference": "160d6274b03562ebeb55ed18399281d8118b76c8",
                 "shasum": ""
             },
             "require": {
@@ -72,9 +135,9 @@
             ],
             "support": {
                 "issues": "https://github.com/thephpleague/oauth2-client/issues",
-                "source": "https://github.com/thephpleague/oauth2-client/tree/2.6.1"
+                "source": "https://github.com/thephpleague/oauth2-client/tree/2.7.0"
             },
-            "time": "2021-12-22T16:42:49+00:00"
+            "time": "2023-04-16T18:19:15+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -128,23 +191,23 @@
         },
         {
             "name": "xeroapi/xero-php-oauth2",
-            "version": "2.21.0",
+            "version": "2.23.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/XeroAPI/xero-php-oauth2.git",
-                "reference": "3162bcf4c9928da92104bc9668515444c9fb0ee0"
+                "reference": "0008d8c4eca4c45bf6b3b311213ceeb68045586f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/XeroAPI/xero-php-oauth2/zipball/3162bcf4c9928da92104bc9668515444c9fb0ee0",
-                "reference": "3162bcf4c9928da92104bc9668515444c9fb0ee0",
+                "url": "https://api.github.com/repos/XeroAPI/xero-php-oauth2/zipball/0008d8c4eca4c45bf6b3b311213ceeb68045586f",
+                "reference": "0008d8c4eca4c45bf6b3b311213ceeb68045586f",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "ext-json": "*",
                 "ext-mbstring": "*",
-                "firebase/php-jwt": "^5.0 | ^6.0",
+                "firebase/php-jwt": "^6.0",
                 "guzzlehttp/guzzle": "^6.2 | ^7.0",
                 "league/oauth2-client": "^2.5.0",
                 "php": ">=5.6"
@@ -182,9 +245,9 @@
             ],
             "support": {
                 "issues": "https://github.com/XeroAPI/xero-php-oauth2/issues",
-                "source": "https://github.com/XeroAPI/xero-php-oauth2/tree/2.21.0"
+                "source": "https://github.com/XeroAPI/xero-php-oauth2/tree/2.23.2"
             },
-            "time": "2023-02-17T11:49:23+00:00"
+            "time": "2023-11-30T11:28:42+00:00"
         }
     ],
     "packages-dev": [],
@@ -195,5 +258,5 @@
     "prefer-lowest": false,
     "platform": [],
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.3.0"
 }
