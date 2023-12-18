@@ -153,7 +153,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
             ->addWhere('plugin', '=', $this->_plugin)
             ->addWhere('connector_id', '=', $params['connector_id'])
-            ->execute()->first();
+            ->execute()->first() ?? [];
 
           if (count($matching)) {
             if (empty($matching['contact_id']) ||
