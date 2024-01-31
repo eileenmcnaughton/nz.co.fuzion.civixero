@@ -2,17 +2,17 @@
     "packages": [
         {
             "name": "xeroapi/xero-php-oauth2",
-            "version": "2.23.2",
-            "version_normalized": "2.23.2.0",
+            "version": "2.23.3",
+            "version_normalized": "2.23.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/XeroAPI/xero-php-oauth2.git",
-                "reference": "0008d8c4eca4c45bf6b3b311213ceeb68045586f"
+                "reference": "34b3cfb05689b0d160550a5f6ffc1c7caf778aff"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/XeroAPI/xero-php-oauth2/zipball/0008d8c4eca4c45bf6b3b311213ceeb68045586f",
-                "reference": "0008d8c4eca4c45bf6b3b311213ceeb68045586f",
+                "url": "https://api.github.com/repos/XeroAPI/xero-php-oauth2/zipball/34b3cfb05689b0d160550a5f6ffc1c7caf778aff",
+                "reference": "34b3cfb05689b0d160550a5f6ffc1c7caf778aff",
                 "shasum": ""
             },
             "require": {
@@ -29,7 +29,7 @@
                 "phpunit/phpunit": "^4.8",
                 "squizlabs/php_codesniffer": "~2.6"
             },
-            "time": "2023-11-30T11:28:42+00:00",
+            "time": "2024-01-22T16:07:01+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -59,7 +59,7 @@
             ],
             "support": {
                 "issues": "https://github.com/XeroAPI/xero-php-oauth2/issues",
-                "source": "https://github.com/XeroAPI/xero-php-oauth2/tree/2.23.2"
+                "source": "https://github.com/XeroAPI/xero-php-oauth2/tree/2.23.3"
             },
             "install-path": "../xeroapi/xero-php-oauth2"
         }
