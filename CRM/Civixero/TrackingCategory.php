@@ -76,6 +76,28 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
   /**
    * @throws \Exception
    */
+  public function deleteOption(string $trackingCategoryID, string $trackingOptionID): array {
+    CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
+
+    $apiInstance = $this->getAccountingApiInstance();
+
+    try {
+      $result = $apiInstance->deleteTrackingOptions($this->getTenantID(), $trackingCategoryID, $trackingOptionID);
+      return [
+        'name' => $result->getOptions()[0]->getName(),
+        'status' => $result->getOptions()[0]->getStatus(),
+        'id' => $result->getOptions()[0]->getTrackingOptionId(),
+        'deleted' => TRUE,
+      ];
+    } catch (\Exception $e) {
+      \Civi::log('civixero')->error('Exception when calling AccountingApi->deleteTrackingOptions: ' . $e->getMessage());
+      throw $e;
+    }
+  }
+
+  /**
+   * @throws \Exception
+   */
   public function checkIfCategoryHasOption(string $trackingCategoryID, string $trackingOptionName): array {
     $trackingCategories = $this->pull();
     if (!isset($trackingCategories[$trackingCategoryID])) {
