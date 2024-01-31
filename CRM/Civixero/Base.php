@@ -2,6 +2,7 @@
 
 use Civi\Xero\ConnectorInterface;
 use League\OAuth2\Client\Token\AccessToken;
+use XeroAPI\XeroPHP\Api\AccountingApi;
 
 /**
  * Class CRM_Civixero_Base
@@ -70,14 +71,15 @@ class CRM_Civixero_Base {
     $this->singleton($this->_xero_access_token->getToken(), $this->_xero_tenant_id, $this->connector_id, $force);
   }
 
-  public function getAccountingApiInstance(): \XeroAPI\XeroPHP\Api\AccountingApi {
+  public function getAccountingApiInstance(): AccountingApi {
     // Configure OAuth2 access token for authorization: OAuth2
     $config = \XeroAPI\XeroPHP\Configuration::getDefaultConfiguration()->setAccessToken($this->getAccessToken());
 
-    $apiInstance = new \XeroAPI\XeroPHP\Api\AccountingApi(
+    $apiInstance = new AccountingApi(
       new \GuzzleHttp\Client(),
       $config
     );
+
     return $apiInstance;
   }
 
