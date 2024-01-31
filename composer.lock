@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8c7205d81afdd06a104f2062eedfaf51",
+    "content-hash": "77b5f2782002c54e7abf893e8f241583",
     "packages": [
         {
             "name": "xeroapi/xero-php-oauth2",
-            "version": "2.23.2",
+            "version": "4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/XeroAPI/xero-php-oauth2.git",
-                "reference": "0008d8c4eca4c45bf6b3b311213ceeb68045586f"
+                "reference": "d4db4ce23d78cc45ee1a3950dd5b0c4085743e00"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/XeroAPI/xero-php-oauth2/zipball/0008d8c4eca4c45bf6b3b311213ceeb68045586f",
-                "reference": "0008d8c4eca4c45bf6b3b311213ceeb68045586f",
+                "url": "https://api.github.com/repos/XeroAPI/xero-php-oauth2/zipball/d4db4ce23d78cc45ee1a3950dd5b0c4085743e00",
+                "reference": "d4db4ce23d78cc45ee1a3950dd5b0c4085743e00",
                 "shasum": ""
             },
             "require": {
@@ -62,9 +62,9 @@
             ],
             "support": {
                 "issues": "https://github.com/XeroAPI/xero-php-oauth2/issues",
-                "source": "https://github.com/XeroAPI/xero-php-oauth2/tree/2.23.2"
+                "source": "https://github.com/XeroAPI/xero-php-oauth2/tree/4.0.0"
             },
-            "time": "2023-11-30T11:28:42+00:00"
+            "time": "2024-05-03T16:13:22+00:00"
         }
     ],
     "packages-dev": [],
