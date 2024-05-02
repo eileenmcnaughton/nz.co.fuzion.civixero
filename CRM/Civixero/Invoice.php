@@ -383,7 +383,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'accounts_needs_update' => 1,
       'plugin' => 'xero',
       'connector_id' => $params['connector_id'],
-      'accounts_status_id' => ['NOT IN' => [3]],
+      ['OR', [['accounts_status_id', '!=', 3], ['accounts_status_id', 'IS NULL']]],
       'options' => [
         'sort' => 'error_data',
         'limit' => $limit,

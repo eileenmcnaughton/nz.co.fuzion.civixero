@@ -103,8 +103,10 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $accountContacts->addWhere('contact_id', '=', $params['contact_id']);
       }
       else {
+        $accountContacts->addWhere('contact_id', 'IS NOT NULL');
         $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
       }
+      $accountContacts->setLimit($params['limit'] ?? 10);
 
       $records = $accountContacts->execute();
 
