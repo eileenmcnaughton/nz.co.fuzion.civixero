@@ -107,6 +107,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
       }
       $accountContacts->setLimit($params['limit'] ?? 10);
+      $accountContacts->addOrderBy('error_data', 'ASC');
 
       $records = $accountContacts->execute();
 
@@ -183,13 +184,13 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           // This will update the last sync date.
           $record['accounts_needs_update'] = 0;
           unset($record['last_sync_date']);
-          civicrm_api3('AccountContact', 'create', $record);
         }
         catch (CRM_Core_Exception $e) {
           $errors[] = E::ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
             . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
             . E::ts('Contact Push failed');
         }
+        civicrm_api3('AccountContact', 'create', $record);
       }
       if ($errors) {
         // since we expect this to wind up in the job log we'll print the errors
