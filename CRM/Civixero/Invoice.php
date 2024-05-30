@@ -201,8 +201,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     foreach ($invoiceData['line_items'] as $lineItem) {
       $lineItems[] = [
         'Description' => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
-        'Quantity' => $lineItem['qty'],
-        'UnitAmount' => $lineItem['unit_price'],
+        // Xero does not like negative quantity so for a refund make the price negative instead.
+        'Quantity' => abs($lineItem['qty']),
+        'UnitAmount' => $lineItem['qty'] >= 0 ? $lineItem['unit_price'] : (- $lineItem['unit_price']),
         'AccountCode' => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
       ];
       $total_amount += $lineItem['qty'] * $lineItem['unit_price'];
