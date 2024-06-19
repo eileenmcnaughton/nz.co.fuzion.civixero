@@ -1,9 +1,11 @@
 {
   "require": {
-    "league/oauth2-client": "^2.4"
+    "xeroapi/xero-php-oauth2": "^4.0"
   },
   "replace": {
-    "guzzlehttp/guzzle": "^6.5",
-    "guzzlehttp/psr7": "^1.8.5"
+    "guzzlehttp/guzzle": "^6.3 || ^7.3",
+    "firebase/php-jwt": "^6.0",
+    "league/oauth2-client": "^2.0",
+    "paragonie/random_compat": "^1 || ^2 || ^9.99"
   }
 }
