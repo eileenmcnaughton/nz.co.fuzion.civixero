@@ -252,7 +252,7 @@ class Xero {
         $headers[] = "If-Modified-Since: $modified_after";
       }
       $temp_xero_response = (string) $this->getGuzzleClient()->get($xero_url, [
-        'body' => $nvpreq,
+        'body' => '',
         'curl' => [
           CURLOPT_RETURNTRANSFER => TRUE,
           // Seems bad, historically set to this.
