@@ -135,7 +135,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    *
    * @return array
    */
-  protected function getNotUpdateCandidateResponses() {
+  protected function getNotUpdateCandidateResponses(): array {
     return [
       'This Bank Transaction cannot be edited as it has been reconciled with a Bank Statement.',
     ];
