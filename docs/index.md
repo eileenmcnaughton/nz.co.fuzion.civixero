@@ -1,4 +1,4 @@
-# nz.co.fuzion.civixero
+# CiviXero
 
 Synchronisation [CiviCRM](https://civicrm.org) and [Xero](https://xero.com) for financial transactions and contacts.
 
