@@ -50,10 +50,6 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     parent::setUp();
   }
 
-  public function tearDown():void {
-    parent::tearDown();
-  }
-
   /**
    * Test push.
    */

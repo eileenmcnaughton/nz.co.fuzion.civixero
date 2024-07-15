@@ -15,6 +15,7 @@ require_once 'Civixero.civix.php';
  */
 function civixero_civicrm_config(CRM_Core_Config $config) {
   _civixero_civix_civicrm_config($config);
+  \Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_Civixero_Base', 'checkApiRateExceeded']);
   require_once __DIR__ . '/vendor/autoload.php';
   if (!function_exists('random_bytes')) {
     require_once(__DIR__ . '/vendor/paragonie/random_compat/lib/random.php');

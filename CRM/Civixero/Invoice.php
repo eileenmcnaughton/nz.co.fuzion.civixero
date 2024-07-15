@@ -40,8 +40,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $xeroParams = ['Type' => 'ACCREC'];
     $filter = $params['invoice_number'] ?? FALSE;
     try {
-      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
-
       $count = 0;
       $result = $this
         ->getSingleton($params['connector_id'])
@@ -145,7 +143,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   public function push($params, $limit = 10) {
     try {
-      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
       $records = $this->getContributionsRequiringPushUpdate($params, $limit);
       $errors = [];
 
