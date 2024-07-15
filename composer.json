@@ -1,9 +1,9 @@
 {
   "require": {
-    "league/oauth2-client": "^2.4"
+    "xeroapi/xero-php-oauth2": "^6.0"
   },
   "replace": {
-    "guzzlehttp/guzzle": "^6.5",
+    "guzzlehttp/guzzle": "^6.3 || ^7.3",
     "guzzlehttp/psr7": "^1.8.5"
   }
 }
