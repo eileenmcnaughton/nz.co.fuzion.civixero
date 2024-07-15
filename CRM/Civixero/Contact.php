@@ -285,6 +285,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
       $accountContacts->addWhere('contact_id', 'IS NOT NULL');
     }
+    $accountContacts->addOrderBy('error_data');
 
     return (array) $accountContacts->execute();
   }
