@@ -89,25 +89,17 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @return bool
    * @throws CRM_Core_Exception
+   * @throws \CRM_Civixero_Exception_XeroThrottle
    */
-  public function push(array $params): bool {
+  public function push(array $params, int $limit = 10): bool {
+    if (CRM_Civixero_Base::isApiRateLimitExceeded()) {
+      throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again in 1 hour');
+    }
     try {
-      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
-      $accountContacts = AccountContact::get(FALSE)
-        ->addWhere('plugin', '=', $this->_plugin)
-        ->addWhere('accounts_needs_update', '=', TRUE)
-        ->addWhere('connector_id', '=', $params['connector_id']);
-
-      // If we specified a CiviCRM contact ID just push that contact.
-      if (!empty($params['contact_id'])) {
-        $accountContacts->addWhere('contact_id', '=', $params['contact_id']);
+      $records = $this->getContactsRequiringPushUpdate($params, $limit);
+      if (empty($records)) {
+        return TRUE;
       }
-      else {
-        $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
-      }
-
-      $records = $accountContacts->execute();
-
       $errors = [];
 
       //@todo pass limit through from params to get call
@@ -270,4 +262,31 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
     return $locTypes;
   }
+
+  /**
+   * @param array $params
+   * @param int $limit
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getContactsRequiringPushUpdate(array $params, int $limit): array {
+    $accountContacts = AccountContact::get(FALSE)
+      ->addWhere('plugin', '=', $this->_plugin)
+      ->addWhere('accounts_needs_update', '=', TRUE)
+      ->addWhere('connector_id', '=', $params['connector_id'])
+      ->setLimit($limit);
+
+    // If we specified a CiviCRM contact ID just push that contact.
+    if (!empty($params['contact_id'])) {
+      $accountContacts->addWhere('contact_id', '=', $params['contact_id']);
+    }
+    else {
+      $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
+      $accountContacts->addWhere('contact_id', 'IS NOT NULL');
+    }
+
+    return (array) $accountContacts->execute();
+  }
+
 }
