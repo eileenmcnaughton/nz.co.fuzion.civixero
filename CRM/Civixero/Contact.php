@@ -190,10 +190,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
         $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
         $contact['phone'] = $this->getPreferredPhone($locationTypeToSync, $record['contact_id']);
-        $contactAddress = $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
-        if ($contactAddress) {
-          $contact = array_merge($contact, $contactAddress);
-        }
+        $contact += $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
 
         $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
         $accountsContact = $this->mapToAccounts($contact, $accountsContactID);
@@ -228,7 +225,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
               ->addWhere('id', '=', $matchingAccountContact['contact_id'])
               ->addWhere('is_deleted', '=', TRUE)
               ->execute()
-              ->first()['is_deleted'];
+              ->first()['is_deleted'] ?? FALSE;
           }
           if (empty($matchingAccountContact['contact_id']) || $contactIsDeleted) {
             \Civi::log(E::SHORT_NAME)->error(E::ts('Error updating existing contact for %1', [1 => $record['contact_id']]));
@@ -379,20 +376,17 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         ->execute()
         ->first();
     }
-    if (!empty($address['street_address'])) {
-      // Yes, we have an address with preferred location type.
-      return [
-        'street_address' => $address['street_address'],
-        'city' => $address['city'],
-        'postal_code' => $address['postal_code'],
-        'supplemental_address_1' => $address['supplemental_address_1'],
-        'supplemental_address_2' => $address['supplemental_address_2'],
-        'supplemental_address_3' => $address['supplemental_address_3'],
-        'country' => $address['country_id:label'],
-        'state_province_name' => $address['state_province_id:label'],
-      ];
-    }
-    return NULL;
+    // Return preferred values or empty keys
+    return [
+      'street_address' => $address['street_address'] ?? '',
+      'city' => $address['city'] ?? '',
+      'postal_code' => $address['postal_code'] ?? '',
+      'supplemental_address_1' => $address['supplemental_address_1'] ?? '',
+      'supplemental_address_2' => $address['supplemental_address_2'] ?? '',
+      'supplemental_address_3' => $address['supplemental_address_3'] ?? '',
+      'country' => $address['country_id:label'] ?? '',
+      'state_province_name' => $address['state_province_id:label'] ?? '',
+    ];
   }
 
   /**
