@@ -6,6 +6,9 @@ This extension requires the [AccountSync extension](https://github.com/eileenmcn
 
 It sets up scheduled jobs that synchronize Xero contacts and invoices with CiviCRM contacts and invoices.
 
+## Getting started
+Check out the [setup guide](setup.md)
+
 ## Questions
 
 ### What is synced?
