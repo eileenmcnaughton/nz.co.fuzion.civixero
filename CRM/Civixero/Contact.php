@@ -53,7 +53,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
         // Xero sets ContactNumber = ContactID (accounts_contact_id) if not set by CiviCRM.
         // We can only use it if it is an integer (map it to CiviCRM contact_id).
-        $contactID = CRM_Utils_Type::validate($contact['ContactNumber'], 'Integer', FALSE);
+        $contactID = CRM_Utils_Type::validate($contact['ContactNumber'] ?? NULL, 'Integer', FALSE);
         if ($contactID) {
           $accountContactParams['contact_id'] = $contactID;
           $or[] = ['contact_id', '=', $contactID];
