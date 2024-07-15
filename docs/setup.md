@@ -30,8 +30,11 @@ On the menu, click on __MyApps__, then click __New app__.
 
 Use the following details:
 - __App name__: A name of your choice eg. "CiviCRM".
+
 - __Integration type__: Web app.
+
 - __Company or application URL__: Enter your website URL - eg. https://example.org
+
 - __OAuth 2.0 redirect URI__: this is the __URL of the Xero Authorize page__ in CiviCRM. Navigate to the page, __Administer -> Xero -> Xero Authorize__ and copy the URL to this page. Xero will validate using this URL. If working in a local development environment, then use localhost as the domain name. Eg. https://example.org/civicrm/xero/authorize
 
 Once the app is created click the __Configuration__ tab:
