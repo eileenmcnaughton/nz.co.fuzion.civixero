@@ -10,6 +10,7 @@
   <urls>
     <url desc="Main Extension Page">https://github.com/eileenmcnaughton/nz.co.fuzion.civixero</url>
     <url desc="Licensing">https://civicrm.org/licensing</url>
+    <url desc="Documentation">http://docs.civicrm.org/foobar/en/latest</url>
   </urls>
   <maintainer>
     <author>eileen</author>
