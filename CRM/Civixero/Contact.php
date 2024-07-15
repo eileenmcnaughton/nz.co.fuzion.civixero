@@ -1,8 +1,11 @@
 <?php
 
-use Civi\Api4\AccountContact;
-use Civi\Api4\Email;
 use CRM_Civixero_ExtensionUtil as E;
+use Civi\Api4\AccountContact;
+use Civi\Api4\Address;
+use Civi\Api4\Contact;
+use Civi\Api4\Email;
+use Civi\Api4\Phone;
 use Civi\Api4\LocationType;
 
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
@@ -96,23 +99,28 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       }
       $errors = [];
 
-      //@todo pass limit through from params to get call
       foreach ($records as $record) {
         try {
-          // Get the contact data. This includes the "Primary" email as $contact['email'] if set.
-          $contact = civicrm_api3('Contact', 'getsingle', ['id' => $record['contact_id']]);
+          // Get the contact data.
+          $contact = Contact::get(FALSE)
+            ->addWhere('id', '=', $record['contact_id'])
+            ->execute()
+            ->first();
+          if ($contact['is_deleted']) {
+            AccountContact::update(FALSE)
+              ->addWhere('id', '=', $record['id'])
+              ->addValue('do_not_sync', TRUE)
+              ->execute();
+            continue;
+          }
+
           // See if we have an email for the preferred location type?
           $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
-          if ($locationTypeToSync !== 0) {
-            $email = Email::get(FALSE)
-              ->addWhere('contact_id', '=', $record['contact_id'])
-              ->addWhere('location_type_id', '=', $locationTypeToSync)
-              ->execute()
-              ->first();
-            if (!empty($email['email'])) {
-              // Yes, we have an email. "Overwrite" the primary email in the data passed to Xero.
-              $contact['email'] = $email['email'];
-            }
+          $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
+          $contact['phone'] = $this->getPreferredPhone($locationTypeToSync, $record['contact_id']);
+          $contactAddress = $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
+          if ($contactAddress) {
+            $contact = array_merge($contact, $contactAddress);
           }
 
           $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
@@ -184,6 +192,87 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
       throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero');
     }
+  }
+
+  private function getPreferredEmail($locationTypeToSync, $contactID) {
+    if ($locationTypeToSync !== 0) {
+      $email = Email::get(FALSE)
+        ->addWhere('contact_id', '=', $contactID)
+        ->addWhere('location_type_id', '=', $locationTypeToSync)
+        ->execute()
+        ->first();
+    }
+    if (empty($email)) {
+      // Get the primary email
+      $email = Email::get(FALSE)
+        ->addWhere('is_primary', '=', TRUE)
+        ->addWhere('contact_id', '=', $contactID)
+        ->execute()
+        ->first();
+    }
+
+    if (!empty($email['email'])) {
+      // Yes, we have an email with preferred location type
+      return $email['email'];
+    }
+    return NULL;
+  }
+
+  private function getPreferredPhone($locationTypeToSync, $contactID) {
+    if ($locationTypeToSync !== 0) {
+      $phone = Phone::get(FALSE)
+        ->addWhere('contact_id', '=', $contactID)
+        ->addWhere('location_type_id', '=', $locationTypeToSync)
+        ->execute()
+        ->first();
+    }
+    if (empty($phone)) {
+      // Get the primary phone
+      $phone = Phone::get(FALSE)
+        ->addWhere('is_primary', '=', TRUE)
+        ->addWhere('contact_id', '=', $contactID)
+        ->execute()
+        ->first();
+    }
+    if (!empty($phone['phone'])) {
+      // Yes, we have a phone with preferred location type.
+      return $phone['phone'];
+    }
+    return NULL;
+  }
+
+  private function getPreferredAddress($locationTypeToSync, $contactID) {
+    if ($locationTypeToSync !== 0) {
+      $address = Address::get(FALSE)
+        ->addSelect('*', 'country_id:label', 'state_province_id:label')
+        ->addWhere('contact_id', '=', $contactID)
+        ->addWhere('location_type_id', '=', $locationTypeToSync)
+        ->execute()
+        ->first();
+    }
+    if (empty($address)) {
+      // Get the primary address
+      $address = Address::get(FALSE)
+        ->addSelect('*', 'country_id:label', 'state_province_id:label')
+        ->addWhere('is_primary', '=', TRUE)
+        ->addWhere('contact_id', '=', $contactID)
+        ->execute()
+        ->first();
+    }
+    if (!empty($address['street_address'])) {
+      // Yes, we have an address with preferred location type.
+      return [
+        'street_address' => $address['street_address'],
+        'city' => $address['city'],
+        'postal_code' => $address['postal_code'],
+        'supplemental_address_1' => $address['supplemental_address_1'],
+        'supplemental_address_2' => $address['supplemental_address_2'],
+        'supplemental_address_3' => $address['supplemental_address_3'],
+        'country' => $address['country_id:label'],
+        'state_province_name' => $address['state_province_id:label'],
+      ];
+    }
+    return NULL;
   }
 
   /**
