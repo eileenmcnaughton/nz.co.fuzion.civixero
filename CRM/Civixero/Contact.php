@@ -17,7 +17,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $params
    *
-   * @throws API_Exception
    * @throws CRM_Core_Exception
    */
   public function pull(array $params): void {
@@ -194,7 +193,16 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
   }
 
-  private function getPreferredEmail($locationTypeToSync, $contactID) {
+  /**
+   * Get the preferred email, taking the preferred location type into account.
+   *
+   * @param int $locationTypeToSync
+   * @param int $contactID
+   *
+   * @return string|null
+   * @throws \CRM_Core_Exception
+   */
+  private function getPreferredEmail(int $locationTypeToSync, int $contactID): ?string {
     if ($locationTypeToSync !== 0) {
       $email = Email::get(FALSE)
         ->addWhere('contact_id', '=', $contactID)
@@ -218,7 +226,16 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     return NULL;
   }
 
-  private function getPreferredPhone($locationTypeToSync, $contactID) {
+  /**
+   * Get the preferred phone, taking the preferred location type into account.
+   *
+   * @param int $locationTypeToSync
+   * @param int $contactID
+   *
+   * @return mixed|null
+   * @throws \CRM_Core_Exception
+   */
+  private function getPreferredPhone(int $locationTypeToSync, int $contactID) {
     if ($locationTypeToSync !== 0) {
       $phone = Phone::get(FALSE)
         ->addWhere('contact_id', '=', $contactID)
@@ -241,7 +258,16 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     return NULL;
   }
 
-  private function getPreferredAddress($locationTypeToSync, $contactID) {
+  /**
+   * Get the preferred address, taking the preferred location type into account.
+   *
+   * @param int $locationTypeToSync
+   * @param int $contactID
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  private function getPreferredAddress(int $locationTypeToSync, int $contactID): ?array {
     if ($locationTypeToSync !== 0) {
       $address = Address::get(FALSE)
         ->addSelect('*', 'country_id:label', 'state_province_id:label')
@@ -360,9 +386,12 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   /**
    * Get available location types.
    *
+   * This is called from the setting declaration.
+   *
    * @return array
    *
    * @throws \CRM_Core_Exception
+   * @noinspection PhpRedundantDocCommentInspection
    */
   public static function getLocationTypes(): array {
     $locationTypes = LocationType::get(FALSE)
