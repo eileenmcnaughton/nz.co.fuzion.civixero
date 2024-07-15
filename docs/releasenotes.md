@@ -9,4 +9,6 @@ Releases use the following numbering system:
 
 * **[BC]**: Items marked with [BC] indicate a breaking change that will require updates to your code if you are using that code in your extension.
 
-## Release 2.1 (not yet released)
+## Release 3.0.0
+Many api calls are updated to use apiv4. This may mean that hooks receive
+different parameters (ie apiv4 rather than apiv3 ready)
