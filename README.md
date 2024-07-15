@@ -10,5 +10,4 @@ Interaction with this module is primarily by API and it creates scheduled jobs t
 
 ## Requirements
 
-* https://github.com/civicrm/civicrm-core/pull/24747 - Add Job Entity to Api4.
 * https://github.com/civicrm/civicrm-core/pull/24928 - Add html_attributes to API4 Setting.
