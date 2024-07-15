@@ -148,7 +148,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $errors = [];
 
       $count = 0;
-      foreach ($records['values'] as $record) {
+      foreach ($records as $record) {
         try {
           $accountsInvoice = $this->getAccountsInvoice($record);
           if ($accountsInvoice === FALSE) {
