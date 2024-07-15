@@ -1,56 +1,71 @@
-<?php return array (
-  'root' => 
-  array (
-    'pretty_version' => 'dev-master',
-    'version' => 'dev-master',
-    'aliases' => 
-    array (
+<?php return array(
+    'root' => array(
+        'name' => '__root__',
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'reference' => 'd18c0655f4c122444e4abf4317176c3252c91649',
+        'type' => 'library',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => true,
     ),
-    'reference' => '699e1f49559d8ff47df8c5130b0e43b1011a67a0',
-    'name' => '__root__',
-  ),
-  'versions' => 
-  array (
-    '__root__' => 
-    array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '699e1f49559d8ff47df8c5130b0e43b1011a67a0',
+    'versions' => array(
+        '__root__' => array(
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => 'd18c0655f4c122444e4abf4317176c3252c91649',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'firebase/php-jwt' => array(
+            'pretty_version' => 'v6.10.0',
+            'version' => '6.10.0.0',
+            'reference' => 'a49db6f0a5033aef5143295342f1c95521b075ff',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../firebase/php-jwt',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'guzzlehttp/guzzle' => array(
+            'dev_requirement' => false,
+            'replaced' => array(
+                0 => '^6.3 || ^7.3',
+            ),
+        ),
+        'guzzlehttp/psr7' => array(
+            'dev_requirement' => false,
+            'replaced' => array(
+                0 => '^1.8.5',
+            ),
+        ),
+        'league/oauth2-client' => array(
+            'pretty_version' => '2.7.0',
+            'version' => '2.7.0.0',
+            'reference' => '160d6274b03562ebeb55ed18399281d8118b76c8',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../league/oauth2-client',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'paragonie/random_compat' => array(
+            'pretty_version' => 'v9.99.100',
+            'version' => '9.99.100.0',
+            'reference' => '996434e5492cb4c3edcb9168db6fbb1359ef965a',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../paragonie/random_compat',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'xeroapi/xero-php-oauth2' => array(
+            'pretty_version' => '6.0.0',
+            'version' => '6.0.0.0',
+            'reference' => '09707a032fce9c21f77e9aa3a983c9e565194841',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../xeroapi/xero-php-oauth2',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
     ),
-    'guzzlehttp/guzzle' => 
-    array (
-      'replaced' => 
-      array (
-        0 => '^6.5',
-      ),
-    ),
-    'guzzlehttp/psr7' => 
-    array (
-      'replaced' => 
-      array (
-        0 => '^1.8.5',
-      ),
-    ),
-    'league/oauth2-client' => 
-    array (
-      'pretty_version' => '2.6.1',
-      'version' => '2.6.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '2334c249907190c132364f5dae0287ab8666aa19',
-    ),
-    'paragonie/random_compat' => 
-    array (
-      'pretty_version' => 'v9.99.100',
-      'version' => '9.99.100.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '996434e5492cb4c3edcb9168db6fbb1359ef965a',
-    ),
-  ),
 );
