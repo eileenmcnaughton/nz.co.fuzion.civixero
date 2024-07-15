@@ -276,6 +276,35 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   }
 
   /**
+   * Get contacts marked as needing to be pushed to the accounts package.
+   *
+   * @param array $params
+   * @param int $limit
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getContactsRequiringPushUpdate(array $params, int $limit): array {
+    $accountContacts = AccountContact::get(FALSE)
+      ->addWhere('plugin', '=', $this->_plugin)
+      ->addWhere('accounts_needs_update', '=', TRUE)
+      ->addWhere('connector_id', '=', $params['connector_id'])
+      ->setLimit($limit);
+
+    // If we specified a CiviCRM contact ID just push that contact.
+    if (!empty($params['contact_id'])) {
+      $accountContacts->addWhere('contact_id', '=', $params['contact_id']);
+    }
+    else {
+      $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
+      $accountContacts->addWhere('contact_id', 'IS NOT NULL');
+    }
+    $accountContacts->addOrderBy('error_data');
+
+    return (array) $accountContacts->execute();
+  }
+
+  /**
    * Map civicrm Array to Accounts package field names.
    *
    * @param array $contact
@@ -345,32 +374,4 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
     return $locTypes;
   }
-
-  /**
-   * @param array $params
-   * @param int $limit
-   *
-   * @return array
-   * @throws \CRM_Core_Exception
-   */
-  public function getContactsRequiringPushUpdate(array $params, int $limit): array {
-    $accountContacts = AccountContact::get(FALSE)
-      ->addWhere('plugin', '=', $this->_plugin)
-      ->addWhere('accounts_needs_update', '=', TRUE)
-      ->addWhere('connector_id', '=', $params['connector_id'])
-      ->setLimit($limit);
-
-    // If we specified a CiviCRM contact ID just push that contact.
-    if (!empty($params['contact_id'])) {
-      $accountContacts->addWhere('contact_id', '=', $params['contact_id']);
-    }
-    else {
-      $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
-      $accountContacts->addWhere('contact_id', 'IS NOT NULL');
-    }
-    $accountContacts->addOrderBy('error_data');
-
-    return (array) $accountContacts->execute();
-  }
-
 }
