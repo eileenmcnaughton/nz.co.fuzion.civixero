@@ -1,6 +1,7 @@
 <?php
 
 use CRM_Civixero_ExtensionUtil as E;
+use Civi\Api4\AccountInvoice;
 
 /**
  * Class CRM_Civixero_Invoice.
@@ -40,8 +41,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $xeroParams = ['Type' => 'ACCREC'];
     $filter = $params['invoice_number'] ?? FALSE;
     try {
-      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
-
       $count = 0;
       $result = $this
         ->getSingleton($params['connector_id'])
@@ -145,7 +144,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   public function push($params, $limit = 10) {
     try {
-      CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
       $records = $this->getContributionsRequiringPushUpdate($params, $limit);
       $errors = [];
 
@@ -303,13 +301,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   CiviCRM equivalent status ID.
    */
   protected function mapStatus($status) {
+    $accountsStatusIDs = array_flip(CRM_Accountsync_BAO_AccountInvoice::buildOptions('accounts_status_id', 'validate'));
+
     $statuses = [
-      'PAID' => 1,
-      'DELETED' => 3,
-      'VOIDED' => 3,
-      'DRAFT' => 2,
-      'AUTHORISED' => 2,
-      'SUBMITTED' => 2,
+      'PAID' => $accountsStatusIDs['completed'],
+      'DELETED' => $accountsStatusIDs['cancelled'],
+      'VOIDED' => $accountsStatusIDs['cancelled'],
+      'DRAFT' => $accountsStatusIDs['pending'],
+      'AUTHORISED' => $accountsStatusIDs['pending'],
+      'SUBMITTED' => $accountsStatusIDs['pending'],
     ];
     return $statuses[$status];
   }
@@ -377,25 +377,24 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param int $limit
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
-  protected function getContributionsRequiringPushUpdate($params, $limit) {
-    $criteria = [
-      'accounts_needs_update' => 1,
-      'plugin' => 'xero',
-      'connector_id' => $params['connector_id'],
-      'accounts_status_id' => ['NOT IN' => [3]],
-      'options' => [
-        'sort' => 'error_data',
-        'limit' => $limit,
-      ],
-    ];
-    if (!empty($params['contribution_id'])) {
-      $criteria['contribution_id'] = $params['contribution_id'];
-      unset($criteria['accounts_needs_update']);
-    }
+  protected function getContributionsRequiringPushUpdate(array $params, int $limit): array {
+    $accountInvoices = AccountInvoice::get(FALSE)
+      ->addWhere('plugin', '=', 'xero')
+      ->addWhere('connector_id', '=', $params['connector_id'])
+      ->addWhere('accounts_status_id', 'NOT IN', [CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')])
+      ->addOrderBy('error_data')
+      ->setLimit($limit);
 
-    return civicrm_api3('AccountInvoice', 'get', $criteria);
+    if (!empty($params['contribution_id'])) {
+      $accountInvoices->addWhere('contribution_id', '=', $params['contribution_id']);
+    }
+    else {
+      $accountInvoices->addClause('OR', ['error_data', 'IS NULL'], ['is_error_resolved', '=', TRUE]);
+      $accountInvoices->addWhere('accounts_needs_update', '=', TRUE);
+    }
+    return $accountInvoices->execute()->getArrayCopy();
   }
 
   /**
@@ -407,7 +406,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getAccountsInvoice(array $record) {
-    if ($record['accounts_status_id'] == 3) {
+    if ($record['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
       return FALSE;
     }
 

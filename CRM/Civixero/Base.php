@@ -1,5 +1,6 @@
 <?php
 
+use Civi\API\Event\PrepareEvent;
 use Civi\Xero\ConnectorInterface;
 use League\OAuth2\Client\Token\AccessToken;
 
@@ -231,26 +232,28 @@ class CRM_Civixero_Base {
   }
 
   /**
-   * @param bool $throwException
-   *  Deprecated parameter - should return true or false
+   * Check if the api rate is exceeded, during api prepare.
    *
-   * @return bool
-   * @throws \CRM_Core_Exception
+   * @param \Civi\API\Event\PrepareEvent $event
+   *
+   * @return void
+   * @throws \CRM_Civixero_Exception_XeroThrottle
    */
-  public static function isApiRateLimitExceeded($throwException = FALSE) {
-    $rateLimitExceeded = Civi::settings()->get('xero_oauth_rate_exceeded');
-    if (!$rateLimitExceeded) {
-      return FALSE;
-    }
-    // Wait for 1 hour if rate limit was exceeded and then retry
-    if (strtotime('+1 hours', $rateLimitExceeded) > time()) {
-      if ($throwException) {
-        throw new CRM_Core_Exception('Rate limit was previously triggered. Try again in 1 hour');
+  public static function checkApiRateExceeded(PrepareEvent $event): void {
+    if ($event->getEntityName() === 'Civixero' && (
+      substr($event->getActionName(), -4) === 'push'
+      || substr($event->getActionName(), -4) === 'pull'
+    )) {
+      $rateLimitExceeded = \Civi::settings()->get('xero_oauth_rate_exceeded');
+      if (!$rateLimitExceeded) {
+        return;
       }
-      return TRUE;
+      // Wait for 1 hour if rate limit was exceeded and then retry
+      if (strtotime('+1 hours', $rateLimitExceeded) > time()) {
+        throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again in 1 hour');
+      }
+      self::resetApiRateLimitExceeded();
     }
-    self::resetApiRateLimitExceeded();
-    return FALSE;
   }
 
   /**
