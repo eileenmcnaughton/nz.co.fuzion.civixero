@@ -88,109 +88,106 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @return bool
    * @throws CRM_Core_Exception
-   * @throws \CRM_Civixero_Exception_XeroThrottle
    */
   public function push(array $params, int $limit = 10): bool {
-    try {
-      $records = $this->getContactsRequiringPushUpdate($params, $limit);
-      if (empty($records)) {
-        return TRUE;
-      }
-      $errors = [];
-
-      foreach ($records as $record) {
-        try {
-          // Get the contact data.
-          $contact = Contact::get(FALSE)
-            ->addWhere('id', '=', $record['contact_id'])
-            ->execute()
-            ->first();
-          if ($contact['is_deleted']) {
-            AccountContact::update(FALSE)
-              ->addWhere('id', '=', $record['id'])
-              ->addValue('do_not_sync', TRUE)
-              ->execute();
-            continue;
-          }
-
-          // See if we have an email for the preferred location type?
-          $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
-          $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
-          $contact['phone'] = $this->getPreferredPhone($locationTypeToSync, $record['contact_id']);
-          $contactAddress = $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
-          if ($contactAddress) {
-            $contact = array_merge($contact, $contactAddress);
-          }
-
-          $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
-          $accountsContact = $this->mapToAccounts($contact, $accountsContactID);
-          if ($accountsContact === FALSE) {
-            $result = FALSE;
-            $responseErrors = [];
-          }
-          else {
-            /** @noinspection PhpUndefinedMethodInspection */
-            $result = $this->getSingleton($params['connector_id'])->Contacts($accountsContact);
-            $responseErrors = $this->validateResponse($result);
-          }
-          if ($result === FALSE) {
-            unset($record['accounts_modified_date']);
-          }
-          if ($responseErrors) {
-            $record['error_data'] = json_encode($responseErrors);
-            throw new CRM_Core_Exception('Error in response from Xero');
-          }
-
-          /* When Xero returns an ID that matches an existing account_contact, update it instead. */
-          $matching = AccountContact::get(FALSE)
-            ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
-            ->addWhere('plugin', '=', $this->_plugin)
-            ->addWhere('connector_id', '=', $params['connector_id'])
-            ->execute()->first() ?? [];
-
-          if (count($matching)) {
-            if (empty($matching['contact_id']) ||
-              civicrm_api3('contact', 'getvalue', ['id' => $matching['contact_id'], 'return' => 'contact_is_deleted'])) {
-              Civi::log('civixero')->error(E::ts('Updating existing contact for %1', [1 => $record['contact_id']]));
-              civicrm_api3('AccountContact', 'delete', ['id' => $record['id']]);
-              $record['do_not_sync'] = 0;
-              $record['id'] = $matching['id'];
-            }
-            elseif ($matching['contact_id'] !== $record['contact_id']) {
-              throw new CRM_Core_Exception(E::ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2. ', [
-                1 => $record['contact_id'],
-                2 => $matching['contact_id'],
-              ]), 'xero_dup_contact');
-            }
-          }
-
-          $record['error_data'] = 'null';
-          if (empty($record['accounts_contact_id'])) {
-            $record['accounts_contact_id'] = $result['Contacts']['Contact']['ContactID'];
-          }
-          $record['accounts_modified_date'] = $result['Contacts']['Contact']['UpdatedDateUTC'];
-          $record['accounts_data'] = json_encode($result['Contacts']['Contact']);
-          $record['accounts_display_name'] = $result['Contacts']['Contact']['Name'];
-          // This will update the last sync date.
-          $record['accounts_needs_update'] = 0;
-          unset($record['last_sync_date']);
-          civicrm_api3('AccountContact', 'create', $record);
-        }
-        catch (CRM_Core_Exception $e) {
-          $errors[] = E::ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-            . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
-            . E::ts('Contact Push failed');
-        }
-      }
-      if ($errors) {
-        // since we expect this to wind up in the job log we'll print the errors
-        throw new CRM_Core_Exception(E::ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
-      }
+    $records = $this->getContactsRequiringPushUpdate($params, $limit);
+    if (empty($records)) {
       return TRUE;
     }
-    catch (CRM_Civixero_Exception_XeroThrottle $e) {
-      throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero');
+    $errors = [];
+
+    foreach ($records as $record) {
+      try {
+        // Get the contact data.
+        $contact = Contact::get(FALSE)
+          ->addWhere('id', '=', $record['contact_id'])
+          ->execute()
+          ->first();
+        if ($contact['is_deleted']) {
+          AccountContact::update(FALSE)
+            ->addWhere('id', '=', $record['id'])
+            ->addValue('do_not_sync', TRUE)
+            ->execute();
+          continue;
+        }
+
+        // See if we have an email for the preferred location type?
+        $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
+        $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
+        $contact['phone'] = $this->getPreferredPhone($locationTypeToSync, $record['contact_id']);
+        $contactAddress = $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
+        if ($contactAddress) {
+          $contact = array_merge($contact, $contactAddress);
+        }
+
+        $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
+        $accountsContact = $this->mapToAccounts($contact, $accountsContactID);
+        if ($accountsContact === FALSE) {
+          $result = FALSE;
+          $responseErrors = [];
+        }
+        else {
+          /** @noinspection PhpUndefinedMethodInspection */
+          $result = $this->getSingleton($params['connector_id'])->Contacts($accountsContact);
+          $responseErrors = $this->validateResponse($result);
+        }
+        if ($result === FALSE) {
+          unset($record['accounts_modified_date']);
+        }
+        if ($responseErrors) {
+          $record['error_data'] = json_encode($responseErrors);
+          throw new CRM_Core_Exception('Error in response from Xero');
+        }
+
+        /* When Xero returns an ID that matches an existing account_contact, update it instead. */
+        $matching = AccountContact::get(FALSE)
+          ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
+          ->addWhere('plugin', '=', $this->_plugin)
+          ->addWhere('connector_id', '=', $params['connector_id'])
+          ->execute()->first() ?? [];
+
+        if (count($matching)) {
+          if (empty($matching['contact_id']) ||
+            civicrm_api3('contact', 'getvalue', ['id' => $matching['contact_id'], 'return' => 'contact_is_deleted'])) {
+            Civi::log('civixero')->error(E::ts('Updating existing contact for %1', [1 => $record['contact_id']]));
+            civicrm_api3('AccountContact', 'delete', ['id' => $record['id']]);
+            $record['do_not_sync'] = 0;
+            $record['id'] = $matching['id'];
+          }
+          elseif ($matching['contact_id'] !== $record['contact_id']) {
+            throw new CRM_Core_Exception(E::ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2. ', [
+              1 => $record['contact_id'],
+              2 => $matching['contact_id'],
+            ]), 'xero_dup_contact');
+          }
+        }
+
+        $record['error_data'] = 'null';
+        if (empty($record['accounts_contact_id'])) {
+          $record['accounts_contact_id'] = $result['Contacts']['Contact']['ContactID'];
+        }
+        $record['accounts_modified_date'] = $result['Contacts']['Contact']['UpdatedDateUTC'];
+        $record['accounts_data'] = json_encode($result['Contacts']['Contact']);
+        $record['accounts_display_name'] = $result['Contacts']['Contact']['Name'];
+        // This will update the last sync date.
+        $record['accounts_needs_update'] = 0;
+        unset($record['last_sync_date']);
+        civicrm_api3('AccountContact', 'create', $record);
+      }
+      catch (CRM_Civixero_Exception_XeroThrottle $e) {
+        throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero' . print_r($errors, TRUE));
+      }
+      catch (CRM_Core_Exception $e) {
+        $errors[] = E::ts('Failed to push ') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
+          . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
+          . E::ts('Contact Push failed');
+      }
     }
+    if ($errors) {
+      // since we expect this to wind up in the job log we'll print the errors
+      throw new CRM_Core_Exception(E::ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
+    }
+    return TRUE;
   }
 
   /**
