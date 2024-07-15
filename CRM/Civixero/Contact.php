@@ -354,18 +354,18 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $contact
    *          Contact Array as returned from API
-   * @param $accountsID
+   * @param $accountsContactID
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
    */
-  protected function mapToAccounts(array $contact, $accountsID) {
+  protected function mapToAccounts(array $contact, $accountsContactID) {
     $new_contact = [
-      'Name' => $contact['display_name'] . ' - ' . $contact['contact_id'],
-      'FirstName' => $contact['first_name'],
-      'LastName' => $contact['last_name'],
+      'Name' => $contact['display_name'] . ' - ' . $contact['id'],
+      'FirstName' => $contact['first_name'] ?? '',
+      'LastName' => $contact['last_name'] ?? '',
       'EmailAddress' => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
-      'ContactNumber' => $contact['contact_id'],
+      'ContactNumber' => $contact['id'],
       'Addresses' => [
         'Address' => [
           [
@@ -388,8 +388,8 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         ],
       ],
     ];
-    if (!empty($accountsID)) {
-      $new_contact['ContactID'] = $accountsID;
+    if (!empty($accountsContactID)) {
+      $new_contact['ContactID'] = $accountsContactID;
     }
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('contact', $contact, $proceed, $new_contact);
