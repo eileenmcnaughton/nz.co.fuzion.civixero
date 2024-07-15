@@ -22,59 +22,54 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   public function pull(array $params): void {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
-    try {
 
-      /** @noinspection PhpUndefinedMethodInspection */
-      $result = $this
-        ->getSingleton($params['connector_id'])
-        ->Contacts($params['xero_contact_id'], $this->formatDateForXero($params['start_date']));
-      if (!is_array($result)) {
-        throw new CRM_Core_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
-      }
-      if (!empty($result['Contacts'])) {
-        $contacts = $result['Contacts']['Contact'];
-        if (isset($contacts['ContactID'])) {
-          // the return syntax puts the contact only level higher up when only one contact is involved
-          $contacts = [$contacts];
-        }
-        foreach ($contacts as $contact) {
-
-          $save = TRUE;
-          $params = [
-            'accounts_display_name' => $contact['Name'],
-            'contact_id' => $contact['ContactNumber'] ?? NULL,
-            'accounts_modified_date' => $contact['UpdatedDateUTC'],
-            'plugin' => 'xero',
-            'accounts_contact_id' => $contact['ContactID'],
-            'accounts_data' => json_encode($contact),
-            'connector_id' => $params['connector_id'],
-          ];
-          CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save, $params);
-          if (!$save) {
-            continue;
-          }
-          try {
-            $params['id'] = AccountContact::get(FALSE)
-              ->addSelect('id')
-              ->addWhere('accounts_contact_id', '=', $contact['ContactID'])
-              ->addWhere('plugin', '=', $this->_plugin)
-              ->execute()->first()['id'];
-          }
-          catch (CRM_Core_Exception $e) {
-          }
-          try {
-            AccountContact::save(FALSE)->setRecords([$params])->execute();
-          }
-          catch (CRM_Core_Exception $e) {
-            CRM_Core_Session::setStatus(E::ts('Failed to store ') . $params['accounts_display_name']
-              . E::ts(' with error ') . $e->getMessage(),
-              E::ts('Contact Pull failed'));
-          }
-        }
-      }
+    /** @noinspection PhpUndefinedMethodInspection */
+    $result = $this
+      ->getSingleton($params['connector_id'])
+      ->Contacts($params['xero_contact_id'], $this->formatDateForXero($params['start_date']));
+    if (!is_array($result)) {
+      throw new CRM_Core_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
     }
-    catch (CRM_Civixero_Exception_XeroThrottle $e) {
-      throw new CRM_Core_Exception('Contact Pull aborted due to throttling by Xero');
+    if (!empty($result['Contacts'])) {
+      $contacts = $result['Contacts']['Contact'];
+      if (isset($contacts['ContactID'])) {
+        // the return syntax puts the contact only level higher up when only one contact is involved
+        $contacts = [$contacts];
+      }
+      foreach ($contacts as $contact) {
+
+        $save = TRUE;
+        $params = [
+          'accounts_display_name' => $contact['Name'],
+          'contact_id' => $contact['ContactNumber'] ?? NULL,
+          'accounts_modified_date' => $contact['UpdatedDateUTC'],
+          'plugin' => $this->_plugin,
+          'accounts_contact_id' => $contact['ContactID'],
+          'accounts_data' => json_encode($contact),
+          'connector_id' => $params['connector_id'],
+        ];
+        CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save, $params);
+        if (!$save) {
+          continue;
+        }
+        try {
+          $params['id'] = AccountContact::get(FALSE)
+            ->addSelect('id')
+            ->addWhere('accounts_contact_id', '=', $contact['ContactID'])
+            ->addWhere('plugin', '=', $this->_plugin)
+            ->execute()->first()['id'];
+        }
+        catch (CRM_Core_Exception $e) {
+        }
+        try {
+          AccountContact::save(FALSE)->setRecords([$params])->execute();
+        }
+        catch (CRM_Core_Exception $e) {
+          CRM_Core_Session::setStatus(E::ts('Failed to store ') . $params['accounts_display_name']
+            . E::ts(' with error ') . $e->getMessage(),
+            E::ts('Contact Pull failed'));
+        }
+      }
     }
   }
 
@@ -354,18 +349,18 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $contact
    *          Contact Array as returned from API
-   * @param $accountsID
+   * @param $accountsContactID
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
    */
-  protected function mapToAccounts(array $contact, $accountsID) {
+  protected function mapToAccounts(array $contact, $accountsContactID) {
     $new_contact = [
-      'Name' => $contact['display_name'] . ' - ' . $contact['contact_id'],
-      'FirstName' => $contact['first_name'],
-      'LastName' => $contact['last_name'],
+      'Name' => $contact['display_name'] . ' - ' . $contact['id'],
+      'FirstName' => $contact['first_name'] ?? '',
+      'LastName' => $contact['last_name'] ?? '',
       'EmailAddress' => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
-      'ContactNumber' => $contact['contact_id'],
+      'ContactNumber' => $contact['id'],
       'Addresses' => [
         'Address' => [
           [
@@ -388,8 +383,8 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         ],
       ],
     ];
-    if (!empty($accountsID)) {
-      $new_contact['ContactID'] = $accountsID;
+    if (!empty($accountsContactID)) {
+      $new_contact['ContactID'] = $accountsContactID;
     }
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('contact', $contact, $proceed, $new_contact);
