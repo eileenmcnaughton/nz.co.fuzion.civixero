@@ -140,24 +140,24 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         }
 
         /* When Xero returns an ID that matches an existing account_contact, update it instead. */
-        $matching = AccountContact::get(FALSE)
+        $matchingAccountContact = AccountContact::get(FALSE)
           ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
           ->addWhere('plugin', '=', $this->_plugin)
           ->addWhere('connector_id', '=', $params['connector_id'])
           ->execute()->first() ?? [];
 
-        if (count($matching)) {
-          if (empty($matching['contact_id']) ||
-            civicrm_api3('contact', 'getvalue', ['id' => $matching['contact_id'], 'return' => 'contact_is_deleted'])) {
+        if (count($matchingAccountContact)) {
+          if (empty($matchingAccountContact['contact_id']) ||
+            civicrm_api3('contact', 'getvalue', ['id' => $matchingAccountContact['contact_id'], 'return' => 'contact_is_deleted'])) {
             Civi::log('civixero')->error(E::ts('Updating existing contact for %1', [1 => $record['contact_id']]));
             civicrm_api3('AccountContact', 'delete', ['id' => $record['id']]);
             $record['do_not_sync'] = 0;
-            $record['id'] = $matching['id'];
+            $record['id'] = $matchingAccountContact['id'];
           }
-          elseif ($matching['contact_id'] !== $record['contact_id']) {
+          elseif ($matchingAccountContact['contact_id'] !== $record['contact_id']) {
             throw new CRM_Core_Exception(E::ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2. ', [
               1 => $record['contact_id'],
-              2 => $matching['contact_id'],
+              2 => $matchingAccountContact['contact_id'],
             ]), 'xero_dup_contact');
           }
         }
