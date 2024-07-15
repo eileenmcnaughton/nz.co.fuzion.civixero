@@ -6,8 +6,6 @@
   <license>AGPL</license>
   <requires>
     <ext>nz.co.fuzion.accountsync</ext>
-    <ext>org.civicrm.search_kit</ext>
-    <ext>org.civicrm.afform</ext>
   </requires>
   <urls>
     <url desc="Main Extension Page">https://github.com/eileenmcnaughton/nz.co.fuzion.civixero</url>
