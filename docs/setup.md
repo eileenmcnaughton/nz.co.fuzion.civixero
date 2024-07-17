@@ -35,7 +35,7 @@ Use the following details:
 
 - __Company or application URL__: Enter your website URL - eg. https://example.org
 
-- __OAuth 2.0 redirect URI__: this is the __URL of the Xero Authorize page__ in CiviCRM. Navigate to the page, __Administer -> Xero -> Xero Authorize__ and copy the URL to this page. Xero will validate using this URL. If working in a local development environment, then use localhost as the domain name. Eg. https://example.org/civicrm/xero/authorize
+- __OAuth 2.0 redirect URI__: this is the __URL of the Xero Authorize page__ in CiviCRM. Navigate to the page, __Administer -> CiviContribute -> Account Integration -> Xero Authorize__ and copy the URL to this page. Xero will validate using this URL. If working in a local development environment, then use localhost as the domain name. Eg. https://example.org/civicrm/xero/authorize
 
 Once the app is created click the __Configuration__ tab:
 - Copy the __Client id__.
