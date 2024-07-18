@@ -12,7 +12,7 @@ and the same for AccountSync
 
 then you will have the extensions added to the site.
 
-To use these extensions on the site, on the CiviCRM menu on the site go to administer - customise data and screens - manage extensions. There you should install CiviXero and AccountSync.
+To use these extensions on the site, on the CiviCRM menu on the site go to Administer -  System Settings (or on older sites perhaps under Customise Data and Screens - Manage Extensions. There you should install CiviXero and AccountSync.
 
 ## Setup XERO OAuth 2.0
 
