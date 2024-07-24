@@ -35,12 +35,12 @@ function _civicrm_api3_civixero_itempull_spec(&$spec) {
  * @return array
  *   API result descriptor
  *
- * @throws API_Exception
+ * @throws \CRM_Core_Exception
  * @see civicrm_api3_create_error
  *
  * @see civicrm_api3_create_success
  */
-function civicrm_api3_civixero_itempull($params) {
+function civicrm_api3_civixero_itempull(array $params): array {
   $xero = new CRM_Civixero_Item($params);
   return civicrm_api3_create_success($xero->pull($params));
 }

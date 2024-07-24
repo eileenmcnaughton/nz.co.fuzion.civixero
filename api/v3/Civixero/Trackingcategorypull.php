@@ -32,7 +32,7 @@ function _civicrm_api3_civixero_trackingcategorypull_spec(&$spec) {
  * @param array $params
  *
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws \CRM_Core_Exception
  * @see civicrm_api3_create_error
  * @see civicrm_api3_create_success
  */

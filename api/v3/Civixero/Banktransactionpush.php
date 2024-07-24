@@ -27,7 +27,7 @@ function _civicrm_api3_civixero_banktransactionpush_spec(array &$spec) {
  *
  * @param array $params
  *
- * @throws API_Exception
+ * @throws \CRM_Core_Exception
  *
  * @noinspection PhpUnused
  */

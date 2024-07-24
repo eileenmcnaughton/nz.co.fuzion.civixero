@@ -30,11 +30,11 @@ function _civicrm_api3_civixero_invoicepush_spec(&$spec) {
  * @return array
  *   API result descriptor
  *
- * @throws API_Exception
+ * @throws \CRM_Core_Exception
  * @see civicrm_api3_create_error
  * @see civicrm_api3_create_success
  */
-function civicrm_api3_civixero_invoicepush($params) {
+function civicrm_api3_civixero_invoicepush(array $params): array {
   $options = _civicrm_api3_get_options_from_params($params);
 
   $xero = new CRM_Civixero_Invoice($params);
