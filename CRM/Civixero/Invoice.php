@@ -143,37 +143,36 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \CiviCRM_API3_Exception
    */
   public function push($params, $limit = 10) {
-    try {
-      $records = $this->getContributionsRequiringPushUpdate($params, $limit);
-      $errors = [];
+    $records = $this->getContributionsRequiringPushUpdate($params, $limit);
+    $errors = [];
 
-      $count = 0;
-      foreach ($records as $record) {
-        try {
-          $accountsInvoice = $this->getAccountsInvoice($record);
-          if ($accountsInvoice === FALSE) {
-            // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
-            continue;
-          }
-          $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
-          $responseErrors = $this->savePushResponse($result, $record);
-          $count++;
+    $count = 0;
+    foreach ($records as $record) {
+      try {
+        $accountsInvoice = $this->getAccountsInvoice($record);
+        if ($accountsInvoice === FALSE) {
+          // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
+          continue;
         }
-        catch (CiviCRM_API3_Exception $e) {
-          $errors[] = E::ts('Failed to store %1 (%2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
-            . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
-            . E::ts('%1 Push failed', [1 => $this->xero_entity]);
-        }
+        $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
+        $responseErrors = $this->savePushResponse($result, $record);
+        $count++;
       }
-      if ($errors) {
-        // since we expect this to wind up in the job log we'll print the errors
-        throw new CRM_Core_Exception(ts('Not all records were saved') . print_r($errors, TRUE), 'incomplete', $errors);
+      catch (CRM_Civixero_Exception_XeroThrottle $e) {
+        throw new CRM_Core_Exception($this->xero_entity . ' Push aborted due to throttling by Xero');
       }
-      return $count;
+      catch (CRM_Core_Exception $e) {
+        $errors[] = E::ts('Failed to store %1 (%2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
+          . E::ts(' with error ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
+          . E::ts('%1 Push failed', [1 => $this->xero_entity]);
+      }
     }
-    catch (CRM_Civixero_Exception_XeroThrottle $e) {
-      throw new CRM_Core_Exception($this->xero_entity . ' Push aborted due to throttling by Xero');
+    if ($errors) {
+      // since we expect this to wind up in the job log we'll print the errors
+      throw new CRM_Core_Exception(ts('Not all records were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
+    return $count;
+
   }
 
   /**
