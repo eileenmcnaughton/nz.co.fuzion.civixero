@@ -19,7 +19,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @throws CRM_Core_Exception
    */
-  public function pull(array $params): void {
+  public function pull(array $params): array {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
 
@@ -151,6 +151,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
+    return ['AccountContactIDs' => $ids ?? []];
   }
 
   /**
@@ -161,14 +162,15 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @param array $params
    *  - start_date
    *
-   * @return bool
+   * @return array
    * @throws CRM_Core_Exception
    */
-  public function push(array $params, int $limit = 10): bool {
+  public function push(array $params, int $limit = 10): array {
     $records = $this->getContactsRequiringPushUpdate($params, $limit);
     if (empty($records)) {
-      return TRUE;
+      return [];
     }
+
     $errors = [];
 
     foreach ($records as $record) {
@@ -190,7 +192,13 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
         $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
         $contact['phone'] = $this->getPreferredPhone($locationTypeToSync, $record['contact_id']);
-        $contact += $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
+        // Address is different to the other location fields because it has multiple fields.
+        // We might return NULL from getPreferredAddress which means "do not sync to Xero".
+        // That way we preserve any partial address that we might have in Xero and it will be synced next time it's pulled to Civi.
+        $contactAddress = $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
+        if ($contactAddress) {
+          $contact = array_merge($contact, $contactAddress);
+        }
 
         $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
         $accountsContact = $this->mapToAccounts($contact, $accountsContactID);
@@ -256,13 +264,13 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           ->setValues($record)
           ->addValue('accounts_needs_update', FALSE)
           ->execute();
+        $contactIDsPushed[] = $record['contact_id'];
       }
-      catch (CRM_Civixero_Exception_XeroThrottle $e) {
-        throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero' . print_r($errors, TRUE));
-      }
-      catch (CRM_Core_Exception $e) {
+      catch (\Exception $e) {
+        // Note: Using \Exception here as we may get various exception types from the Xero API/SDK
         $errorMessage = E::ts('Failed to push contactID: %1') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-          . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
+          . E::ts('Error: ') . $e->getMessage() . '; '
+          . E::ts('Record: ') . print_r($record,TRUE) . '; '
           . E::ts('Contact Push failed');
 
         AccountContact::update(FALSE)
@@ -281,7 +289,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    return TRUE;
+    return $contactIDsPushed ?? [];
   }
 
   /**
@@ -376,17 +384,22 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         ->execute()
         ->first();
     }
-    // Return preferred values or empty keys
-    return [
-      'street_address' => $address['street_address'] ?? '',
-      'city' => $address['city'] ?? '',
-      'postal_code' => $address['postal_code'] ?? '',
-      'supplemental_address_1' => $address['supplemental_address_1'] ?? '',
-      'supplemental_address_2' => $address['supplemental_address_2'] ?? '',
-      'supplemental_address_3' => $address['supplemental_address_3'] ?? '',
-      'country' => $address['country_id:label'] ?? '',
-      'state_province_name' => $address['state_province_id:label'] ?? '',
-    ];
+
+    // @todo check: If we return empty keys I think we may wipe any existing Xero address
+    if (!empty($address['street_address'])) {
+      // Yes, we have an address with preferred location type.
+      return [
+        'street_address' => $address['street_address'],
+        'city' => $address['city'],
+        'postal_code' => $address['postal_code'],
+        'supplemental_address_1' => $address['supplemental_address_1'],
+        'supplemental_address_2' => $address['supplemental_address_2'],
+        'supplemental_address_3' => $address['supplemental_address_3'],
+        'country' => $address['country_id:label'],
+        'state_province_name' => $address['state_province_id:label'],
+      ];
+    }
+    return NULL;
   }
 
   /**
@@ -401,7 +414,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   public function getContactsRequiringPushUpdate(array $params, int $limit): array {
     $accountContacts = AccountContact::get(FALSE)
       ->addWhere('plugin', '=', $this->_plugin)
-      ->addWhere('accounts_needs_update', '=', TRUE)
       ->addWhere('connector_id', '=', $params['connector_id'])
       ->setLimit($limit);
 
@@ -415,7 +427,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
     $accountContacts->addOrderBy('error_data');
 
-    return (array) $accountContacts->execute();
+    return $accountContacts->execute()->getArrayCopy();
   }
 
   /**
@@ -423,12 +435,12 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $contact
    *          Contact Array as returned from API
-   * @param $accountsContactID
+   * @param string $accountsContactID
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
    */
-  protected function mapToAccounts(array $contact, $accountsContactID) {
+  protected function mapToAccounts(array $contact, string $accountsContactID) {
     $new_contact = [
       'Name' => $contact['display_name'] . ' - ' . $contact['id'],
       'FirstName' => $contact['first_name'] ?? '',
