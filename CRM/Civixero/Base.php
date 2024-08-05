@@ -68,6 +68,18 @@ class CRM_Civixero_Base {
     $this->singleton($this->_xero_access_token->getToken(), $this->_xero_tenant_id, $this->connector_id, $force);
   }
 
+  public function getAccountingApiInstance(): AccountingApi {
+    // Configure OAuth2 access token for authorization: OAuth2
+    $config = \XeroAPI\XeroPHP\Configuration::getDefaultConfiguration()->setAccessToken($this->getAccessToken());
+
+    $apiInstance = new AccountingApi(
+      new \GuzzleHttp\Client(),
+      $config
+    );
+
+    return $apiInstance;
+  }
+
   /**
    * Get the contact that the connector account is associated with.
    *
