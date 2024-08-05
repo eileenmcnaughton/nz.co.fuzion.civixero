@@ -206,24 +206,51 @@ function civixero_civicrm_check(array &$messages) {
  */
 function civixero_civicrm_pageRun($page) {
   $pageName = get_class($page);
-  if ($pageName !== 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
-    return;
+  switch ($pageName) {
+    case 'CRM_Contact_Page_View_Summary':
+
+      if ($pageName !== 'CRM_Contact_Page_View_Summary' || !CRM_Core_Permission::check('view all contacts')) {
+        return;
+      }
+
+      if (($contactID = $page->getVar('_contactId')) !== FALSE) {
+        CRM_Civixero_Page_Inline_ContactSyncStatus::addContactSyncStatusBlock($page, $contactID);
+        CRM_Civixero_Page_Inline_ContactSyncLink::addContactSyncLinkBlock($page, $contactID);
+        CRM_Civixero_Page_Inline_ContactSyncErrors::addContactSyncErrorsBlock($page, $contactID);
+        CRM_Civixero_Page_Inline_InvoiceSyncErrors::addInvoiceSyncErrorsBlock($page, $contactID);
+
+        CRM_Core_Region::instance('contact-basic-info-left')->add([
+          'template' => 'CRM/Civixero/ContactSyncBlock.tpl',
+        ]);
+      }
+
+      CRM_Core_Resources::singleton()
+        ->addScriptFile('nz.co.fuzion.civixero', 'js/civixero_errors.js');
+      break;
+
+    case 'CRM_Contribute_Page_Tab':
+      $contributionID = CRM_Utils_Request::retrieve('id', 'Positive', $page);
+      if (!empty($contributionID)) {
+        $accountInvoice = \Civi\Api4\AccountInvoice::get(FALSE)
+          ->addSelect('accounts_status_id:label', 'accounts_invoice_id')
+          ->addWhere('contribution_id', '=', $contributionID)
+          ->addWhere('plugin', '=', 'xero')
+          ->execute()
+          ->first();
+        if (!empty($accountInvoice)) {
+          CRM_Core_Region::instance('page-footer')->add(['template' => 'CRM/Civixero/Page/Inline/ContributionInvoiceLink.tpl']);
+          $page->assign('xero_invoice_label', E::ts('Xero'));
+          if ($accountInvoice['accounts_status_id'] === (int) CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'unknown')) {
+            $link = $accountInvoice['accounts_status_id:label'];
+          }
+          else {
+            $link = "<a href=\"https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID={$accountInvoice['accounts_invoice_id']}\">{$accountInvoice['accounts_status_id:label']}</a>";
+          }
+          $page->assign('xero_invoice_status', $link);
+        }
+      }
+      break;
   }
-
-  if (($contactID = $page->getVar('_contactId')) !== FALSE) {
-
-    CRM_Civixero_Page_Inline_ContactSyncStatus::addContactSyncStatusBlock($page, $contactID);
-    CRM_Civixero_Page_Inline_ContactSyncLink::addContactSyncLinkBlock($page, $contactID);
-    CRM_Civixero_Page_Inline_ContactSyncErrors::addContactSyncErrorsBlock($page, $contactID);
-    CRM_Civixero_Page_Inline_InvoiceSyncErrors::addInvoiceSyncErrorsBlock($page, $contactID);
-
-    CRM_Core_Region::instance('contact-basic-info-left')->add([
-      'template' => 'CRM/Civixero/ContactSyncBlock.tpl',
-    ]);
-
-  }
-
-  CRM_Core_Resources::singleton()->addScriptFile('nz.co.fuzion.civixero', 'js/civixero_errors.js');
 }
 
 /**
