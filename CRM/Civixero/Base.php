@@ -11,15 +11,15 @@ use League\OAuth2\Client\Token\AccessToken;
  */
 class CRM_Civixero_Base {
 
-  private static $singleton = [];
+  private static array $singleton = [];
 
   private $_xero_access_token;
 
-  private $_xero_tenant_id;
+  private string $_xero_tenant_id;
 
-  protected $_plugin = 'xero';
+  protected string $_plugin = 'xero';
 
-  protected $accounts_contact;
+  protected array $accounts_contact;
 
   /**
    * Connector ID.
@@ -33,7 +33,21 @@ class CRM_Civixero_Base {
   /**
    * @var \CRM_Civixero_Settings
    */
-  protected $settings;
+  protected CRM_Civixero_Settings $settings;
+
+  /**
+   * @return \League\OAuth2\Client\Token\AccessToken
+   */
+  protected function getAccessToken(): AccessToken {
+    return $this->_xero_access_token;
+  }
+
+  /**
+   * @return string
+   */
+  protected function getTenantID(): string {
+    return $this->_xero_tenant_id;
+  }
 
   /**
    * Class constructor.
