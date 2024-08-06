@@ -2,6 +2,8 @@
 
 use CRM_Civixero_ExtensionUtil as E;
 use Civi\Api4\AccountInvoice;
+use Civi\Api4\AccountContact;
+use Civi\Api4\Contribution;
 
 /**
  * Class CRM_Civixero_Invoice.
@@ -133,6 +135,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         catch (CRM_Core_Exception $e) {
           $errors[] = E::ts('Failed to store %1 (%2)', [1 => $invoice['InvoiceNumber'], 2 => $invoice['InvoiceID']])
             . E::ts(' with error ') . $e->getMessage();
+        }
+
+        if (!empty($params['create_contributions_in_civicrm'])) {
+          $this->createContributionFromAccountsInvoice($invoice, $accountInvoiceParams);
         }
       }
     }
@@ -648,6 +654,78 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $return[$result['id']] = $result['label'];
     }
     return $return;
+  }
+
+  /**
+   * @return bool
+   */
+  private function createContributionFromAccountsInvoice(array $invoice, array $accountInvoiceParams): bool {
+    $accountInvoiceParams = AccountInvoice::get(FALSE)
+      ->addWhere('accounts_invoice_id', '=', $accountInvoiceParams['accounts_invoice_id'])
+      ->execute()
+      ->first();
+    if (!empty($accountInvoiceParams['contribution_id'])) {
+      // \Civi::log()->error(__FUNCTION__ . ': AccountsInvoice is already linked to a contribution: ' . print_r($invoice, TRUE));
+      return FALSE;
+    }
+    $accountsContactID = $invoice['Contact']['ContactID'] ?? NULL;
+    if (empty($accountsContactID)) {
+      \Civi::log()->error(__FUNCTION__ . ': missing ContactID in AccountsInvoice: ' . print_r($invoice, TRUE));
+      return FALSE;
+    }
+
+    $accountContact = AccountContact::get(FALSE)
+      ->addWhere('accounts_contact_id', '=', $accountsContactID)
+      ->execute()
+      ->first();
+    if (empty($accountContact)) {
+      \Civi::log()->error(__FUNCTION__ . ': no AccountsContact found: ' . print_r($invoice, TRUE));
+      return FALSE;
+    }
+    if (empty($accountContact['contact_id'])) {
+      \Civi::log()->error(__FUNCTION__ . ': AccountsContact is not matched to a CiviCRM Contact ID: ' . print_r($invoice, TRUE));
+      return FALSE;
+    }
+
+    $lock = Civi::lockManager()->acquire('data.accountsync.createcontribution');
+    if (!$lock->isAcquired()) {
+      Civi::log()->warning(__FUNCTION__ . ': Could not acquire lock to create contribution');
+      return FALSE;
+    }
+    \Civi::$statics['data.accountsync.createcontribution']['createnew'] = FALSE;
+    $contribution = Contribution::create(FALSE)
+      ->addValue('contribution_status_id:name', 'Pending')
+      ->addValue('contact_id', $accountContact['contact_id'])
+      ->addValue('financial_type_id.name', 'Donation')
+      ->addValue('receive_date', date('YmdHis', strtotime($invoice['Date'])))
+      ->addValue('total_amount', $invoice['Total'])
+      ->addValue('currency', $invoice['CurrencyCode'])
+      ->addValue('source', 'Xero: ' . $invoice['InvoiceNumber'] . ' ' . $invoice['Reference'])
+      ->execute()
+      ->first();
+    AccountInvoice::update(FALSE)
+      ->addValue('contribution_id', $contribution['id'])
+      ->addWhere('accounts_invoice_id', '=', $accountInvoiceParams['accounts_invoice_id'])
+      ->execute();
+    $lock->release();
+    unset(\Civi::$statics['data.accountsync.createcontribution']['createnew']);
+
+    if ($accountInvoiceParams['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'completed')) {
+      civicrm_api3('Payment', 'create', [
+        'contribution_id' => $contribution['id'],
+        'total_amount' => $contribution['total_amount'],
+        'trxn_date' => $contribution['receive_date'],
+        'is_send_contribution_notification' => 0,
+      ]);
+    }
+    elseif ($accountInvoiceParams['accounts_status_id'] === (int) CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
+      Contribution::update(FALSE)
+        ->addValue('contribution_status_id:name', 'Cancelled')
+        ->addWhere('id', '=', $contribution['id'])
+        ->execute();
+    }
+
+    return TRUE;
   }
 
 }
