@@ -266,7 +266,7 @@ function _civixero_get_connectors(): array {
       $connectors = $connectors['values'];
     }
     catch (CRM_Core_Exception $e) {
-      $connectors = [0 => 0];
+      $connectors = [0 => ['id' => 0, 'name' => '']];
     }
   }
   return $connectors;
