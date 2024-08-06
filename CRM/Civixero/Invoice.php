@@ -581,7 +581,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       throw new CRM_Core_Exception(
         'Synchronization error ' . $e->getMessage(),
         'xero_' . $e->getCode(),
-        ['xml' => $e->getXML()]
+        ['xml' => (method_exists($e, 'getXML') ? $e->getXML() : '')]
       );
     }
   }
