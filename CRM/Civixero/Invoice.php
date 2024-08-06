@@ -576,7 +576,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
     }
     catch (XeroException $e) {
-      // We should figure out if this is a throttle issue & through a throttle error.
+      // We should figure out if this is a throttle issue & throw a throttle error.
+      // if now \Civi::log('xero')->warning('Failed push with {xml}', ['xml' => $e->getXML()]]
       throw new CRM_Core_Exception(
         'Synchronization error ' . $e->getMessage(),
         'xero_' . $e->getCode(),
