@@ -266,9 +266,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       catch (CRM_Civixero_Exception_XeroThrottle $e) {
         throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero' . print_r($errors, TRUE));
       }
-      catch (CRM_Core_Exception $e) {
+      catch (\Exception $e) {
+        // Note: Using \Exception here as we may get various exception types from the Xero API/SDK
         $errorMessage = E::ts('Failed to push contactID: %1') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-          . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
+          . E::ts('Error: ') . $e->getMessage() . '; '
+          . E::ts('Record: ') . print_r($record,TRUE) . '; '
           . E::ts('Contact Push failed');
 
         AccountContact::update(FALSE)
@@ -412,7 +414,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   public function getContactsRequiringPushUpdate(array $params, int $limit): array {
     $accountContacts = AccountContact::get(FALSE)
       ->addWhere('plugin', '=', $this->_plugin)
-      ->addWhere('accounts_needs_update', '=', TRUE)
       ->addWhere('connector_id', '=', $params['connector_id'])
       ->setLimit($limit);
 
@@ -426,7 +427,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
     $accountContacts->addOrderBy('error_data');
 
-    return (array) $accountContacts->execute();
+    return $accountContacts->execute()->getArrayCopy();
   }
 
   /**
@@ -434,12 +435,12 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $contact
    *          Contact Array as returned from API
-   * @param $accountsContactID
+   * @param string $accountsContactID
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
    */
-  protected function mapToAccounts(array $contact, $accountsContactID) {
+  protected function mapToAccounts(array $contact, string $accountsContactID) {
     $new_contact = [
       'Name' => $contact['display_name'] . ' - ' . $contact['id'],
       'FirstName' => $contact['first_name'] ?? '',
