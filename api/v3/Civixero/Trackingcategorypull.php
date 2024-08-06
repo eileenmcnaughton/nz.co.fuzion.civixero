@@ -10,13 +10,6 @@
  * @see http://wiki.civicrm.org/confluence/display/CRM/API+Architecture+Standards
  */
 function _civicrm_api3_civixero_trackingcategorypull_spec(&$spec) {
-  $spec['start_date'] = [
-    'api.default' => 'yesterday',
-    'type' => CRM_Utils_Type::T_DATE,
-    'name' => 'start_date',
-    'title' => 'Sync Start Date',
-    'description' => 'date to start pulling from',
-  ];
   $spec['connector_id'] = [
     'api.default' => 0,
     'type' => CRM_Utils_Type::T_INT,
