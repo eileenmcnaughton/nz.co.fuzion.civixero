@@ -189,13 +189,14 @@ class CRM_Civixero_Base {
     // Comes back as a string for oauth errors.
     if (is_string($response)) {
       $responseParts = explode('&', urldecode($response));
-      $problem = str_replace('oauth_problem=', '', CRM_Utils_Array::value(0, $responseParts));
+      $problem = str_replace('oauth_problem=', '', $responseParts[0] ?? NULL);
       if ($problem === 'oauth_problem=token_rejected') {
         throw new CRM_Core_Exception('Invalid credentials');
       }
       if ($problem === 'signature_invalid') {
         throw new CRM_Core_Exception('Invalid signature - your key may be invalid');
       }
+      // @fixme: Shouldn't we actually check if the error is "rate limit exceeded" rather than just falling back to that?
       Civi::log('civixero')->error('Xero Oauth rate exceeded: ' . $message);
       CRM_Civixero_Base::setApiRateLimitExceeded();
       throw new CRM_Civixero_Exception_XeroThrottle($problem);
