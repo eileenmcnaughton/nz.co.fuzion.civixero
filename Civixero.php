@@ -262,6 +262,11 @@ function _civixero_get_connectors(): array {
   static $connectors = [];
   if (empty($connectors)) {
     try {
+      $entities = civicrm_api3('Entity', 'get')['values'];
+      if (!in_array('ConnectorType', $entities, TRUE)) {
+        return [0 => ['id' => 0, 'name' => '']];
+      }
+
       $connectors = civicrm_api3('connector', 'get', ['connector_type_id' => 'CiviXero']);
       $connectors = $connectors['values'];
     }
