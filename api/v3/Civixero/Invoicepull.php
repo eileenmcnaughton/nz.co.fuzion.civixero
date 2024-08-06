@@ -37,6 +37,12 @@ function _civicrm_api3_civixero_invoicepull_spec(&$spec) {
     'title' => E::ts('Xero Invoice ID'),
     'description' => E::ts('Specify Xero Invoice UUID to retrieve a single contribution record'),
   ];
+  $spec['create_contributions_in_civicrm'] = [
+    'type' => CRM_Utils_Type::T_BOOLEAN,
+    'api.default' => 0,
+    'name' => 'create_contributions_in_civicrm',
+    'title' => E::ts("Create contributions in CiviCRM if they don't exist"),
+  ];
 }
 
 /**
