@@ -31,6 +31,12 @@ function _civicrm_api3_civixero_invoicepull_spec(&$spec) {
     'title' => E::ts('Invoice Number'),
     'description' => E::ts('The (Optional) Xero Invoice number to pull (eg. IN-0624'),
   ];
+  $spec['xero_invoice_id'] = [
+    'type' => CRM_Utils_Type::T_STRING,
+    'name' => 'xero_invoice_id',
+    'title' => E::ts('Xero Invoice ID'),
+    'description' => E::ts('Specify Xero Invoice UUID to retrieve a single contribution record'),
+  ];
 }
 
 /**
