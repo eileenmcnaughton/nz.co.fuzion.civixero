@@ -3,29 +3,111 @@
 class CRM_Civixero_Item extends CRM_Civixero_Base {
 
   /**
-   * Pull Item Codes from Xero and temporarily stash them on static.
-   *
-   * We don't want to keep stale ones in our DB - we'll check each time
-   * We call the civicrm_accountPullPreSave hook so other modules can alter
-   * if required.
-   *
-   *  - I can't think of a reason why they would but it seems consistent
-   *
-   * @param array $params
-   *
-   * @return array
-   *
-   * @throws CRM_Core_Exception
+   * Pull Items from Xero
    */
-  public function pull($params) {
+  public function pull(array $filters) {
     static $items = [];
     if (empty($items)) {
-      $retrieved = $this->getSingleton($this->connector_id)->Items();
-      if ($this->validateResponse($retrieved)) {
-        throw new CRM_Core_Exception('Failed to get items');
+      $order = "Name ASC";
+      $where = $filters['where'] ?? NULL;
+      $modifiedSince = NULL;
+      // $modifiedSince = date('Y-m-dTH:i:s', strtotime('20240101000000'));
+
+      try {
+        $xeroItems = $this->getAccountingApiInstance()->getItems($this->getTenantID(), $modifiedSince, $where, $order);
+        foreach ($xeroItems as $xeroItem) {
+          /**
+           * @var \XeroAPI\XeroPHP\Models\Accounting\Item $xeroItem
+           */
+          foreach ($xeroItem::attributeMap() as $localName => $originalName) {
+            $getter = 'get' . $originalName;
+            switch ($localName) {
+              case 'purchase_details':
+              case 'sales_details':
+                foreach ($xeroItem->$getter()::attributeMap() as $localSubName => $originalSubName) {
+                  $subGetter = 'get' . $originalSubName;
+                  $item[$localName][$localSubName] = $xeroItem->$getter()->$subGetter();
+                }
+                break;
+
+              default:
+                $item[$localName] = $xeroItem->$getter();
+            }
+          }
+          $items[$item['item_id']] = $item;
+        }
+      } catch (\Exception $e) {
+        \Civi::log('civixero')->error('Exception when calling AccountingApi->getItems: ' . $e->getMessage());
+        throw $e;
       }
-      $items = $retrieved['Items']['Item'];
     }
     return $items;
   }
+
+  /**
+   * @throws \Exception
+   */
+  public function createItem(array $itemParameters): array {
+    $apiInstance = $this->getAccountingApiInstance();
+
+    $item = new XeroAPI\XeroPHP\Models\Accounting\Item;
+    foreach ($item::attributeMap() as $localName => $originalName) {
+      $setter = 'set' . $originalName;
+      if (in_array($setter, ['setSalesDetails', 'setPurchaseDetails'])) {
+        $purchaseDetails = new \XeroAPI\XeroPHP\Models\Accounting\Purchase;
+        foreach ($purchaseDetails::attributeMap() as $purchaseLocalName => $purchaseOriginalName) {
+          $purchaseSetter = 'set' . $purchaseOriginalName;
+          if (isset($itemParameters[$localName][$purchaseLocalName])) {
+            $purchaseDetails->$purchaseSetter($itemParameters[$localName][$purchaseLocalName]);
+          }
+        }
+        $item->$setter($purchaseDetails);
+      }
+      elseif (isset($itemParameters[$localName])) {
+        $item->$setter($itemParameters[$localName]);
+      }
+    }
+    $idempotencyKey = md5(rand() . microtime());
+    $items = new XeroAPI\XeroPHP\Models\Accounting\Items();
+    $items->setItems([$item]);
+
+    try {
+      $result = $apiInstance->updateOrCreateItems($this->getTenantID(), $items, FALSE, NULL, $idempotencyKey);
+      foreach ($result->getItems() as $item) {
+        return [
+          'itemID' => $item->getItemId(),
+          'itemCode' => $item->getCode(),
+        ];
+      }
+    } catch (\Exception $e) {
+      \Civi::log('civixero')->error('Exception when calling AccountingApi->updateOrCreateItems: ' . $e->getMessage());
+      throw $e;
+    }
+  }
+
+  /**
+   * @throws \Exception
+   */
+  public function deleteItem(string $itemID): array {
+    $apiInstance = $this->getAccountingApiInstance();
+
+    try {
+      $result = $apiInstance->deleteItem($this->getTenantID(), $itemID);
+      return [
+        'itemID' => $itemID,
+        'deleted' => TRUE,
+      ];
+    } catch (\Exception $e) {
+      if ($e instanceof XeroAPI\XeroPHP\ApiException && $e->getCode() == 404) {
+        // Already deleted.
+        return [
+          'itemID' => $itemID,
+          'notFound' => TRUE,
+        ];
+      }
+      \Civi::log('civixero')->error('Exception when calling AccountingApi->deleteItem: ' . $e->getMessage());
+      throw $e;
+    }
+  }
+
 }
