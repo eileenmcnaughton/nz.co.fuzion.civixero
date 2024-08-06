@@ -190,7 +190,13 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
         $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
         $contact['phone'] = $this->getPreferredPhone($locationTypeToSync, $record['contact_id']);
-        $contact += $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
+        // Address is different to the other location fields because it has multiple fields.
+        // We might return NULL from getPreferredAddress which means "do not sync to Xero".
+        // That way we preserve any partial address that we might have in Xero and it will be synced next time it's pulled to Civi.
+        $contactAddress = $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
+        if ($contactAddress) {
+          $contact = array_merge($contact, $contactAddress);
+        }
 
         $accountsContactID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
         $accountsContact = $this->mapToAccounts($contact, $accountsContactID);
@@ -376,17 +382,22 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         ->execute()
         ->first();
     }
-    // Return preferred values or empty keys
-    return [
-      'street_address' => $address['street_address'] ?? '',
-      'city' => $address['city'] ?? '',
-      'postal_code' => $address['postal_code'] ?? '',
-      'supplemental_address_1' => $address['supplemental_address_1'] ?? '',
-      'supplemental_address_2' => $address['supplemental_address_2'] ?? '',
-      'supplemental_address_3' => $address['supplemental_address_3'] ?? '',
-      'country' => $address['country_id:label'] ?? '',
-      'state_province_name' => $address['state_province_id:label'] ?? '',
-    ];
+
+    // @todo check: If we return empty keys I think we may wipe any existing Xero address
+    if (!empty($address['street_address'])) {
+      // Yes, we have an address with preferred location type.
+      return [
+        'street_address' => $address['street_address'],
+        'city' => $address['city'],
+        'postal_code' => $address['postal_code'],
+        'supplemental_address_1' => $address['supplemental_address_1'],
+        'supplemental_address_2' => $address['supplemental_address_2'],
+        'supplemental_address_3' => $address['supplemental_address_3'],
+        'country' => $address['country_id:label'],
+        'state_province_name' => $address['state_province_id:label'],
+      ];
+    }
+    return NULL;
   }
 
   /**
