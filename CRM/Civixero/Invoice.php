@@ -271,7 +271,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $new_invoice = [
       'Type' => ($total_amount > 0) ? 'ACCREC' : 'ACCPAY',
       'Contact' => [
-        'ContactNumber' => $invoiceData['contact_id'],
+        'ContactID' => $invoiceData['accounts_contact_id'],
       ],
       'Date' => substr($invoiceData['receive_date'], 0, 10),
       'DueDate' => substr($invoiceData['receive_date'], 0, 10),
