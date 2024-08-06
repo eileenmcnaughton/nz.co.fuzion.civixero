@@ -565,12 +565,24 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   ID of the connector (0 if nz.co.fuzion.connectors not installed.
    *
    * @return array|false
+   * @throws \CRM_Core_Exception
    */
   protected function pushToXero($accountsInvoice, $connector_id) {
     if ($accountsInvoice === FALSE) {
       return FALSE;
     }
-    return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+    try {
+      /** @noinspection PhpUndefinedMethodInspection */
+      return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+    }
+    catch (XeroException $e) {
+      // We should figure out if this is a throttle issue & through a throttle error.
+      throw new CRM_Core_Exception(
+        'Synchronization error ' . $e->getMessage(),
+        'xero_' . $e->getCode(),
+        ['xml' => $e->getXML()]
+      );
+    }
   }
 
   /**
