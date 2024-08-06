@@ -36,13 +36,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $params
    *
-   * @return int
+   * @return array
    * @throws CRM_Core_Exception
    */
-  public function pull(array $params): int {
+  public function pull(array $params): array {
     $xeroParams = ['Type' => 'ACCREC'];
     $filter = $params['xero_invoice_id'] ?? $params['invoice_number'] ?? FALSE;
-    $count = 0;
+
     $errors = [];
     /** @noinspection PhpUndefinedMethodInspection */
     $result = $this
@@ -147,7 +147,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    return $count;
+    return ['AccountInvoiceIDs' => $ids ?? []];
   }
 
   /**
@@ -161,18 +161,17 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param int $limit
    *   Number of invoices to process
    *
-   * @return int
+   * @return array
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function push($params, $limit = 10) {
+  public function push(array $params, int $limit = 10) {
     $records = $this->getContributionsRequiringPushUpdate($params, $limit);
     if (empty($records)) {
-      return 0;
+      return [];
     }
     $errors = [];
-
-    $count = 0;
+    $responseErrors = [];
     foreach ($records as $record) {
       try {
         $accountsInvoice = $this->getAccountsInvoice($record);
@@ -188,7 +187,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         }
         $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
         $responseErrors = $this->savePushResponse($result, $record);
-        $count++;
       }
       catch (CRM_Civixero_Exception_XeroThrottle $e) {
         $errors[] = ($this->xero_entity . ' Push aborted due to throttling by Xero');
@@ -210,13 +208,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           ->execute();
         $errors[] = $errorMessage;
       }
+      $contributionIDsPushed[] = $record['contribution_id'];
     }
     if ($errors) {
       // since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(ts('Not all records were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    return $count;
-
+    return $contributionIDsPushed ?? [];
   }
 
   /**
