@@ -427,7 +427,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
     $accountContacts->addOrderBy('error_data');
 
-    return $accountContacts->execute()->getArrayCopy();
+    return (array) $accountContacts->execute();
   }
 
   /**
