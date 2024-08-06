@@ -19,7 +19,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @throws CRM_Core_Exception
    */
-  public function pull(array $params): void {
+  public function pull(array $params): array {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
 
@@ -150,6 +150,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
+    return ['AccountContactIDs' => $ids ?? []];
   }
 
   /**
@@ -160,14 +161,15 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @param array $params
    *  - start_date
    *
-   * @return bool
+   * @return array
    * @throws CRM_Core_Exception
    */
-  public function push(array $params, int $limit = 10): bool {
+  public function push(array $params, int $limit = 10): array {
     $records = $this->getContactsRequiringPushUpdate($params, $limit);
     if (empty($records)) {
-      return TRUE;
+      return [];
     }
+
     $errors = [];
 
     foreach ($records as $record) {
@@ -261,6 +263,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           ->setValues($record)
           ->addValue('accounts_needs_update', FALSE)
           ->execute();
+        $contactIDsPushed[] = $record['contact_id'];
       }
       catch (CRM_Civixero_Exception_XeroThrottle $e) {
         throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero' . print_r($errors, TRUE));
@@ -288,7 +291,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    return TRUE;
+    return $contactIDsPushed ?? [];
   }
 
   /**
