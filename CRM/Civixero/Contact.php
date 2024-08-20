@@ -24,7 +24,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
 
     $errors = [];
-    $count = 0;
     /** @noinspection PhpUndefinedMethodInspection */
     $result = $this
       ->getSingleton($params['connector_id'])
@@ -435,7 +434,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @param array $contact
    *          Contact Array as returned from API
-   * @param string $accountsContactID
+   * @param string|null $accountsContactID
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
