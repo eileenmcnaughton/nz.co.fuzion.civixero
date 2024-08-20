@@ -440,7 +440,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
    */
-  protected function mapToAccounts(array $contact, string $accountsContactID) {
+  protected function mapToAccounts(array $contact, ?string $accountsContactID) {
     $new_contact = [
       'Name' => $contact['display_name'] . ' - ' . $contact['id'],
       'FirstName' => $contact['first_name'] ?? '',
