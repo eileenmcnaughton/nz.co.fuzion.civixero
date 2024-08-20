@@ -271,20 +271,19 @@ class CRM_Civixero_Base {
    * @throws \CRM_Civixero_Exception_XeroThrottle
    */
   public static function checkApiRateExceeded(PrepareEvent $event): void {
-    if ($event->getEntityName() === 'Civixero' && (
-      substr($event->getActionName(), -4) === 'push'
-      || substr($event->getActionName(), -4) === 'pull'
-    )) {
-      $rateLimitExceeded = \Civi::settings()->get('xero_oauth_rate_exceeded');
-      if (!$rateLimitExceeded) {
-        return;
-      }
-      // Wait for 1 hour if rate limit was exceeded and then retry
-      if (strtotime('+1 hours', $rateLimitExceeded) > time()) {
-        throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again in 1 hour');
-      }
-      self::resetApiRateLimitExceeded();
+    // API3: Civixero; API4: Xero
+    if (!in_array($event->getEntityName(), ['Civixero', 'Xero'])) {
+      return;
     }
+    $rateLimitExceeded = \Civi::settings()->get('xero_oauth_rate_exceeded');
+    if (!$rateLimitExceeded) {
+      return;
+    }
+    // Wait for 1 hour if rate limit was exceeded and then retry
+    if (strtotime('+1 hours', $rateLimitExceeded) > time()) {
+      throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again in 1 hour');
+    }
+    self::resetApiRateLimitExceeded();
   }
 
   /**
