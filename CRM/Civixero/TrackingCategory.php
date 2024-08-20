@@ -12,8 +12,6 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
    * @throws \Exception
    */
   public function pull() {
-    CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
-
     static $trackingCategories = [];
     if (empty($trackingCategories)) {
       $where = 'Status=="' . \XeroAPI\XeroPHP\Models\Accounting\TrackingCategory::STATUS_ACTIVE . '"';
@@ -49,8 +47,6 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
    * @throws \Exception
    */
   public function addOption(string $trackingCategoryID, string $trackingOptionName): array {
-    CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
-
     $apiInstance = $this->getAccountingApiInstance();
 
     $trackingOption = new XeroAPI\XeroPHP\Models\Accounting\TrackingOption;
@@ -79,8 +75,6 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
    * @throws \Exception
    */
   public function deleteOption(string $trackingCategoryID, string $trackingOptionID): array {
-    CRM_Civixero_Base::isApiRateLimitExceeded(TRUE);
-
     $apiInstance = $this->getAccountingApiInstance();
 
     try {
