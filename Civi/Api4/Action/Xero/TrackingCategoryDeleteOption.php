@@ -5,7 +5,7 @@ namespace Civi\Api4\Action\Xero;
 use CRM_Civixero_ExtensionUtil as E;
 
 /**
- * This API Action creates a payment. It is based on API3 Payment.create and API3 MJWPayment.create
+ * This API Action deletes a Xero TrackingCategory option
  *
  */
 class TrackingCategoryDeleteOption extends \Civi\Api4\Generic\AbstractAction {
