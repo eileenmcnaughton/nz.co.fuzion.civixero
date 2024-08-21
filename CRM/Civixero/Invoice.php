@@ -122,6 +122,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               // So check if anything actually changed before updating.
               if ($accountInvoiceParams[$key] !== $accountInvoice[$key]) {
                 // Something changed, update AccountInvoice in DB
+                if (!empty($accountInvoice['contribution_id'])) {
+                  // If the accountInvoice already has a contribution ID don't try to overwrite it with the one we derived from InvoiceNumber.
+                  // Probably we manually reconciled it at some point.
+                  unset($accountInvoiceParams['contribution_id']);
+                }
                 $newAccountInvoice = AccountInvoice::update(FALSE)
                   ->setValues($accountInvoiceParams)
                   ->addWhere('id', '=', $accountInvoice['id'])
