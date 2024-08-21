@@ -422,6 +422,8 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     else {
       $accountContacts->addWhere('accounts_needs_update', '=', TRUE);
       $accountContacts->addWhere('contact_id', 'IS NOT NULL');
+      // Only select AccountContacts for push if error is resolved or there is no error.
+      $accountContacts->addClause('OR', ['is_error_resolved', '=', TRUE], ['error_data', 'IS EMPTY']);
     }
     $accountContacts->addOrderBy('error_data');
 
