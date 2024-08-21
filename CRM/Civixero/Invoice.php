@@ -115,7 +115,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               'accounts_modified_date',
               'accounts_status_id',
               'accounts_needs_update',
-              'accounts_data',
             ];
             foreach ($modifiedFieldKeys as $key) {
               // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
