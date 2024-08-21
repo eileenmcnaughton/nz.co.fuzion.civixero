@@ -137,14 +137,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               }
             }
           }
+          if (!empty($params['create_contributions_in_civicrm'])) {
+            $this->createContributionFromAccountsInvoice($invoice, $accountInvoiceParams);
+          }
         }
         catch (CRM_Core_Exception $e) {
           $errors[] = E::ts('Failed to store %1 (%2)', [1 => $invoice['InvoiceNumber'], 2 => $invoice['InvoiceID']])
             . E::ts(' with error ') . $e->getMessage();
-        }
-
-        if (!empty($params['create_contributions_in_civicrm'])) {
-          $this->createContributionFromAccountsInvoice($invoice, $accountInvoiceParams);
         }
       }
     }
