@@ -682,12 +682,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ->execute()
       ->first();
     if (!empty($accountInvoiceParams['contribution_id'])) {
-      // \Civi::log()->error(__FUNCTION__ . ': AccountsInvoice is already linked to a contribution: ' . print_r($invoice, TRUE));
+      // \Civi::log('civixero')->debug(__FUNCTION__ . ': AccountsInvoice is already linked to a contribution: ' . print_r($invoice, TRUE));
       return FALSE;
     }
+
     $accountsContactID = $invoice['Contact']['ContactID'] ?? NULL;
     if (empty($accountsContactID)) {
-      \Civi::log()->error(__FUNCTION__ . ': missing ContactID in AccountsInvoice: ' . print_r($invoice, TRUE));
+      $errorMessage = __FUNCTION__ . ': missing ContactID in AccountsInvoice';
+      $this->recordAccountInvoiceError($accountInvoiceParams['id'], $errorMessage);
+      \Civi::log('civixero')->debug($errorMessage . ': ' . print_r($invoice, TRUE));
       return FALSE;
     }
 
@@ -696,11 +699,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ->execute()
       ->first();
     if (empty($accountContact)) {
-      \Civi::log()->error(__FUNCTION__ . ': no AccountsContact found: ' . print_r($invoice, TRUE));
+      $errorMessage = __FUNCTION__ . ': no AccountsContact found';
+      $this->recordAccountInvoiceError($accountInvoiceParams['id'], $errorMessage);
+      \Civi::log('civixero')->debug($errorMessage . ': ' . print_r($invoice, TRUE));
       return FALSE;
     }
     if (empty($accountContact['contact_id'])) {
-      \Civi::log()->error(__FUNCTION__ . ': AccountsContact is not matched to a CiviCRM Contact ID: ' . print_r($invoice, TRUE));
+      $errorMessage = __FUNCTION__ . ': AccountsContact is not matched to a CiviCRM Contact ID';
+      $this->recordAccountInvoiceError($accountInvoiceParams['id'], $errorMessage);
+      \Civi::log('civixero')->debug($errorMessage . ': ' . print_r($invoice, TRUE));
       return FALSE;
     }
 
@@ -743,6 +750,22 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     return TRUE;
+  }
+
+  /**
+   * @param string $accountInvoiceID
+   * @param string $message
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  private function recordAccountInvoiceError(string $accountInvoiceID, string $message) {
+    AccountInvoice::update(FALSE)
+      ->addValue('error_data', $message)
+      ->addValue('is_error_resolved', FALSE)
+      ->addWhere('id', '=', $accountInvoiceID)
+      ->execute();
   }
 
 }
