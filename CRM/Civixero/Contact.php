@@ -413,6 +413,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     $accountContacts = AccountContact::get(FALSE)
       ->addWhere('plugin', '=', $this->_plugin)
       ->addWhere('connector_id', '=', $params['connector_id'])
+      ->addWhere('do_not_sync', '<>', TRUE)
       ->setLimit($limit);
 
     // If we specified a CiviCRM contact ID just push that contact.
