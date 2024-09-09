@@ -166,7 +166,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @return int
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function push($params, $limit = 10) {
     $records = $this->getContributionsRequiringPushUpdate($params, $limit);
@@ -207,7 +206,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           ->addValue('is_error_resolved', FALSE)
           ->addValue('error_data', json_encode([
             'error' => $e->getMessage(),
-            'error_data' => $record['error_data']
+            'error_data' => $record['error_data'],
           ]))
           ->addValue('accounts_data', json_encode($record))
           ->execute();
@@ -248,7 +247,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         'Description' => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
         // Xero does not like negative quantity so for a refund make the price negative instead.
         'Quantity' => abs($lineItem['qty']),
-        'UnitAmount' => $lineItem['qty'] >= 0 ? $lineItem['unit_price'] : (- $lineItem['unit_price']),
+        'UnitAmount' => $lineItem['qty'] >= 0 ? $lineItem['unit_price'] : (-$lineItem['unit_price']),
         'AccountCode' => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
       ];
       $total_amount += $lineItem['qty'] * $lineItem['unit_price'];
@@ -347,7 +346,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return int
    *   CiviCRM equivalent status ID.
    */
-  protected function mapStatus($status) {
+  protected function mapStatus($status): int {
     $accountsStatusIDs = array_flip(CRM_Accountsync_BAO_AccountInvoice::buildOptions('accounts_status_id', 'validate'));
 
     $statuses = [
@@ -368,7 +367,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function validatePrerequisites($invoice) {
+  protected function validatePrerequisites($invoice): void {
     if (empty($invoice['LineItems'])) {
       return;
     }
@@ -395,9 +394,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param array $lineItem
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
-  protected function validateTrackingCategory($lineItem) {
+  protected function validateTrackingCategory($lineItem): void {
     if (empty($lineItem['TrackingCategory'])) {
       return;
     }
@@ -441,7 +439,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $accountInvoices->addClause('OR', ['error_data', 'IS NULL'], ['is_error_resolved', '=', TRUE]);
       $accountInvoices->addWhere('accounts_needs_update', '=', TRUE);
     }
-    return $accountInvoices->execute()->getArrayCopy();
+    return (array) $accountInvoices->execute();
   }
 
   /**
