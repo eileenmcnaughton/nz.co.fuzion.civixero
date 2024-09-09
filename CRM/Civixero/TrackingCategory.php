@@ -1,5 +1,7 @@
 <?php
 
+use XeroAPI\XeroPHP\Models\Accounting\TrackingCategory;
+
 class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
 
   /**
@@ -14,7 +16,7 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
   public function pull() {
     static $trackingCategories = [];
     if (empty($trackingCategories)) {
-      $where = 'Status=="' . \XeroAPI\XeroPHP\Models\Accounting\TrackingCategory::STATUS_ACTIVE . '"';
+      $where = 'Status=="' . TrackingCategory::STATUS_ACTIVE . '"';
       $order = "Name ASC";
 
       try {
@@ -35,7 +37,8 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
             ];
           }
         }
-      } catch (\Exception $e) {
+      }
+      catch (\Exception $e) {
         \Civi::log('civixero')->error('Exception when calling AccountingApi->getTrackingCategories: ' . $e->getMessage());
         throw $e;
       }
@@ -49,9 +52,9 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
   public function addOption(string $trackingCategoryID, string $trackingOptionName): array {
     $apiInstance = $this->getAccountingApiInstance();
 
-    $trackingOption = new XeroAPI\XeroPHP\Models\Accounting\TrackingOption;
+    $trackingOption = new XeroAPI\XeroPHP\Models\Accounting\TrackingOption();
     $trackingOption->setName($trackingOptionName);
-    $idempotencyKey = md5(rand() . microtime());
+    $idempotencyKey = md5(mt_rand() . microtime());
 
     try {
       $trackingCategoryOption = $this->checkIfCategoryHasOption($trackingCategoryID, $trackingOptionName);
@@ -65,7 +68,8 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
         'id' => $result->getOptions()[0]->getTrackingOptionId(),
         'added' => TRUE,
       ];
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       \Civi::log('civixero')->error('Exception when calling AccountingApi->createTrackingOptions: ' . $e->getMessage());
       throw $e;
     }
@@ -85,7 +89,8 @@ class CRM_Civixero_TrackingCategory extends CRM_Civixero_Base {
         'id' => $result->getOptions()[0]->getTrackingOptionId(),
         'deleted' => TRUE,
       ];
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       \Civi::log('civixero')->error('Exception when calling AccountingApi->deleteTrackingOptions: ' . $e->getMessage());
       throw $e;
     }
