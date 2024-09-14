@@ -428,7 +428,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $accountInvoices = AccountInvoice::get(FALSE)
       ->addWhere('plugin', '=', 'xero')
       ->addWhere('connector_id', '=', $params['connector_id'])
-      ->addWhere('accounts_status_id', 'NOT IN', [CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')])
+      ->addClause('OR', ['accounts_status_id', 'IS NULL'], ['accounts_status_id', 'NOT IN', [CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')]])
       ->addOrderBy('error_data')
       ->setLimit($limit);
 
