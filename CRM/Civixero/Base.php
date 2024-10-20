@@ -206,12 +206,12 @@ class CRM_Civixero_Base {
     }
 
     if (!empty($response['Elements']) && is_array($response['Elements']['DataContractBase']['ValidationErrors'])) {
-      foreach ($response['Elements']['DataContractBase']['ValidationErrors'] as $key => $value) {
+      foreach ($response['Elements']['DataContractBase']['ValidationErrors'] as $validationError) {
         // we have a situation where the validation errors are an array of errors
         // original code expected a string - not sure if / when that might happen
         // this is all a bit of a hackathon @ the moment
-        if (is_array($value[0])) {
-          foreach ($value as $errorMessage) {
+        if (isset($validationError[0]) && is_array($validationError[0])) {
+          foreach ($validationError as $errorMessage) {
             if (trim($errorMessage['Message']) === 'Account code must be specified') {
               return [
                 'You need to set up the account code',
@@ -222,7 +222,7 @@ class CRM_Civixero_Base {
         }
         else {
           // Single message - string
-          $message = $value['Message'];
+          $message = $validationError['Message'];
         }
         switch (trim($message)) {
           case 'The Contact Name already exists. Please enter a different Contact Name.':
