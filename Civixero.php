@@ -223,9 +223,6 @@ function civixero_civicrm_pageRun($page) {
           'template' => 'CRM/Civixero/ContactSyncBlock.tpl',
         ]);
       }
-
-      CRM_Core_Resources::singleton()
-        ->addScriptFile('nz.co.fuzion.civixero', 'js/civixero_errors.js');
       break;
 
     case 'CRM_Contribute_Page_Tab':
