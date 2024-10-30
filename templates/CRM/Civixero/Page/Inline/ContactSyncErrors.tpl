@@ -5,7 +5,6 @@
         </div>
         <div class="crm-content">
           Contact <span class='error'>sync error</span> with Xero
-          <a href='#' class='helpicon error xeroerror-info' data-xeroerrorid='{$contactID_xero}'></a>
         </div>
     </div>
 {/if}
