@@ -230,13 +230,14 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   - receive date
    *   - source
    *   - contact_id
-   * @param int $accountsID
+   * @param ?string $xeroInvoiceUUID
+   *   The Xero invoice uuid.
    *
    * @return array|bool
    *   Contact Object/ array as expected by accounts package
    * @throws \CRM_Core_Exception
    */
-  protected function mapToAccounts($invoiceData, $accountsID) {
+  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID) {
     // Get the tax mode from the CiviCRM setting. This should be 'exclusive' if
     // tax is enabled (but for historical reasons we force that later on).
     $line_amount_types = Civi::settings()->get('xero_tax_mode');
@@ -288,6 +289,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'LineAmountTypes' => $line_amount_types,
       'LineItems' => ['LineItem' => $lineItems],
     ];
+    if (!empty($xeroInvoiceUUID)) {
+      if (!empty($xeroContactUUID)) {
+        $new_invoice['InvoiceID'] = $xeroContactUUID;
+      }
+    }
 
     /* Use due date and period from the invoice settings when available. */
     $invoiceDueDate = Civi::settings()->get('invoice_due_date');
@@ -310,14 +316,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * Map fields for a cancelled contribution to be updated to Xero.
    *
    * @param int $contributionID
-   * @param string|null $accounts_invoice_id
+   * @param ?string $xeroInvoiceUUID
+   *    The Xero invoice uuid.
    *
    * @return array
    */
-  protected function mapCancelled(int $contributionID, ?string $accounts_invoice_id): array {
+  protected function mapCancelled(int $contributionID, ?string $xeroInvoiceUUID): array {
     return [
       'Invoice' => [
-        'InvoiceID' => $accounts_invoice_id,
+        'InvoiceID' => $xeroInvoiceUUID,
         'InvoiceNumber' => $contributionID,
         'Type' => 'ACCREC',
         'Reference' => 'Cancelled',
@@ -455,7 +462,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       return FALSE;
     }
 
-    $accountsInvoiceID = $record['accounts_invoice_id'] ?? NULL;
+    $xeroInvoiceUUID = $record['accounts_invoice_id'] ?? NULL;
     $contributionID = $record['contribution_id'];
     $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', [
       'id' => $contributionID,
@@ -467,10 +474,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $cancelledStatuses = ['Failed', 'Cancelled'];
 
     if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
-      return $this->mapCancelled($contributionID, $accountsInvoiceID);
+      return $this->mapCancelled($contributionID, $xeroInvoiceUUID);
     }
 
-    return $this->mapToAccounts($civiCRMInvoice, $accountsInvoiceID);
+    return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
   }
 
   /**
