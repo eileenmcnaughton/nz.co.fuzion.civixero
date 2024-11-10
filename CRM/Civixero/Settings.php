@@ -90,12 +90,10 @@ class CRM_Civixero_Settings {
           'xero_client_secret' => $connector['field2'],
           'xero_tenant_id' => $connector['field3'],
           'xero_access_token' => unserialize($connector['field4']),
-          // @todo not yet configurable per selector.
-          'xero_default_invoice_status' => 'SUBMITTED',
         ];
       }
 
-      return $connectors[$this->getConnectorID()][$var];
+      return $connectors[$this->getConnectorID()][$var] ?: \Civi::settings()->get($var);
     }
     if ($var === 'xero_access_token') {
       return [
