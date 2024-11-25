@@ -397,11 +397,7 @@ function civixero_civicrm_contactSummaryBlocks(&$blocks) {
     'tpl_file' => 'CRM/Civixero/Page/Inline/InvoiceSyncErrors.tpl',
     'edit' => FALSE,
   ];
-  $blocks['civixeroblock']['blocks']['invoicesynclink'] = [
-    'title' => E::ts('Invoice Sync Link'),
-    'tpl_file' => 'CRM/Civixero/Page/Inline/InvoiceSyncLink.tpl',
-    'edit' => FALSE,
-  ];
+
   $blocks['civixeroblock']['blocks']['contactsynclink'] = [
     'title' => E::ts('Contact Sync Link'),
     'tpl_file' => 'CRM/Civixero/Page/Inline/ContactSyncLink.tpl',
