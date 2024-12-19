@@ -93,7 +93,7 @@ class CRM_Civixero_Settings {
         ];
       }
 
-      return $connectors[$this->getConnectorID()][$var] ?: \Civi::settings()->get($var);
+      return $connectors[$this->getConnectorID()][$var] ?? \Civi::settings()->get($var);
     }
     if ($var === 'xero_access_token') {
       return [
