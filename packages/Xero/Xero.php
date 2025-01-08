@@ -339,7 +339,7 @@ class Xero {
       }
       catch (XeroException $e) {
         //display custom message
-        return $e->getMessage() . "<br/>";
+        return $e->getMessage() ?  ($e->getMessage()  . "<br/>") : '';
       }
       curl_close($ch);
       if (!isset($xero_xml)) {
