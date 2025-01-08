@@ -47,6 +47,6 @@ function _civicrm_api3_civixero_contactpull_spec(&$spec) {
  */
 function civicrm_api3_civixero_contactpull($params) {
   $xero = new CRM_Civixero_Contact($params);
-  $xero->pull($params);
+  $xero->pullUsingApi4($params);
   return civicrm_api3_create_success(1, $params, 'Civixero', 'contactpull');
 }
