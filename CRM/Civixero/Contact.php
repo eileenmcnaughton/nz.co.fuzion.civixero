@@ -10,6 +10,45 @@ use Civi\Api4\LocationType;
 
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
+  public function newPull(array $filters, string $searchTerm): array {
+    static $contacts = [];
+    if (empty($contacts)) {
+      $order = "Name ASC";
+      $where = $filters['where'] ?? NULL;
+      $modifiedSince = NULL;
+      // $modifiedSince = date('Y-m-dTH:i:s', strtotime('20240101000000'));
+
+      try {
+        $xeroContacts = $this->getAccountingApiInstance()->getContacts($this->getTenantID(), $modifiedSince, $where, $order, NULL, NULL, TRUE, FALSE, $searchTerm);
+        foreach ($xeroContacts->getContacts() as $xeroContact) {
+          /**
+           * @var \XeroAPI\XeroPHP\Models\Accounting\Contact $xeroContact
+           */
+          foreach ($xeroContact::attributeMap() as $localName => $originalName) {
+            $getter = 'get' . $originalName;
+            switch ($localName) {
+              case 'purchase_details':
+              case 'sales_details':
+                foreach ($xeroContact->$getter()::attributeMap() as $localSubName => $originalSubName) {
+                  $subGetter = 'get' . $originalSubName;
+                  $contact[$localName][$localSubName] = $xeroContact->$getter()->$subGetter();
+                }
+                break;
+
+              default:
+                $contact[$localName] = $xeroContact->$getter();
+            }
+          }
+          $contacts[$contact['contact_id']] = $contact;
+        }
+      } catch (\Exception $e) {
+        \Civi::log('civixero')->error('Exception when calling AccountingApi->getContacts: ' . $e->getMessage());
+        throw $e;
+      }
+    }
+    return $contacts;
+  }
+
   /**
    * Pull contacts from Xero and store them into civicrm_account_contact.
    *
