@@ -1,6 +1,7 @@
 <?php
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 
 /**
  * From the README file:
@@ -303,12 +304,27 @@ class Xero {
       if (in_array($name, $valid_post_methods)) {
         $xero_url = self::ENDPOINT . $method;
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($ch, CURLOPT_URL, $xero_url);
-        curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $this->build_http_query(['xml' => $post_body]));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         //curl_setopt($ch, CURLOPT_HEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        // $xero_response = curl_exec($ch);
+        try {
+          $xero_response = (string) $this->getGuzzleClient()->post($xero_url, [
+            'body' => $this->build_http_query(['xml' => $post_body]),
+            'curl' => [
+              CURLOPT_RETURNTRANSFER => TRUE,
+              // Seems bad, historically set to this.
+              CURLOPT_SSL_VERIFYPEER => FALSE,
+              CURLOPT_HTTPHEADER => $headers,
+            ],
+          ])->getBody();
+        }
+        catch (ClientException $e) {
+          if ($e->getCode() === 429) {
+            // This is a case of the limit being exceeded.
+            throw new XeroThrottleException($e->getMessage(), $e->getCode(), NULL, $e->getResponse()->getHeader('Retry-After')[0] + time());
+          }
+        }
       }
       else {
         $xero_url = self::ENDPOINT . $method;
@@ -323,9 +339,10 @@ class Xero {
         curl_setopt($ch, CURLOPT_INFILE, $fh);
         curl_setopt($ch, CURLOPT_INFILESIZE, strlen($xml));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $xero_response = curl_exec($ch);
       }
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-      $xero_response = curl_exec($ch);
+
       if (isset($fh)) {
         fclose($fh);
       }
@@ -337,7 +354,14 @@ class Xero {
           $xero_xml = simplexml_load_string($xero_response);
         }
       }
+      catch (XeroThrottleException $e) {
+        // Let it bubble up since it has more information.
+        throw $e;
+      }
       catch (XeroException $e) {
+        if ($e->getCode() === 429) {
+          throw $e;
+        }
         //display custom message
         return $e->getMessage() ?  ($e->getMessage()  . "<br/>") : '';
       }
@@ -552,7 +576,19 @@ class ArrayToXML {
 
 
 class XeroException extends Exception {
+  protected $retryAfter = NULL;
+  public function getRetryAfter(): int {
+    return (int) $this->retryAfter;
+  }
 
+}
+
+class XeroThrottleException extends XeroException {
+
+  public function __construct($message, $code = NULL, $previous = NULL, ?int $retryAfter = NULL) {
+    $this->retryAfter = $retryAfter;
+    parent::__construct($message, $code, $previous);
+  }
 }
 
 class XeroApiException extends XeroException {

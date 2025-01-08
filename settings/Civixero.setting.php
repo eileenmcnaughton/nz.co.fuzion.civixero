@@ -169,4 +169,13 @@ return [
     'title' => 'Xero OAuth Rate Exceeded',
     'description' => 'Timestamp when OAuth Rate was exceeded. Cleared after one hour',
   ],
+  'xero_retry_after' => [
+    'name' => 'xero_retry_after',
+    'type' => 'Integer',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'default' => '',
+    'title' => 'Xero Retry after',
+    'description' => 'Timestamp when Xero will accept requests again - see https://developer.xero.com/documentation/guides/oauth2/limits/',
+  ],
 ];

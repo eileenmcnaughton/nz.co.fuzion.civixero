@@ -173,43 +173,45 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $errors = [];
 
     $count = 0;
-    foreach ($records as $record) {
-      try {
-        $accountsInvoice = $this->getAccountsInvoice($record);
-        if ($accountsInvoice === FALSE) {
-          // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
+    try {
+      foreach ($records as $record) {
+        try {
+          $accountsInvoice = $this->getAccountsInvoice($record);
+          if ($accountsInvoice === FALSE) {
+            // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
+            AccountInvoice::update(FALSE)
+              ->addWhere('id', '=', $record['id'])
+              ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
+              ->addValue('accounts_needs_update', FALSE)
+              ->execute();
+            // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
+            continue;
+          }
+          $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
+          $responseErrors = $this->savePushResponse($result, $record);
+          $count++;
+        }
+        catch (CRM_Core_Exception $e) {
+          $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsContactID: %2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
+            . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors, TRUE)
+            . E::ts('%1 Push failed', [1 => $this->xero_entity]);
+
           AccountInvoice::update(FALSE)
             ->addWhere('id', '=', $record['id'])
-            ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
-            ->addValue('accounts_needs_update', FALSE)
+            ->addValue('is_error_resolved', FALSE)
+            ->addValue('error_data', json_encode([
+              'error' => $e->getMessage(),
+              'error_data' => $record['error_data'],
+            ]))
+            ->addValue('accounts_data', json_encode($record))
             ->execute();
-          // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
-          continue;
+          $errors[] = $errorMessage;
         }
-        $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
-        $responseErrors = $this->savePushResponse($result, $record);
-        $count++;
       }
-      catch (CRM_Civixero_Exception_XeroThrottle $e) {
-        $errors[] = ($this->xero_entity . ' Push aborted due to throttling by Xero');
-        break;
-      }
-      catch (CRM_Core_Exception $e) {
-        $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsContactID: %2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
-          . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors, TRUE)
-          . E::ts('%1 Push failed', [1 => $this->xero_entity]);
-
-        AccountInvoice::update(FALSE)
-          ->addWhere('id', '=', $record['id'])
-          ->addValue('is_error_resolved', FALSE)
-          ->addValue('error_data', json_encode([
-            'error' => $e->getMessage(),
-            'error_data' => $record['error_data'],
-          ]))
-          ->addValue('accounts_data', json_encode($record))
-          ->execute();
-        $errors[] = $errorMessage;
-      }
+    }
+    catch (CRM_Civixero_Exception_XeroThrottle $e) {
+      $errors[] = ($this->xero_entity . ' Push aborted due to throttling by Xero');
+      CRM_Civixero_Base::setApiRateLimitExceeded($e->getRetryAfter());
     }
     if ($errors) {
       // since we expect this to wind up in the job log we'll print the errors
@@ -589,8 +591,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       /** @noinspection PhpUndefinedMethodInspection */
       return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
     }
+    catch (XeroThrottleException $e) {
+      throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
+    }
     catch (XeroException $e) {
-      // We should figure out if this is a throttle issue & throw a throttle error.
       // if now \Civi::log('xero')->warning('Failed push with {xml}', ['xml' => $e->getXML()]]
       throw new CRM_Core_Exception(
         'Synchronization error ' . $e->getMessage(),

@@ -276,13 +276,14 @@ class CRM_Civixero_Base {
       return;
     }
     $rateLimitExceeded = \Civi::settings()->get('xero_oauth_rate_exceeded');
-    if (!$rateLimitExceeded) {
+    $retryAfter = \Civi::settings()->get('xero_retry_after');
+    if (!$rateLimitExceeded && !$retryAfter) {
       return;
     }
     // Wait for 1 hour if rate limit was exceeded and then retry
-    $retryTime = strtotime('+1 hours', $rateLimitExceeded);
+    $retryTime = $retryAfter ?: (strtotime('+1 hours', $rateLimitExceeded));
     if ($retryTime > time()) {
-      throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again after ' . date('Y-m-d H:i:s', $retryTime));
+      throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again after ' . date('Y-m-d H:i:s', $retryTime), 429, NULL, $retryTime);
     }
     self::resetApiRateLimitExceeded();
   }
@@ -290,8 +291,16 @@ class CRM_Civixero_Base {
   /**
    * @return void
    */
-  public static function setApiRateLimitExceeded(): void {
-    Civi::settings()->set('xero_oauth_rate_exceeded', time());
+  public static function setApiRateLimitExceeded($retryAfter = 0): void {
+    if ($retryAfter) {
+      // We aren't really using this one yet - but we want to migrate to it.
+      Civi::settings()->set('xero_retry_after', time() + $retryAfter);
+      // Set time to an hour before we should try again.
+      Civi::settings()->set('xero_oauth_rate_exceeded', time() + $retryAfter - (60 * 60));
+    }
+    else {
+      Civi::settings()->set('xero_oauth_rate_exceeded', time());
+    }
   }
 
   /**
@@ -299,6 +308,7 @@ class CRM_Civixero_Base {
    */
   public static function resetApiRateLimitExceeded(): void {
     Civi::settings()->set('xero_oauth_rate_exceeded', NULL);
+    Civi::settings()->set('xero_retry_after', NULL);
   }
 
   /**
