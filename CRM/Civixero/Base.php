@@ -272,7 +272,7 @@ class CRM_Civixero_Base {
    */
   public static function checkApiRateExceeded(PrepareEvent $event): void {
     // API3: Civixero; API4: Xero
-    if (!in_array($event->getEntityName(), ['Civixero', 'Xero'])) {
+    if (!in_array($event->getEntityName(), ['Civixero', 'Xero']) || $event->getActionName() === 'getFields') {
       return;
     }
     $rateLimitExceeded = \Civi::settings()->get('xero_oauth_rate_exceeded');
