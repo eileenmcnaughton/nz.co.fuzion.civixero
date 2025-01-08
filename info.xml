@@ -16,12 +16,21 @@
     <author>eileen</author>
     <email>eileen@fuzion.co.nz</email>
   </maintainer>
-  <releaseDate>2024-08-22</releaseDate>
-  <version>3.0.1</version>
+  <releaseDate>2025-01-08</releaseDate>
+  <version>3.0.2</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.74</ver>
   </compatibility>
+  <smarty_compatibility>
+    <ver>5</ver>
+  </smarty_compatibility>
+  <php_compatibility>
+    <ver>8.1</ver>
+    <ver>8.2</ver>
+    <ver>8.3</ver>
+    <ver>8.4</ver>
+  </php_compatibility>
   <comments>This module requires nz.co.fuzion.accountsync</comments>
   <classloader>
     <psr0 prefix="CRM_" path="."/>
