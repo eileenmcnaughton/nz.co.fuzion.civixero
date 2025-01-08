@@ -280,8 +280,9 @@ class CRM_Civixero_Base {
       return;
     }
     // Wait for 1 hour if rate limit was exceeded and then retry
-    if (strtotime('+1 hours', $rateLimitExceeded) > time()) {
-      throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again in 1 hour');
+    $retryTime = strtotime('+1 hours', $rateLimitExceeded);
+    if ($retryTime > time()) {
+      throw new CRM_Civixero_Exception_XeroThrottle('Rate limit was previously triggered. Try again after ' . date('Y-m-d H:i:s', $retryTime));
     }
     self::resetApiRateLimitExceeded();
   }
