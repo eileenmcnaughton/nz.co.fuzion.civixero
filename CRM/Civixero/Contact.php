@@ -383,21 +383,27 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         ->first();
     }
 
-    // @todo check: If we return empty keys I think we may wipe any existing Xero address
     if (!empty($address['street_address'])) {
       // Yes, we have an address with preferred location type.
-      return [
-        'street_address' => $address['street_address'],
-        'city' => $address['city'],
-        'postal_code' => $address['postal_code'],
-        'supplemental_address_1' => $address['supplemental_address_1'],
-        'supplemental_address_2' => $address['supplemental_address_2'],
-        'supplemental_address_3' => $address['supplemental_address_3'],
-        'country' => $address['country_id:label'],
-        'state_province_name' => $address['state_province_id:label'],
-      ];
+      foreach ($this->getAddressFieldMap() as $key => $api4Key) {
+        $addressResult[$key] = $address[$api4Key];
+      }
+      return $addressResult;
     }
     return NULL;
+  }
+
+  private function getAddressFieldMap(): array {
+    return [
+      'street_address' => 'street_address',
+      'city' => 'city',
+      'postal_code' => 'postal_code',
+      'supplemental_address_1' => 'supplemental_address_1',
+      'supplemental_address_2' => 'supplemental_address_2',
+      'supplemental_address_3' => 'supplemental_address_3',
+      'country' => 'country_id:label',
+      'state_province_name' => 'state_province_id:label',
+    ];
   }
 
   /**
@@ -449,28 +455,40 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       'LastName' => $contact['last_name'] ?? '',
       'EmailAddress' => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
       'ContactNumber' => $contact['id'],
-      'Addresses' => [
-        'Address' => [
-          [
-            'AddressType' => 'POBOX', // described in documentation as the default mailing address for invoices http://blog.xero.com/developer/api/types/#Addresses
-            'AddressLine1' => $contact['street_address'],
-            'City' => $contact['city'],
-            'PostalCode' => $contact['postal_code'],
-            'AddressLine2' => $contact['supplemental_address_1'] ?? '',
-            'AddressLine3' => $contact['supplemental_address_2'] ?? '',
-            'AddressLine4' => $contact['supplemental_address_3'] ?? '',
-            'Country' => $contact['country'] ?? '',
-            'Region' => $contact['state_province_name'] ?? '',
-          ],
-        ],
-      ],
-      'Phones' => [
+    ];
+
+    // Only map Phone if we have one
+    if (isset($contact['phone'])) {
+      $new_contact['Phones'] = [
         'Phone' => [
           'PhoneType' => 'DEFAULT',
           'PhoneNumber' => $contact['phone'],
         ],
-      ],
-    ];
+      ];
+    }
+    // Only map address if an address was found
+    foreach ($this->getAddressFieldMap() as $key => $api4Key) {
+      if (isset($contact[$key])) {
+        // We have an address (at least a partial one)
+        $new_contact['Addresses'] = [
+          'Address' => [
+            [
+              'AddressType' => 'POBOX', // described in documentation as the default mailing address for invoices http://blog.xero.com/developer/api/types/#Addresses
+              'AddressLine1' => $contact['street_address'] ?? '',
+              'City' => $contact['city'] ?? '',
+              'PostalCode' => $contact['postal_code'] ?? '',
+              'AddressLine2' => $contact['supplemental_address_1'] ?? '',
+              'AddressLine3' => $contact['supplemental_address_2'] ?? '',
+              'AddressLine4' => $contact['supplemental_address_3'] ?? '',
+              'Country' => $contact['country'] ?? '',
+              'Region' => $contact['state_province_name'] ?? '',
+            ],
+          ],
+        ];
+        break;
+      }
+    }
+
     if (!empty($xeroContactUUID)) {
       $new_contact['ContactID'] = $xeroContactUUID;
     }
