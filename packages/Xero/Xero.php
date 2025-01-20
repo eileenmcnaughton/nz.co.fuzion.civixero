@@ -341,6 +341,9 @@ class Xero {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $xero_response = curl_exec($ch);
+        if (!$xero_response) {
+          throw new XeroException(curl_error($ch));
+        }
       }
 
       if (isset($fh)) {
