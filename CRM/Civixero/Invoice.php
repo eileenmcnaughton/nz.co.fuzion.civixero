@@ -124,6 +124,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
                   // Probably we manually reconciled it at some point.
                   unset($accountInvoiceParams['contribution_id']);
                 }
+                if (empty(Contribution::get(FALSE)->addWhere('id', '=', $accountInvoiceParams['contribution_id'])->execute()->first())) {
+                  // This happens if we deleted the contribution in CiviCRM
+                  unset($accountInvoiceParams['contribution_id']);
+                  $accountInvoiceParams['error_data'] = json_encode(['error' => 'No matching contribution found in CiviCRM']);
+                }
                 $newAccountInvoice = AccountInvoice::update(FALSE)
                   ->setValues($accountInvoiceParams)
                   ->addWhere('id', '=', $accountInvoice['id'])
