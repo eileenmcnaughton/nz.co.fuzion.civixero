@@ -460,7 +460,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param array $record
    *
    * @return array|false
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getAccountsInvoice(array $record) {
     if ($record['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
@@ -507,7 +507,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   Array of any errors
    *
    * @throws \CRM_Civixero_Exception_XeroThrottle
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function savePushResponse($result, $record) {
     if ($result === FALSE) {
