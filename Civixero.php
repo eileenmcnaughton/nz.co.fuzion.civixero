@@ -77,7 +77,7 @@ function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData): void 
  * @param int $contactID
  *
  * @return array
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function getContactContributions(int $contactID): array {
   $contributions = civicrm_api3('Contribution', 'get', [
@@ -95,7 +95,7 @@ function getContactContributions(int $contactID): array {
  *
  * @return array
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function getErroredInvoicesOfContributions(array $contributions): array {
   return civicrm_api3('AccountInvoice', 'get', [
