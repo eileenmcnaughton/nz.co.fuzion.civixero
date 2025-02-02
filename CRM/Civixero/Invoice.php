@@ -713,6 +713,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       return FALSE;
     }
 
+    if ($accountInvoiceParams['accounts_status_id'] === CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
+      // Invoice is voided/cancelled. Don't try to create in CiviCRM
+      return FALSE;
+    }
+
     $accountsContactID = $invoice->getContact()->getContactId() ?? NULL;
     if (empty($accountsContactID)) {
       $errorMessage = __FUNCTION__ . ': missing ContactID in AccountsInvoice';
