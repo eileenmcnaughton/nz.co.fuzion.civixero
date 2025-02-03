@@ -59,7 +59,6 @@ class CRM_Civixero_Base {
    * @param array $parameters
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function __construct($parameters = []) {
     $force = FALSE;
@@ -92,7 +91,7 @@ class CRM_Civixero_Base {
    * The nz.co.fuzion.connectors extension is required to use more than one account.
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getAccountsContact() {
     if (empty($this->accounts_contact)) {
@@ -246,7 +245,7 @@ class CRM_Civixero_Base {
    *
    * @return ConnectorInterface
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getXeroConnector(array $parameters): ConnectorInterface {
     if (isset(Civi::$statics['civixero_connector'])) {
@@ -313,7 +312,7 @@ class CRM_Civixero_Base {
 
   /**
    * @return array|mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getSetting($setting) {
    return $this->settings->get($setting);
