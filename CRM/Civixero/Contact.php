@@ -10,6 +10,45 @@ use Civi\Api4\LocationType;
 
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
+  public function newPull(array $filters, string $searchTerm): array {
+    static $contacts = [];
+    if (empty($contacts)) {
+      $order = "Name ASC";
+      $where = $filters['where'] ?? NULL;
+      $modifiedSince = NULL;
+      // $modifiedSince = date('Y-m-dTH:i:s', strtotime('20240101000000'));
+
+      try {
+        $xeroContacts = $this->getAccountingApiInstance()->getContacts($this->getTenantID(), $modifiedSince, $where, $order, NULL, NULL, TRUE, FALSE, $searchTerm);
+        foreach ($xeroContacts->getContacts() as $xeroContact) {
+          /**
+           * @var \XeroAPI\XeroPHP\Models\Accounting\Contact $xeroContact
+           */
+          foreach ($xeroContact::attributeMap() as $localName => $originalName) {
+            $getter = 'get' . $originalName;
+            switch ($localName) {
+              case 'purchase_details':
+              case 'sales_details':
+                foreach ($xeroContact->$getter()::attributeMap() as $localSubName => $originalSubName) {
+                  $subGetter = 'get' . $originalSubName;
+                  $contact[$localName][$localSubName] = $xeroContact->$getter()->$subGetter();
+                }
+                break;
+
+              default:
+                $contact[$localName] = $xeroContact->$getter();
+            }
+          }
+          $contacts[$contact['contact_id']] = $contact;
+        }
+      } catch (\Exception $e) {
+        \Civi::log('civixero')->error('Exception when calling AccountingApi->getContacts: ' . $e->getMessage());
+        throw $e;
+      }
+    }
+    return $contacts;
+  }
+
   /**
    * Pull contacts from Xero and store them into civicrm_account_contact.
    *
@@ -19,7 +58,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @throws CRM_Core_Exception
    */
-  public function pull(array $params): void {
+  public function pull(array $params): array {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
 
@@ -149,6 +188,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
+    return ['AccountContactIDs' => $ids ?? []];
   }
 
   /**
@@ -159,14 +199,15 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @param array $params
    *  - start_date
    *
-   * @return bool
+   * @return array
    * @throws CRM_Core_Exception
    */
-  public function push(array $params, int $limit = 10): bool {
+  public function push(array $params, int $limit = 10): array {
     $records = $this->getContactsRequiringPushUpdate($params, $limit);
     if (empty($records)) {
-      return TRUE;
+      return [];
     }
+
     $errors = [];
 
     foreach ($records as $record) {
@@ -260,6 +301,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           ->setValues($record)
           ->addValue('accounts_needs_update', FALSE)
           ->execute();
+        $contactIDsPushed[] = $record['contact_id'];
       }
       catch (CRM_Civixero_Exception_XeroThrottle $e) {
         throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero' . print_r($errors, TRUE));
@@ -287,7 +329,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    return TRUE;
+    return $contactIDsPushed ?? [];
   }
 
   /**

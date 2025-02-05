@@ -36,11 +36,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $params
    *
-   * @return int
+   * @return array
    * @throws CRM_Core_Exception
    */
-  public function pull(array $params): int {
-    $count = 0;
+  public function pull(array $params): array {
     $errors = [];
 
     $modifiedSince = NULL;
@@ -105,7 +104,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               ->setValues($accountInvoiceParams)
               ->execute()
               ->first();
-            $ids[] = $newAccountInvoice['id'];
+            $updatedAccountInvoiceIDs[] = $newAccountInvoice['id'];
           }
           else {
             // Update existing AccountInvoice record
@@ -134,7 +133,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
                   ->addWhere('id', '=', $accountInvoice['id'])
                   ->execute()
                   ->first();
-                $ids[] = $newAccountInvoice['id'];
+                $updatedAccountInvoiceIDs[] = $newAccountInvoice['id'];
                 break;
               }
             }
@@ -153,7 +152,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    return $count;
+    return ['AccountInvoiceIDs' => $updatedAccountInvoiceIDs ?? []];
   }
 
   /**
@@ -167,17 +166,17 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param int $limit
    *   Number of invoices to process
    *
-   * @return int
+   * @return array
    * @throws \CRM_Core_Exception
    */
-  public function push($params, $limit = 10) {
+  public function push(array $params, int $limit = 10) {
     $records = $this->getContributionsRequiringPushUpdate($params, $limit);
     if (empty($records)) {
-      return 0;
+      return [];
     }
     $errors = [];
 
-    $count = 0;
+    $responseErrors = [];
     try {
       foreach ($records as $record) {
         try {
@@ -194,7 +193,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           }
           $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
           $responseErrors = $this->savePushResponse($result, $record);
-          $count++;
         }
         catch (CRM_Core_Exception $e) {
           $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsContactID: %2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
@@ -213,6 +211,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $errors[] = $errorMessage;
         }
       }
+      $contributionIDsPushed[] = $record['contribution_id'];
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
       $errors[] = ($this->xero_entity . ' Push aborted due to throttling by Xero');
@@ -222,8 +221,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       // since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(ts('Not all records were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    return $count;
-
+    return $contributionIDsPushed ?? [];
   }
 
   /**
@@ -594,7 +592,14 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     try {
       /** @noinspection PhpUndefinedMethodInspection */
-      return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+      $result = $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+      // Note: One day it would be nice to switch to the new Xero PHP SDK method for pushing invoices.
+      // For some reason pushing certain invoices seems to result in a completely empty response
+      //   but our calling code (in savePushResponse) expects false in this case. So we'll just hack that in here.
+      if (empty($result)) {
+        return FALSE;
+      }
+      return $result;
     }
     catch (XeroThrottleException $e) {
       throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
@@ -703,6 +708,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ->first();
     if (!empty($accountInvoiceParams['contribution_id'])) {
       // \Civi::log('civixero')->debug(__FUNCTION__ . ': AccountsInvoice is already linked to a contribution: ' . print_r($invoice, TRUE));
+      return FALSE;
+    }
+
+    if ($accountInvoiceParams['accounts_status_id'] === CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
+      // Invoice is voided/cancelled. Don't try to create in CiviCRM
       return FALSE;
     }
 
