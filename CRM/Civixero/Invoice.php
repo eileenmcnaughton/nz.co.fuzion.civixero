@@ -603,6 +603,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
     }
     catch (XeroException $e) {
+      if (method_exists($e, 'getXML') && $e->getXML()) {
+        return ArrayToXML::toArray($e->getXML());
+      }
       // if now \Civi::log('xero')->warning('Failed push with {xml}', ['xml' => $e->getXML()]]
       throw new CRM_Core_Exception(
         'Synchronization error ' . $e->getMessage(),

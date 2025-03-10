@@ -324,6 +324,8 @@ class Xero {
             // This is a case of the limit being exceeded.
             throw new XeroThrottleException($e->getMessage(), $e->getCode(), NULL, $e->getResponse()->getHeader('Retry-After')[0] + time());
           }
+          $xero_response = $e->getResponse();
+          throw new XeroApiException((string) $xero_response->getBody(), $xero_response->getStatusCode(), $e);
         }
       }
       else {
