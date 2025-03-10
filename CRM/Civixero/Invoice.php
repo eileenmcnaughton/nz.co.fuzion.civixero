@@ -539,7 +539,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             $record['accounts_invoice_id'] = $result['Invoices']['Invoice']['InvoiceID'];
           }
           $record['accounts_modified_date'] = $result['Invoices']['Invoice']['UpdatedDateUTC'];
-          $record['accounts_data'] = json_encode($result['Invoices']['Invoice']);
+          $accountsData = $result['Invoices']['Invoice'];
+          // It can get too long for the db if we include everything.
+          unset($accountsData['Contact'], $accountsData['LineItems']);
+          $record['accounts_data'] = json_encode($accountsData);
           $record['accounts_status_id'] = $this->mapStatus($result['Invoices']['Invoice']['Status']);
           $record['accounts_needs_update'] = 0;
         }
