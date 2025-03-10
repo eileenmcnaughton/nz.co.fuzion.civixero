@@ -577,6 +577,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     return [
       'Invoice not of valid status for modification',
       ' Invoice not of valid status for modification This document cannot be edited as it has a payment or credit note allocated to it.',
+      ' To update fields on a paid invoice line item, you must supply a LineItemID The status SUBMITTED cannot be applied to the invoice because it has payments or credit notes allocated to it.'
     ];
   }
 

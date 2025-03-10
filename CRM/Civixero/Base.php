@@ -185,7 +185,7 @@ class CRM_Civixero_Base {
   protected function validateResponse($response) {
     $message = '';
     $errors = [];
-    // Comes back as a string for oauth errors.
+    // Comes back as a string for oauth errors - probably no longer ever true as we look in headers now
     if (is_string($response)) {
       $responseParts = explode('&', urldecode($response));
       $problem = str_replace('oauth_problem=', '', $responseParts[0] ?? NULL);
