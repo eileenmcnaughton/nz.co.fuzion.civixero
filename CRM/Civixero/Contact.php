@@ -23,7 +23,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
     $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
 
-    $errors = [];
+    $errors = $ids = [];
     /** @noinspection PhpUndefinedMethodInspection */
     $result = $this
       ->getSingleton($params['connector_id'])
@@ -146,9 +146,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       }
     }
     if ($errors) {
+      \Civi::log('xero')->warning('Not all records were saved {errors}', ['errors' => $errors]);
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
+    \Civi::log('xero')->info('{count} IDs retrieved {ids}', ['count' => count($ids), 'ids' => implode(', ', $ids)]);
   }
 
   /**

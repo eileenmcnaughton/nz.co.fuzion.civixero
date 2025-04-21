@@ -4,6 +4,7 @@ use CRM_Civixero_ExtensionUtil as E;
 use Civi\Api4\AccountInvoice;
 use Civi\Api4\AccountContact;
 use Civi\Api4\Contribution;
+use XeroAPI\XeroPHP\Models\Accounting\Invoice;
 
 /**
  * Class CRM_Civixero_Invoice.
@@ -44,8 +45,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $errors = [];
 
     $modifiedSince = NULL;
-    $where = 'Status!="' . \XeroAPI\XeroPHP\Models\Accounting\Invoice::STATUS_DELETED . '"'
-      . ' AND TYPE="' . \XeroAPI\XeroPHP\Models\Accounting\Invoice::TYPE_ACCREC . '"';
+    $where = 'Status!="' . Invoice::STATUS_DELETED . '"'
+      . ' AND TYPE="' . Invoice::TYPE_ACCREC . '"';
     if (!empty(\Civi::settings()->get('account_sync_contribution_day_zero'))) {
       $dateFrom = new \DateTime(\Civi::settings()->get('account_sync_contribution_day_zero'));
       $where .= ' AND Date>DateTime(' . $dateFrom->format('Y,m,d') . ')';
@@ -57,6 +58,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
 
     if (!empty($invoices->getInvoices())) {
       foreach ($invoices->getInvoices() as $invoice) {
+        $contributionID = NULL;
         $accountInvoiceParams = [
           'plugin' => $this->_plugin,
           'connector_id' => $params['connector_id'],
@@ -124,7 +126,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
                   // Probably we manually reconciled it at some point.
                   unset($accountInvoiceParams['contribution_id']);
                 }
-                if (empty(Contribution::get(FALSE)->addWhere('id', '=', $accountInvoiceParams['contribution_id'])->execute()->first())) {
+                if (isset($accountInvoiceParams['contribution_id']) && empty(Contribution::get(FALSE)->addWhere('id', '=', $accountInvoiceParams['contribution_id'])->execute()->first())) {
                   // This happens if we deleted the contribution in CiviCRM
                   unset($accountInvoiceParams['contribution_id']);
                   $accountInvoiceParams['error_data'] = json_encode(['error' => 'No matching contribution found in CiviCRM']);
@@ -150,9 +152,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       }
     }
     if ($errors) {
+      \Civi::log('xero')->warning('Not all records were saved {errors}', ['errors' => $errors]);
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
+    \Civi::log('xero')->info('{count} IDs retrieved {ids}', ['count' => count($ids), 'ids' => implode(', ', $ids)]);
     return $count;
   }
 
@@ -703,7 +707,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  private function createContributionFromAccountsInvoice(\XeroAPI\XeroPHP\Models\Accounting\Invoice $invoice, array $accountInvoiceParams): bool {
+  private function createContributionFromAccountsInvoice(Invoice $invoice, array $accountInvoiceParams): bool {
     $accountInvoiceParams = AccountInvoice::get(FALSE)
       ->addWhere('accounts_invoice_id', '=', $accountInvoiceParams['accounts_invoice_id'])
       ->execute()
