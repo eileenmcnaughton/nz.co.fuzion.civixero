@@ -16,8 +16,8 @@
     <author>eileen</author>
     <email>eileen@fuzion.co.nz</email>
   </maintainer>
-  <releaseDate>2025-01-08</releaseDate>
-  <version>3.0.2</version>
+  <releaseDate>2025-04-25</releaseDate>
+  <version>99.MJW.3.0.2</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.74</ver>
