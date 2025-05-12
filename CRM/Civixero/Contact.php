@@ -150,7 +150,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
-    \Civi::log('xero')->info('Xero Contact Pull: {count} IDs retrieved {ids}', ['count' => count($ids), 'ids' => implode(', ', $ids)]);
+    if (!empty($ids)) {
+      \Civi::log('xero')->info('Xero Contact Pull: {count} IDs retrieved {ids}', ['count' => count($ids), 'ids' => implode(', ', $ids)]);
+    }
   }
 
   /**
