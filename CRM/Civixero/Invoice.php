@@ -42,7 +42,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   public function pull(array $params): int {
     $count = 0;
-    $errors = [];
+    $errors = $ids = [];
 
     $modifiedSince = NULL;
     $where = 'Status!="' . Invoice::STATUS_DELETED . '"'
@@ -52,9 +52,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $where .= ' AND Date>DateTime(' . $dateFrom->format('Y,m,d') . ')';
     }
     $order = "Date ASC";
-    $ids[] = $params['xero_invoice_id'] ?? NULL;
+    $invoiceIDs[] = $params['xero_invoice_id'] ?? NULL;
     $invoiceNumbers = $params['invoice_number'] ?? NULL;
-    $invoices = $this->getAccountingApiInstance()->getInvoices($this->getTenantID(), $modifiedSince, $where, $order, $ids, $invoiceNumbers);
+    $invoices = $this->getAccountingApiInstance()->getInvoices($this->getTenantID(), $modifiedSince, $where, $order, $invoiceIDs, $invoiceNumbers);
 
     if (!empty($invoices->getInvoices())) {
       foreach ($invoices->getInvoices() as $invoice) {
