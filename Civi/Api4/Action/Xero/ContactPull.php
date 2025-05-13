@@ -20,7 +20,32 @@ class ContactPull extends \Civi\Api4\Generic\AbstractAction {
   /**
    * @var string
    */
-  protected string $contactNumber = '';
+  protected string $searchTerm = '';
+
+  /**
+   * @var string
+   */
+  protected string $ifModifiedSinceDateTime = '-1 week';
+
+  /**
+   * @var bool
+   */
+  protected bool $includeArchived = FALSE;
+
+  /**
+   * @var bool
+   */
+  protected bool $summaryOnly = FALSE;
+
+  /**
+   * @var int
+   */
+  protected int $page = 1;
+
+  /**
+   * @var int
+   */
+  protected int $pageSize = 100;
 
   /**
    *
@@ -32,13 +57,7 @@ class ContactPull extends \Civi\Api4\Generic\AbstractAction {
   public function _run(\Civi\Api4\Generic\Result $result) {
     $params = ['connector_id' => $this->connectorID];
     $xero = new \CRM_Civixero_Contact($params);
-    if (!empty($this->contactNumber)) {
-      $filters['where'][] = 'ContactNumber=="' . $this->contactNumber . '"';
-    }
-    if (!empty($this->code)) {
-      $filters['where'][] = 'Code=="' . $this->code . '"';
-    }
-    $items = $xero->newPull($filters ?? [], $this->contactNumber);
+    $items = $xero->pullFromXero($filters ?? [], $this->includeArchived, $this->summaryOnly, $this->searchTerm, $this->page, $this->pageSize, $this->ifModifiedSinceDateTime);
     $result->exchangeArray($items ?? []);
     return $result;
   }
