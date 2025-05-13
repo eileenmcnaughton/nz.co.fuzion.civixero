@@ -59,6 +59,6 @@ function _civicrm_api3_civixero_invoicepull_spec(&$spec) {
  */
 function civicrm_api3_civixero_invoicepull(array $params): array {
   $xero = new CRM_Civixero_Invoice($params);
-  $result = $xero->pull($params);
-  return civicrm_api3_create_success($result, $params);
+  $xero->pullUsingApi4($params);
+  return civicrm_api3_create_success(1, $params);
 }
