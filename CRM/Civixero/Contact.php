@@ -10,6 +10,52 @@ use Civi\Api4\LocationType;
 
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
+  public function pullFromXero(
+    array $filters,
+    bool $includeArchived,
+    bool $summaryOnly,
+    string $searchTerm,
+    int $page,
+    int $pageSize,
+    string $ifModifiedSinceDateTime,
+  ): array {
+    $xeroTenantId = $this->getTenantID();
+    $ifModifiedSince = new DateTime($ifModifiedSinceDateTime);
+    $where = $filters['where'] ?? NULL;
+    $order = "Name ASC";
+    $ids = NULL; //$iDs = ["00000000-0000-0000-0000-000000000000"];
+
+    try {
+      $xeroContacts = $this->getAccountingApiInstance()
+        ->getContacts($xeroTenantId, $ifModifiedSince, $where, $order, $ids, $page, $includeArchived, $summaryOnly, $searchTerm, $pageSize);
+      foreach ($xeroContacts->getContacts() as $xeroContact) {
+        /**
+         * @var \XeroAPI\XeroPHP\Models\Accounting\Contact $xeroContact
+         */
+        foreach ($xeroContact::attributeMap() as $localName => $originalName) {
+          $getter = 'get' . $originalName;
+          switch ($localName) {
+            case 'updated_date_utc':
+              $dateGetter = $getter . 'AsDate';
+              $contact[$localName] = $xeroContact->$dateGetter()->format('Y-m-d H:i:s');
+              break;
+
+            default:
+              $contact[$localName] = $xeroContact->$getter();
+          }
+        }
+        $contacts[$contact['contact_id']] = $contact;
+      }
+    } catch (\InvalidArgumentException $e) {
+      // This means there are no contacts returned for the requested page. That's ok!
+      return [];
+    } catch (\Exception $e) {
+      \Civi::log('civixero')->error('Exception when calling AccountingApi->getContacts: ' . $e->getMessage());
+      throw $e;
+    }
+    return $contacts;
+  }
+
   /**
    * Pull contacts from Xero and store them into civicrm_account_contact.
    *
@@ -19,130 +65,141 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * @throws CRM_Core_Exception
    */
-  public function pull(array $params): void {
-    // If we specify a xero contact id (UUID) then we try to load ONLY that contact.
-    $params['xero_contact_id'] = $params['xero_contact_id'] ?? FALSE;
+  public function pullUsingApi4(array $params): void {
+    $page = 1;
+    $pageSize = 100;
 
-    $errors = $ids = [];
-    /** @noinspection PhpUndefinedMethodInspection */
-    $result = $this
-      ->getSingleton($params['connector_id'])
-      ->Contacts($params['xero_contact_id'], $this->formatDateForXero($params['start_date']));
-    if (!is_array($result)) {
-      throw new CRM_Core_Exception('Sync Failed', 'xero_retrieve_failure', (array) $result);
-    }
-
-    if (!empty($result['Contacts'])) {
-      $contacts = $result['Contacts']['Contact'];
-      if (isset($contacts['ContactID'])) {
-        // the return syntax puts the contact only level higher up when only one contact is involved
-        $contacts = [$contacts];
+    try {
+      while (TRUE) {
+        $contactPull = \Civi\Api4\Xero::contactPull(FALSE)
+          ->setIfModifiedSinceDateTime($params['start_date'])
+          ->setConnectorID($params['connector_id'] ?? 0)
+          ->setPage($page)
+          ->setPageSize($pageSize);
+        if (!empty($params['xero_contact_id'])) {
+          $contactPull->setSearchTerm($params['xero_contact_id']);
+        }
+        $contacts = $contactPull->execute()->getArrayCopy();
+        if (empty($contacts)) {
+          break;
+        }
+        $this->processPull($contacts, $params['connector_id'] ?? 0);
+        unset($contacts);
+        $page++;
       }
-      foreach ($contacts as $contact) {
-        $or = [];
-        $accountContactParams = [
-          'plugin' => $this->_plugin,
-          'connector_id' => $params['connector_id'],
-          'accounts_display_name' => $contact['Name'],
-          'accounts_modified_date' => date('Y-m-d H:i:s', strtotime($contact['UpdatedDateUTC'])),
-          'accounts_contact_id' => $contact['ContactID'],
-          'accounts_data' => json_encode($contact),
-          'accounts_needs_update' => FALSE,
-        ];
+    }
+    catch (\Throwable $e) {
+      \Civi::log('civixero')->error('CiviXero: Error when running Contact Pull: ' . $e->getMessage());
+    }
+  }
 
-        // Xero sets ContactNumber = ContactID (accounts_contact_id) if not set by CiviCRM.
-        // We can only use it if it is an integer (map it to CiviCRM contact_id).
-        $contactID = CRM_Utils_Type::validate($contact['ContactNumber'] ?? NULL, 'Integer', FALSE);
-        if ($contactID) {
-          $accountContactParams['contact_id'] = $contactID;
-          $or[] = ['contact_id', '=', $contactID];
-        }
+  private function processPull($contacts, int $connectorID) {
+    $errors = $ids = [];
 
-        $save = TRUE;
-        CRM_Accountsync_Hook::accountPullPreSave('contact', $contact, $save, $accountContactParams);
-        if (!$save) {
-          continue;
-        }
+    foreach ($contacts as $xeroContactID => $xeroContact) {
+      $or = [];
+      $accountContactParams = [
+        'plugin' => $this->_plugin,
+        'connector_id' => $connectorID,
+        'accounts_display_name' => $xeroContact['name'],
+        'accounts_modified_date' => date('Y-m-d H:i:s', strtotime($xeroContact['updated_date_utc'])),
+        'accounts_contact_id' => $xeroContact['contact_id'],
+        'accounts_data' => json_encode($xeroContact),
+        'accounts_needs_update' => FALSE,
+      ];
 
-        $accountsContactID = $contact['ContactID'];
-        $or[] = ['accounts_contact_id', '=', $accountsContactID];
-        // Find accountContact records matching accounts_contact_id (Xero ContactID) or contact_id (Xero ContactNumber)
-        $accountContacts = AccountContact::get(FALSE)
-          ->addWhere('plugin', '=', $this->_plugin)
-          ->addWhere('connector_id', '=', $accountContactParams['connector_id'])
-          ->addClause('OR', $or)
+      // Xero sets contact_number = contact_id (accounts_contact_id) if not set by CiviCRM.
+      // We can only use it if it is an integer (map it to CiviCRM contact_id).
+      $contactID = CRM_Utils_Type::validate($xeroContact['contact_number'] ?? NULL, 'Integer', FALSE);
+      if ($contactID) {
+        $accountContactParams['contact_id'] = $contactID;
+        $or[] = ['contact_id', '=', $contactID];
+      }
+
+      $save = TRUE;
+      CRM_Accountsync_Hook::accountPullPreSave('contact', $xeroContact, $save, $accountContactParams);
+      if (!$save) {
+        continue;
+      }
+
+      $accountsContactID = $xeroContact['contact_id'];
+      $or[] = ['accounts_contact_id', '=', $accountsContactID];
+      // Find accountContact records matching accounts_contact_id (Xero ContactID) or contact_id (Xero ContactNumber)
+      $accountContacts = AccountContact::get(FALSE)
+        ->addWhere('plugin', '=', $this->_plugin)
+        ->addWhere('connector_id', '=', $accountContactParams['connector_id'])
+        ->addClause('OR', $or)
+        ->execute()
+        ->indexBy('id');
+      if ($accountContacts->count() === 1) {
+        // We have exactly one match. Update existing
+        $accountContactParams['id'] = $accountContacts->first()['id'];
+      }
+      elseif ($accountContacts->count() > 1) {
+        // We found more than one matching record
+        // Means we have duplicate contacts and Xero/Civi don't match up.
+        $errorMessage = 'Duplicate records found for accounts_contact_id: ' . $accountsContactID . ', contact_id: ' . $contactID;
+        AccountContact::update(FALSE)
+          ->addWhere('id', 'IN', $accountContacts->column('id'))
+          ->addValue('is_error_resolved', FALSE)
+          ->addValue('error_data', json_encode([
+            'error' => $errorMessage
+          ]))
+          ->addValue('accounts_data', json_encode($xeroContact))
+          ->execute();
+        $errors[] = 'Duplicate records found for accounts_contact_id: ' . $accountsContactID . ', contact_id: ' . $contactID;
+        // We recorded the error - now continue with syncing the rest
+        continue;
+      }
+
+      // Check that the CiviCRM contact ID is valid.
+      // If the CiviCRM contact ID does not exist but is set it was probably deleted in CiviCRM.
+      if ($contactID) {
+        $civicrmContact = Contact::get(FALSE)
+          ->addWhere('id', '=', $contactID)
           ->execute()
-          ->indexBy('id');
-        if ($accountContacts->count() === 1) {
-          // We have exactly one match. Update existing
-          $accountContactParams['id'] = $accountContacts->first()['id'];
+          ->first();
+        if (empty($civicrmContact)) {
+          unset($accountContactParams['contact_id']);
         }
-        elseif ($accountContacts->count() > 1) {
-          // We found more than one matching record
-          // Means we have duplicate contacts and Xero/Civi don't match up.
-          $errorMessage = 'Duplicate records found for accounts_contact_id: ' . $accountsContactID . ', contact_id: ' . $contactID;
-          AccountContact::update(FALSE)
-            ->addWhere('id', 'IN', $accountContacts->column('id'))
-            ->addValue('is_error_resolved', FALSE)
-            ->addValue('error_data', json_encode([
-              'error' => $errorMessage
-            ]))
-            ->addValue('accounts_data', json_encode($contact))
-            ->execute();
-          $errors[] = 'Duplicate records found for accounts_contact_id: ' . $accountsContactID . ', contact_id: ' . $contactID;
-          // We recorded the error - now continue with syncing the rest
-          continue;
-        }
+      }
 
-        // Check that the CiviCRM contact ID is valid.
-        // If the CiviCRM contact ID does not exist but is set it was probably deleted in CiviCRM.
-        if ($contactID) {
-          $contact = Contact::get(FALSE)
-            ->addWhere('id', '=', $contactID)
+      try {
+        if ($accountContacts->count() === 0) {
+          // Create new AccountContact record
+          $newAccountContact = AccountContact::create(FALSE)
+            ->setValues($accountContactParams)
             ->execute()
             ->first();
-          if (empty($contact)) {
-            unset($accountContactParams['contact_id']);
-          }
+          $ids[] = $newAccountContact['id'];
         }
-
-        try {
-          if ($accountContacts->count() === 0) {
-            // Create new AccountContact record
-            $newAccountContact = AccountContact::create(FALSE)
-              ->setValues($accountContactParams)
-              ->execute()
-              ->first();
-            $ids[] = $newAccountContact['id'];
-          }
-          else {
-            // Update existing AccountInvoice record
-            $modifiedFieldKeys = [
-              'accounts_display_name',
-              'accounts_modified_date',
-              'accounts_contact_id',
-              'accounts_needs_update',
-            ];
-            foreach ($modifiedFieldKeys as $key) {
-              // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
-              // So check if anything actually changed before updating.
-              if ($accountContactParams[$key] !== $accountContacts->first()[$key]) {
-                // Something changed, update AccountContact in DB
-                $newAccountContact = AccountContact::update(FALSE)
-                  ->setValues($accountContactParams)
-                  ->addWhere('id', '=', $accountContacts->first()['id'])
-                  ->execute()
-                  ->first();
-                $ids[] = $newAccountContact['id'];
-                break;
-              }
+        else {
+          // Update existing AccountInvoice record
+          $modifiedFieldKeys = [
+            'accounts_display_name',
+            'accounts_modified_date',
+            'accounts_contact_id',
+            'accounts_needs_update',
+          ];
+          foreach ($modifiedFieldKeys as $key) {
+            // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
+            // So check if anything actually changed before updating.
+            if ($accountContactParams[$key] !== $accountContacts->first()[$key]) {
+              // Something changed, update AccountContact in DB
+              $newAccountContact = AccountContact::update(FALSE)
+                ->setValues($accountContactParams)
+                ->addWhere('id', '=', $accountContacts->first()['id'])
+                ->execute()
+                ->first();
+              $ids[] = $newAccountContact['id'];
+              break;
             }
           }
         }
-        catch (CRM_Core_Exception $e) {
-          $errors[] = E::ts('Failed to store %1 (%2)', [1 => $contact['Name'], 2 => $contact['ContactID']])
-            . E::ts(' with error ') . $e->getMessage();
-        }
+      }
+      catch (CRM_Core_Exception $e) {
+        $errors[] = E::ts('Failed to store %1 (%2)', [1 => $xeroContact['name'], 2 => $xeroContact['contact_id']])
+          . E::ts(' with error ') . $e->getMessage();
       }
     }
     if ($errors) {
