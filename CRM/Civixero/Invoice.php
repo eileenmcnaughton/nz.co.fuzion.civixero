@@ -454,8 +454,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return int
    *   CiviCRM equivalent status ID.
    */
-  protected function mapStatus($status): int {
-    $accountsStatusIDs = array_flip(CRM_Accountsync_BAO_AccountInvoice::buildOptions('accounts_status_id', 'validate'));
+  protected function mapStatus(string $status): int {
+    $accountsStatusIDs = array_column(Civi::entity('AccountInvoice')->getOptions('accounts_status_id'), 'id', 'name');
 
     $statuses = [
       'PAID' => $accountsStatusIDs['completed'],
