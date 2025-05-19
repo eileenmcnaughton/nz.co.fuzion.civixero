@@ -30,6 +30,111 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   protected $default_account_code;
 
+
+  public function pullFromXero(
+    bool $includeArchived,
+    bool $summaryOnly,
+    string $searchTerm,
+    int $page,
+    int $pageSize,
+    string $ifModifiedSinceDateTime,
+  ): array {
+    $where = 'TYPE=="' . Invoice::TYPE_ACCREC . '"';
+
+    $xeroTenantId = $this->getTenantID();
+    $ifModifiedSince = new DateTime($ifModifiedSinceDateTime);
+    if (!empty(\Civi::settings()->get('account_sync_contribution_day_zero'))) {
+      // Never retrieve before date zero
+      $minDateFrom = new \DateTime(\Civi::settings()->get('account_sync_contribution_day_zero'));
+      if ($minDateFrom > $ifModifiedSince) {
+        $ifModifiedSince = $minDateFrom;
+      }
+    }
+    // $where = "Status=="' . \XeroAPI\XeroPHP\Models\Accounting\Invoice::STATUS_DRAFT . '"";
+    // $where = $filters['where'] ?? NULL;
+    $order = "Date ASC";
+    $ids = NULL;
+    if (!empty($params['xero_invoice_id'])) {
+      $ids = [$params['xero_invoice_id']];
+    }
+    $invoiceNumbers = NULL;
+    if (!empty($params['invoice_number'])) {
+      $invoiceNumbers = [$params['invoice_number']];
+    }
+    $contactIDs = NULL; // array("00000000-0000-0000-0000-000000000000")
+    $statuses = ['DRAFT', 'SUBMITTED', 'AUTHORISED'];
+    $createdByMyApp = FALSE;
+    $unitdp = 2;
+
+    try {
+      $xeroInvoices = $this->getAccountingApiInstance()->getInvoices($xeroTenantId, $ifModifiedSince, $where, $order, $iDs, $invoiceNumbers, $contactIDs, $statuses, $page, $includeArchived, $createdByMyApp, $unitdp, $summaryOnly, $pageSize, $searchTerm);
+      foreach ($xeroInvoices->getInvoices() as $xeroInvoice) {
+        /**
+         * @var \XeroAPI\XeroPHP\Models\Accounting\Invoice $xeroInvoice
+         */
+        foreach ($xeroInvoice::attributeMap() as $localName => $originalName) {
+          $getter = 'get' . $originalName;
+          switch ($localName) {
+            case 'updated_date_utc':
+            case 'date':
+            case 'due_date':
+              $dateGetter = $getter . 'AsDate';
+              $invoice[$localName] = $xeroInvoice->$dateGetter()->format('Y-m-d H:i:s');
+              break;
+
+            default:
+              $invoice[$localName] = $xeroInvoice->$getter();
+          }
+        }
+        $invoices[$invoice['invoice_id']] = $invoice;
+      }
+    } catch (\InvalidArgumentException $e) {
+      // This means there are no invoices returned for the requested page. That's ok!
+      return [];
+    } catch (\Exception $e) {
+      \Civi::log('civixero')->error('Exception when calling AccountingApi->getInvoices: ' . $e->getMessage());
+      throw $e;
+    }
+    return $invoices;
+  }
+
+  /**
+   * Pull contacts from Xero and store them into civicrm_account_contact.
+   *
+   * We call the civicrm_accountPullPreSave hook so other modules can alter if required
+   *
+   * @param array $params
+   *
+   * @throws CRM_Core_Exception
+   */
+  public function pullUsingApi4(array $params): void {
+    $page = 1;
+    $pageSize = 100;
+
+    try {
+      while (TRUE) {
+        $invoicePull = \Civi\Api4\Xero::invoicePull(FALSE)
+          ->setIfModifiedSinceDateTime($params['start_date'])
+          ->setConnectorID($params['connector_id'] ?? 0)
+          ->setPage($page)
+          ->setPageSize($pageSize);
+        if (!empty($params['xero_contact_id'])) {
+          $invoicePull->setSearchTerm($params['xero_contact_id']);
+        }
+        $invoices = $invoicePull->execute()->getArrayCopy();
+        if (empty($invoices)) {
+          break;
+        }
+        $this->processPull($invoices, $params['connector_id'] ?? 0);
+        unset($invoices);
+        $page++;
+      }
+    }
+    catch (\Throwable $e) {
+      \Civi::log('civixero')->error('CiviXero: Error when running Invoice Pull: ' . $e->getMessage());
+    }
+  }
+
   /**
    * Pull contacts from Xero and store them into civicrm_account_contact.
    *
@@ -40,115 +145,100 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return int
    * @throws CRM_Core_Exception
    */
-  public function pull(array $params): int {
+  private function processPull($invoices, int $connectorID) {
     $count = 0;
     $errors = $ids = [];
+    foreach ($invoices as $xeroInvoiceID => $xeroInvoice) {
+      $contributionID = NULL;
+      $accountInvoiceParams = [
+        'plugin' => $this->_plugin,
+        'connector_id' => $connectorID,
+        'accounts_modified_date' => date('Y-m-d H:i:s', strtotime($xeroInvoice['updated_date_utc'])),
+        'accounts_invoice_id' => $xeroInvoice['invoice_id'],
+        'accounts_data' => json_encode($xeroInvoice),
+        'accounts_status_id' => $this->mapStatus($xeroInvoice['status']),
+        'accounts_needs_update' => FALSE,
+      ];
 
-    $modifiedSince = NULL;
-    $where = 'Status!="' . Invoice::STATUS_DELETED . '"'
-      . ' AND TYPE="' . Invoice::TYPE_ACCREC . '"';
-    if (!empty(\Civi::settings()->get('account_sync_contribution_day_zero'))) {
-      $dateFrom = new \DateTime(\Civi::settings()->get('account_sync_contribution_day_zero'));
-      $where .= ' AND Date>DateTime(' . $dateFrom->format('Y,m,d') . ')';
-    }
-    $order = "Date ASC";
-    $invoiceIDs[] = $params['xero_invoice_id'] ?? NULL;
-    $invoiceNumbers = $params['invoice_number'] ?? NULL;
-    $invoices = $this->getAccountingApiInstance()->getInvoices($this->getTenantID(), $modifiedSince, $where, $order, $invoiceIDs, $invoiceNumbers);
-
-    if (!empty($invoices->getInvoices())) {
-      foreach ($invoices->getInvoices() as $invoice) {
-        $contributionID = NULL;
-        $accountInvoiceParams = [
-          'plugin' => $this->_plugin,
-          'connector_id' => $params['connector_id'],
-          'accounts_modified_date' => $invoice->getUpdatedDateUtcAsDate()->format('Y-m-d H:i:s'),
-          'accounts_invoice_id' => $invoice->getInvoiceId(),
-          'accounts_data' => json_encode((array) $invoice),
-          'accounts_status_id' => $this->mapStatus($invoice->getStatus()),
-          'accounts_needs_update' => FALSE,
-        ];
-
-        $prefix = $this->getSetting('xero_invoice_number_prefix') ?: '';
-        // If we have no prefix we don't know if the InvoiceNumber was generated by Xero or CiviCRM, so we can't use it.
-        if (!empty($prefix) && !empty($invoice->getInvoiceNumber()) && (str_starts_with($invoice->getInvoiceNumber(), $prefix))) {
-          // Strip out the invoice number prefix if present.
-          $contributionID = preg_replace("/^\Q{$prefix}\E/", '', $invoice->getInvoiceNumber() ?? NULL);
-          // Xero sets InvoiceNumber = InvoiceID (accounts_invoice_id) if not set by CiviCRM.
-          // We can only use it if it is an integer (map it to CiviCRM contribution_id).
-          $contributionID = CRM_Utils_Type::validate($contributionID, 'Integer', FALSE);
-          if ($contributionID) {
-            $accountInvoiceParams['contribution_id'] = $contributionID;
-          }
+      $prefix = $this->getSetting('xero_invoice_number_prefix') ?: '';
+      // If we have no prefix we don't know if the InvoiceNumber was generated by Xero or CiviCRM, so we can't use it.
+      if (!empty($prefix) && !empty($xeroInvoice['invoice_number']) && (str_starts_with($xeroInvoice['invoice_number'], $prefix))) {
+        // Strip out the invoice number prefix if present.
+        $contributionID = preg_replace("/^\Q{$prefix}\E/", '', $xeroInvoice['invoice_number'] ?? NULL);
+        // Xero sets InvoiceNumber = InvoiceID (accounts_invoice_id) if not set by CiviCRM.
+        // We can only use it if it is an integer (map it to CiviCRM contribution_id).
+        $contributionID = CRM_Utils_Type::validate($contributionID, 'Integer', FALSE);
+        if ($contributionID) {
+          $accountInvoiceParams['contribution_id'] = $contributionID;
         }
+      }
 
-        $save = TRUE;
-        CRM_Accountsync_Hook::accountPullPreSave('invoice', $invoice, $save, $accountInvoiceParams);
-        if (!$save) {
-          continue;
+      $save = TRUE;
+      CRM_Accountsync_Hook::accountPullPreSave('invoice', $xeroInvoice, $save, $accountInvoiceParams);
+      if (!$save) {
+        continue;
+      }
+
+      $accountInvoice = AccountInvoice::get(FALSE)
+        ->addWhere('plugin', '=', $this->_plugin)
+        ->addWhere('connector_id', '=', $connectorID)
+        ->addWhere('accounts_invoice_id', '=', $xeroInvoice['invoice_id'])
+        ->execute()
+        ->first();
+      try {
+        if (empty($accountInvoice)) {
+          // Invoice is in Xero but (accounts_invoice_id) does not exist in account_invoice table
+          // Note $contributionId will be invalid if it was generated at Xero and did not exist in CiviCRM because it is
+          //   derived from Xero invoice ID without prefix.
+          // So we can't use contribution ID - remove it, and then we'll record a new entry in account_invoice with Xero invoice.
+          // This could be manually reconciled by adding a contribution ID.
+          // Create a new AccountInvoice record
+          unset($accountInvoiceParams['contribution_id']);
+          $newAccountInvoice = AccountInvoice::create(FALSE)
+            ->setValues($accountInvoiceParams)
+            ->execute()
+            ->first();
+          $ids[] = $newAccountInvoice['id'];
         }
-
-        $accountInvoice = AccountInvoice::get(FALSE)
-          ->addWhere('plugin', '=', $this->_plugin)
-          ->addWhere('connector_id', '=', $params['connector_id'])
-          ->addWhere('accounts_invoice_id', '=', $invoice->getInvoiceId())
-          ->execute()
-          ->first();
-        try {
-          if (empty($accountInvoice)) {
-            // Invoice is in Xero but (accounts_invoice_id) does not exist in account_invoice table
-            // Note $contributionId will be invalid if it was generated at Xero and did not exist in CiviCRM because it is
-            //   derived from Xero invoice ID without prefix.
-            // So we can't use contribution ID - remove it, and then we'll record a new entry in account_invoice with Xero invoice.
-            // This could be manually reconciled by adding a contribution ID.
-            // Create a new AccountInvoice record
-            unset($accountInvoiceParams['contribution_id']);
-            $newAccountInvoice = AccountInvoice::create(FALSE)
-              ->setValues($accountInvoiceParams)
-              ->execute()
-              ->first();
-            $ids[] = $newAccountInvoice['id'];
-          }
-          else {
-            // Update existing AccountInvoice record
-            $modifiedFieldKeys = [
-              'accounts_modified_date',
-              'accounts_status_id',
-              'accounts_needs_update',
-            ];
-            foreach ($modifiedFieldKeys as $key) {
-              // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
-              // So check if anything actually changed before updating.
-              if ($accountInvoiceParams[$key] !== $accountInvoice[$key]) {
-                // Something changed, update AccountInvoice in DB
-                if (!empty($accountInvoice['contribution_id'])) {
-                  // If the accountInvoice already has a contribution ID don't try to overwrite it with the one we derived from InvoiceNumber.
-                  // Probably we manually reconciled it at some point.
-                  unset($accountInvoiceParams['contribution_id']);
-                }
-                if (isset($accountInvoiceParams['contribution_id']) && empty(Contribution::get(FALSE)->addWhere('id', '=', $accountInvoiceParams['contribution_id'])->execute()->first())) {
-                  // This happens if we deleted the contribution in CiviCRM
-                  unset($accountInvoiceParams['contribution_id']);
-                  $accountInvoiceParams['error_data'] = json_encode(['error' => 'No matching contribution found in CiviCRM']);
-                }
-                $newAccountInvoice = AccountInvoice::update(FALSE)
-                  ->setValues($accountInvoiceParams)
-                  ->addWhere('id', '=', $accountInvoice['id'])
-                  ->execute()
-                  ->first();
-                $ids[] = $newAccountInvoice['id'];
-                break;
+        else {
+          // Update existing AccountInvoice record
+          $modifiedFieldKeys = [
+            'accounts_modified_date',
+            'accounts_status_id',
+            'accounts_needs_update',
+          ];
+          foreach ($modifiedFieldKeys as $key) {
+            // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
+            // So check if anything actually changed before updating.
+            if ($accountInvoiceParams[$key] !== $accountInvoice[$key]) {
+              // Something changed, update AccountInvoice in DB
+              if (!empty($accountInvoice['contribution_id'])) {
+                // If the accountInvoice already has a contribution ID don't try to overwrite it with the one we derived from InvoiceNumber.
+                // Probably we manually reconciled it at some point.
+                unset($accountInvoiceParams['contribution_id']);
               }
+              if (isset($accountInvoiceParams['contribution_id']) && empty(Contribution::get(FALSE)->addWhere('id', '=', $accountInvoiceParams['contribution_id'])->execute()->first())) {
+                // This happens if we deleted the contribution in CiviCRM
+                unset($accountInvoiceParams['contribution_id']);
+                $accountInvoiceParams['error_data'] = json_encode(['error' => 'No matching contribution found in CiviCRM']);
+              }
+              $newAccountInvoice = AccountInvoice::update(FALSE)
+                ->setValues($accountInvoiceParams)
+                ->addWhere('id', '=', $accountInvoice['id'])
+                ->execute()
+                ->first();
+              $ids[] = $newAccountInvoice['id'];
+              break;
             }
           }
-          if (!empty($params['create_contributions_in_civicrm'])) {
-            $this->createContributionFromAccountsInvoice($invoice, $accountInvoiceParams);
-          }
         }
-        catch (CRM_Core_Exception $e) {
-          $errors[] = E::ts('Failed to store %1 (%2)', [1 => $invoice->getInvoiceNumber(), 2 => $invoice->getInvoiceId()])
-            . E::ts(' with error ') . $e->getMessage();
+        if (!empty($params['create_contributions_in_civicrm'])) {
+          $this->createContributionFromAccountsInvoice($xeroInvoice, $accountInvoiceParams);
         }
+      }
+      catch (CRM_Core_Exception $e) {
+        $errors[] = E::ts('Failed to store %1 (%2)', [1 => $xeroInvoice['invoice_number'], 2 => $xeroInvoice['invoice_id']])
+          . E::ts(' with error ') . $e->getMessage();
       }
     }
     if ($errors) {
