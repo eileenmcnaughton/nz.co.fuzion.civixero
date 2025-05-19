@@ -7,7 +7,7 @@ return [
   0 => [
     'name' => 'CiviXero Contact Push Job',
     'entity' => 'Job',
-    'update' => 'never',
+    'update' => 'unmodified',
     'params' => [
       'version' => 3,
       'name' => 'CiviXero Contact Push Job',
@@ -16,14 +16,13 @@ return [
       'api_action' => 'contactpush',
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero',
-      'update' => 'never',
       'is_active' => FALSE,
     ],
   ],
   1 => [
     'name' => 'CiviXero Contact Pull Job',
     'entity' => 'Job',
-    'update' => 'never',
+    'update' => 'unmodified',
     'params' => [
       'version' => 3,
       'name' => 'CiviXero Contact Pull Job',
@@ -32,14 +31,13 @@ return [
       'api_action' => 'contactpull',
       'run_frequency' => 'Always',
       'parameters' => "plugin=xero\nstart_date=yesterday",
-      'update' => 'never',
       'is_active' => FALSE,
     ],
   ],
   2 => [
     'name' => 'CiviXero Invoice Push Job',
     'entity' => 'Job',
-    'update' => 'never',
+    'update' => 'unmodified',
     'params' => [
       'version' => 3,
       'name' => 'CiviXero Invoice Push Job',
@@ -48,14 +46,13 @@ return [
       'api_action' => 'invoicepush',
       'run_frequency' => 'Always',
       'parameters' => 'plugin=xero',
-      'update' => 'never',
       'is_active' => FALSE,
     ],
   ],
   3 => [
     'name' => 'CiviXero Invoice Pull Job',
     'entity' => 'Job',
-    'update' => 'never',
+    'update' => 'unmodified',
     'params' => [
       'version' => 3,
       'name' => 'CiviXero Invoice Pull Job',
@@ -64,13 +61,13 @@ return [
       'api_action' => 'invoicepull',
       'run_frequency' => 'Always',
       'parameters' => "plugin=xero\nstart_date=yesterday",
-      'update' => 'never',
       'is_active' => FALSE,
     ],
   ],
   4 => [
     'name' => 'CiviAccountSync Complete Contributions From Accounts (Xero)',
     'entity' => 'Job',
+    'update' => 'unmodified',
     'params' =>
       [
         'version' => 3,
@@ -80,13 +77,13 @@ return [
         'api_action' => 'update_contribution',
         'run_frequency' => 'Always',
         'parameters' => "plugin=xero\naccounts_status_id=1",
-        'update' => 'never',
         'is_active' => FALSE,
       ],
   ],
   5 => [
     'name' => 'CiviAccountSync Cancel Contributions From Accounts (Xero)',
     'entity' => 'Job',
+    'update' => 'unmodified',
     'params' =>
       [
         'version' => 3,
@@ -96,7 +93,6 @@ return [
         'api_action' => 'update_contribution',
         'run_frequency' => 'Always',
         'parameters' => "plugin=xero\naccounts_status_id=3",
-        'update' => 'never',
         'is_active' => FALSE,
       ],
   ],
