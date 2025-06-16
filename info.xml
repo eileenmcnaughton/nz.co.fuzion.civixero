@@ -16,11 +16,11 @@
     <author>eileen</author>
     <email>eileen@fuzion.co.nz</email>
   </maintainer>
-  <releaseDate>2025-05-06</releaseDate>
-  <version>3.0.2</version>
+  <releaseDate>2025-06-16</releaseDate>
+  <version>3.0.3</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.74</ver>
+    <ver>6.0</ver>
   </compatibility>
   <smarty_compatibility>
     <ver>5</ver>
