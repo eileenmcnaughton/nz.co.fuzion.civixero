@@ -38,6 +38,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     int $page,
     int $pageSize,
     string $ifModifiedSinceDateTime,
+    string $invoiceIDs,
+    string $invoiceNumbers,
+    string $xeroContactIDs
   ): array {
     $where = 'TYPE=="' . Invoice::TYPE_ACCREC . '"';
 
@@ -53,21 +56,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     // $where = "Status=="' . \XeroAPI\XeroPHP\Models\Accounting\Invoice::STATUS_DRAFT . '"";
     // $where = $filters['where'] ?? NULL;
     $order = "Date ASC";
-    $ids = NULL;
-    if (!empty($params['xero_invoice_id'])) {
-      $ids = [$params['xero_invoice_id']];
-    }
-    $invoiceNumbers = NULL;
-    if (!empty($params['invoice_number'])) {
-      $invoiceNumbers = [$params['invoice_number']];
-    }
-    $contactIDs = NULL; // array("00000000-0000-0000-0000-000000000000")
-    $statuses = ['DRAFT', 'SUBMITTED', 'AUTHORISED'];
+    $statuses = ['DRAFT', 'SUBMITTED', 'AUTHORISED', 'PAID'];
     $createdByMyApp = FALSE;
     $unitdp = 2;
 
     try {
-      $xeroInvoices = $this->getAccountingApiInstance()->getInvoices($xeroTenantId, $ifModifiedSince, $where, $order, $iDs, $invoiceNumbers, $contactIDs, $statuses, $page, $includeArchived, $createdByMyApp, $unitdp, $summaryOnly, $pageSize, $searchTerm);
+      $xeroInvoices = $this->getAccountingApiInstance()->getInvoices(
+        $xeroTenantId, $ifModifiedSince, $where, $order, $invoiceIDs, $invoiceNumbers, $xeroContactIDs,
+        $statuses, $page, $includeArchived, $createdByMyApp, $unitdp, $summaryOnly, $pageSize
+      );
       foreach ($xeroInvoices->getInvoices() as $xeroInvoice) {
         /**
          * @var \XeroAPI\XeroPHP\Models\Accounting\Invoice $xeroInvoice
@@ -119,7 +116,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           ->setPage($page)
           ->setPageSize($pageSize);
         if (!empty($params['xero_contact_id'])) {
-          $invoicePull->setSearchTerm($params['xero_contact_id']);
+          $invoicePull->setXeroContactIDs($params['xero_contact_id']);
+        }
+        if (!empty($params['xero_invoice_id'])) {
+          $invoicePull->setXeroInvoiceIDs($params['xero_invoice_id']);
+        }
+        if (!empty($params['invoice_number'])) {
+          $invoicePull->setXeroInvoiceNumbers($params['invoice_number']);
         }
         $invoices = $invoicePull->execute()->getArrayCopy();
         if (empty($invoices)) {
@@ -219,8 +222,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               }
               if (isset($accountInvoiceParams['contribution_id']) && empty(Contribution::get(FALSE)->addWhere('id', '=', $accountInvoiceParams['contribution_id'])->execute()->first())) {
                 // This happens if we deleted the contribution in CiviCRM
+                $accountInvoiceParams['error_data'] = json_encode(['error' => "ContributionID {$accountInvoiceParams['contribution_id']} not found in CiviCRM. If you deleted it you can mark this as resolved."]);
                 unset($accountInvoiceParams['contribution_id']);
-                $accountInvoiceParams['error_data'] = json_encode(['error' => 'No matching contribution found in CiviCRM']);
               }
               $newAccountInvoice = AccountInvoice::update(FALSE)
                 ->setValues($accountInvoiceParams)
