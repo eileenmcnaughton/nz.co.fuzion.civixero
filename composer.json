@@ -1,4 +1,6 @@
 {
+  "name": "civicrm/civixero",
+  "type": "civicrm-ext",
   "require": {
     "xeroapi/xero-php-oauth2": "^6.0"
   },
