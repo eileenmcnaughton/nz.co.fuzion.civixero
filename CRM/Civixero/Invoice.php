@@ -697,7 +697,14 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     try {
       /** @noinspection PhpUndefinedMethodInspection */
-      return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+      $result = $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+      // Note: One day it would be nice to switch to the new Xero PHP SDK method for pushing invoices.
+      // For some reason pushing certain invoices seems to result in a completely empty response
+      //   but our calling code (in savePushResponse) expects false in this case. So we'll just hack that in here.
+      if (empty($result)) {
+        return FALSE;
+      }
+      return $result;
     }
     catch (XeroThrottleException $e) {
       throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
