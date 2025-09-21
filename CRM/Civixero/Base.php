@@ -295,9 +295,9 @@ class CRM_Civixero_Base {
   public static function setApiRateLimitExceeded($retryAfter = 0): void {
     if ($retryAfter) {
       // We aren't really using this one yet - but we want to migrate to it.
-      Civi::settings()->set('xero_retry_after', time() + $retryAfter);
+      Civi::settings()->set('xero_retry_after', $retryAfter);
       // Set time to an hour before we should try again.
-      Civi::settings()->set('xero_oauth_rate_exceeded', time() + $retryAfter - (60 * 60));
+      Civi::settings()->set('xero_oauth_rate_exceeded', $retryAfter - (60 * 60));
     }
     else {
       Civi::settings()->set('xero_oauth_rate_exceeded', time());
