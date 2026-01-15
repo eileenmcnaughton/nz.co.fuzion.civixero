@@ -135,6 +135,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     catch (\Throwable $e) {
       \Civi::log('civixero')->error('CiviXero: Error when running Invoice Pull: ' . $e->getMessage());
+      if ($e->getCode() === 403) {
+        throw new CRM_Core_Exception('Authentication with Xero failed');
+      }
     }
   }
 

@@ -600,14 +600,23 @@ class XeroApiException extends XeroException {
 
   private $xml;
 
+  private string $type;
+
   public function __construct($xml_exception) {
-    $this->xml = $xml_exception;
-    $xml = new SimpleXMLElement($xml_exception);
+    $jsonAttempt = json_decode($xml_exception, TRUE);
+    if (!$jsonAttempt !== FALSE) {
+      $message = $jsonAttempt['Detail'];
+      $errorNumber = $jsonAttempt['Status'];
+      $type = $jsonAttempt['Type'];
+    }
+    else {
+      $this->xml = $xml_exception;
+      $xml = new SimpleXMLElement($xml_exception);
 
-    [$message] = $xml->xpath('/ApiException/Message');
-    [$errorNumber] = $xml->xpath('/ApiException/ErrorNumber');
-    [$type] = $xml->xpath('/ApiException/Type');
-
+      [$message] = $xml->xpath('/ApiException/Message');
+      [$errorNumber] = $xml->xpath('/ApiException/ErrorNumber');
+      [$type] = $xml->xpath('/ApiException/Type');
+    }
     parent::__construct((string) $type . ': ' . (string) $message, (int) $errorNumber);
 
     $this->type = (string) $type;
