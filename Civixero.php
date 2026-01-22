@@ -116,7 +116,6 @@ function getErroredInvoicesOfContributions(array $contributions): array {
  * @throws \CRM_Core_Exception
  */
 function civixero_civicrm_check(array &$messages) {
-
   try {
     $accountContactErrors = AccountContact::get()
       ->selectRowCount()
@@ -165,7 +164,7 @@ function civixero_civicrm_check(array &$messages) {
     $clientID = $settings->get('xero_client_id');
     $clientSecret = $settings->get('xero_client_secret');
     $accessTokenData = $settings->get('xero_access_token');
-    $url = CRM_Utils_System::url('civicrm/xero/authorize', $connectorID ? 'connector_id=' . $connectorID : '');
+    $url = CRM_Utils_System::url('civicrm/xero/authorize', 'connector_id=' . $connectorID);
     if (!$clientID || !$clientSecret) {
       $messages[] = new CRM_Utils_Check_Message(
         'civixero_client_required',
@@ -182,15 +181,6 @@ function civixero_civicrm_check(array &$messages) {
         E::ts('Please Authorize with Xero to enable a connection.')  . '</a>',
         E::ts('Xero Authorization Required'),
         LogLevel::WARNING,
-        'fa-flag'
-      );
-    }
-    elseif (isset($accessTokenData['expires']) && ($accessTokenData['expires'] <= time())) {
-      $messages[] = new CRM_Utils_Check_Message(
-        'civixero_authorization_required',
-        '<a href = ' . $url . '>' . E::ts('Xero access token has expired. You need to re-authorize with Xero to re-enable the connection.') . '</a>',
-        E::ts('Xero Authorization Required'),
-        LogLevel::CRITICAL,
         'fa-flag'
       );
     }
