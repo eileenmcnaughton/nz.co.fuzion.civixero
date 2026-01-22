@@ -46,7 +46,8 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   public function preProcess(): void {
-    $this->connectorID = CRM_Utils_Request::retrieve('connector_id', 'Integer', $this, FALSE, 0);
+    // Note: Setting defaultValue = 0 doesn't work for retrieve (it gets set to NULL)
+    $this->connectorID = CRM_Utils_Request::retrieveValue('connector_id', 'Integer') ?? 0;
     $this->settings = new CRM_Civixero_Settings($this->connectorID);
     $this->clientID = $this->settings->get('xero_client_id');
     $this->clientSecret = $this->settings->get('xero_client_secret');
@@ -61,11 +62,16 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
     );
 
     $this->provider = new CRM_Civixero_OAuth2_Provider_Xero([
-      'clientId' => $this->settings->get('xero_client_id'),
-      'clientSecret' => $this->settings->get('xero_client_secret'),
+      'clientId' => $this->clientID,
+      'clientSecret' => $this->clientSecret,
       'redirectUri' => $redirectURL,
       ]
     );
+    if ((empty($this->clientID) || empty($this->clientSecret))
+      && (empty($this->getSubmittedValue('xero_client_id')) || empty($this->getSubmittedValue('xero_client_secret')))) {
+      // Client ID / Client Secret not configured.
+      return;
+    }
 
     $civiXeroOAuth = CRM_Civixero_OAuth2_Xero::singleton(
       $this->connectorID,
@@ -278,6 +284,7 @@ class CRM_Civixero_Form_XeroAuthorize extends CRM_Core_Form {
     if ($authChanged) {
       $this->settings->save('xero_tenant_id', '');
       $this->settings->save('xero_access_token_access_token', '');
+      $this->settings->save('xero_access_token_expires', '');
     }
 
     if ($action === 'authorize') {
