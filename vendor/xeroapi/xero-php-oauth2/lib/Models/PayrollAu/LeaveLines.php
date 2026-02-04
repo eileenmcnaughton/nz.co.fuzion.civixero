@@ -304,7 +304,16 @@ class LeaveLines implements ModelInterface, ArrayAccess, \Countable, \IteratorAg
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return PayrollAuObjectSerializer::sanitizeForSerialization($this)->LeaveLines;
+       $sanitizedObject = PayrollAuObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['LeaveLines'] = $sanitizedObject->LeaveLines;
+        return $json;
     }
 
     /**

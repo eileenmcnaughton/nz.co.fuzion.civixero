@@ -303,7 +303,16 @@ class SuperFundProducts implements ModelInterface, ArrayAccess, \Countable, \Ite
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return PayrollAuObjectSerializer::sanitizeForSerialization($this)->SuperFundProducts;
+       $sanitizedObject = PayrollAuObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['SuperFundProducts'] = $sanitizedObject->SuperFundProducts;
+        return $json;
     }
 
     /**

@@ -303,7 +303,16 @@ class HistoryRecords implements ModelInterface, ArrayAccess, \Countable, \Iterat
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return AccountingObjectSerializer::sanitizeForSerialization($this)->HistoryRecords;
+       $sanitizedObject = AccountingObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['HistoryRecords'] = $sanitizedObject->HistoryRecords;
+        return $json;
     }
 
     /**

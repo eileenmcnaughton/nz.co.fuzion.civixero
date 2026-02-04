@@ -60,7 +60,9 @@ class Employment implements ModelInterface, ArrayAccess
     protected static $openAPITypes = [
         'payroll_calendar_id' => 'string',
         'pay_run_calendar_id' => 'string',
-        'start_date' => '\DateTime'
+        'start_date' => '\DateTime',
+        'engagement_type' => 'string',
+        'fixed_term_end_date' => '\DateTime'
     ];
 
     /**
@@ -71,7 +73,9 @@ class Employment implements ModelInterface, ArrayAccess
     protected static $openAPIFormats = [
         'payroll_calendar_id' => 'uuid',
         'pay_run_calendar_id' => 'uuid',
-        'start_date' => 'date'
+        'start_date' => 'date',
+        'engagement_type' => null,
+        'fixed_term_end_date' => 'date'
     ];
 
     /**
@@ -103,7 +107,9 @@ class Employment implements ModelInterface, ArrayAccess
     protected static $attributeMap = [
         'payroll_calendar_id' => 'payrollCalendarID',
         'pay_run_calendar_id' => 'payRunCalendarID',
-        'start_date' => 'startDate'
+        'start_date' => 'startDate',
+        'engagement_type' => 'engagementType',
+        'fixed_term_end_date' => 'fixedTermEndDate'
     ];
 
     /**
@@ -114,7 +120,9 @@ class Employment implements ModelInterface, ArrayAccess
     protected static $setters = [
         'payroll_calendar_id' => 'setPayrollCalendarId',
         'pay_run_calendar_id' => 'setPayRunCalendarId',
-        'start_date' => 'setStartDate'
+        'start_date' => 'setStartDate',
+        'engagement_type' => 'setEngagementType',
+        'fixed_term_end_date' => 'setFixedTermEndDate'
     ];
 
     /**
@@ -125,7 +133,9 @@ class Employment implements ModelInterface, ArrayAccess
     protected static $getters = [
         'payroll_calendar_id' => 'getPayrollCalendarId',
         'pay_run_calendar_id' => 'getPayRunCalendarId',
-        'start_date' => 'getStartDate'
+        'start_date' => 'getStartDate',
+        'engagement_type' => 'getEngagementType',
+        'fixed_term_end_date' => 'getFixedTermEndDate'
     ];
 
     /**
@@ -191,6 +201,8 @@ class Employment implements ModelInterface, ArrayAccess
         $this->container['payroll_calendar_id'] = isset($data['payroll_calendar_id']) ? $data['payroll_calendar_id'] : null;
         $this->container['pay_run_calendar_id'] = isset($data['pay_run_calendar_id']) ? $data['pay_run_calendar_id'] : null;
         $this->container['start_date'] = isset($data['start_date']) ? $data['start_date'] : null;
+        $this->container['engagement_type'] = isset($data['engagement_type']) ? $data['engagement_type'] : null;
+        $this->container['fixed_term_end_date'] = isset($data['fixed_term_end_date']) ? $data['fixed_term_end_date'] : null;
     }
 
     /**
@@ -202,6 +214,15 @@ class Employment implements ModelInterface, ArrayAccess
     {
         $invalidProperties = [];
 
+        if ($this->container['payroll_calendar_id'] === null) {
+            $invalidProperties[] = "'payroll_calendar_id' can't be null";
+        }
+        if ($this->container['start_date'] === null) {
+            $invalidProperties[] = "'start_date' can't be null";
+        }
+        if ($this->container['engagement_type'] === null) {
+            $invalidProperties[] = "'engagement_type' can't be null";
+        }
         return $invalidProperties;
     }
 
@@ -220,7 +241,7 @@ class Employment implements ModelInterface, ArrayAccess
     /**
      * Gets payroll_calendar_id
      *
-     * @return string|null
+     * @return string
      */
     public function getPayrollCalendarId()
     {
@@ -230,7 +251,7 @@ class Employment implements ModelInterface, ArrayAccess
     /**
      * Sets payroll_calendar_id
      *
-     * @param string|null $payroll_calendar_id Xero unique identifier for the payroll calendar of the employee
+     * @param string $payroll_calendar_id Xero unique identifier for the payroll calendar of the employee
      *
      * @return $this
      */
@@ -274,7 +295,7 @@ class Employment implements ModelInterface, ArrayAccess
     /**
      * Gets start_date
      *
-     * @return \DateTime|null
+     * @return \DateTime
      */
     public function getStartDate()
     {
@@ -284,7 +305,7 @@ class Employment implements ModelInterface, ArrayAccess
     /**
      * Sets start_date
      *
-     * @param \DateTime|null $start_date Start date of the employment (YYYY-MM-DD)
+     * @param \DateTime $start_date Start date of the employment (YYYY-MM-DD)
      *
      * @return $this
      */
@@ -292,6 +313,60 @@ class Employment implements ModelInterface, ArrayAccess
     {
 
         $this->container['start_date'] = $start_date;
+
+        return $this;
+    }
+
+
+
+    /**
+     * Gets engagement_type
+     *
+     * @return string
+     */
+    public function getEngagementType()
+    {
+        return $this->container['engagement_type'];
+    }
+
+    /**
+     * Sets engagement_type
+     *
+     * @param string $engagement_type Engagement type of the employee
+     *
+     * @return $this
+     */
+    public function setEngagementType($engagement_type)
+    {
+
+        $this->container['engagement_type'] = $engagement_type;
+
+        return $this;
+    }
+
+
+
+    /**
+     * Gets fixed_term_end_date
+     *
+     * @return \DateTime|null
+     */
+    public function getFixedTermEndDate()
+    {
+        return $this->container['fixed_term_end_date'];
+    }
+
+    /**
+     * Sets fixed_term_end_date
+     *
+     * @param \DateTime|null $fixed_term_end_date End date for an employee with a fixed-term engagement type
+     *
+     * @return $this
+     */
+    public function setFixedTermEndDate($fixed_term_end_date)
+    {
+
+        $this->container['fixed_term_end_date'] = $fixed_term_end_date;
 
         return $this;
     }
