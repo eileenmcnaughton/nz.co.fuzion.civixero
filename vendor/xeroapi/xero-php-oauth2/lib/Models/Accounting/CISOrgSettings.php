@@ -303,7 +303,16 @@ class CISOrgSettings implements ModelInterface, ArrayAccess, \Countable, \Iterat
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return AccountingObjectSerializer::sanitizeForSerialization($this)->CISOrgSettings;
+       $sanitizedObject = AccountingObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['CISOrgSettings'] = $sanitizedObject->CISOrgSettings;
+        return $json;
     }
 
     /**
