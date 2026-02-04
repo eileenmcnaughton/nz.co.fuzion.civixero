@@ -72,41 +72,6 @@ function civixero_civicrm_alterSettingsMetaData(array &$settingsMetaData): void 
 }
 
 /**
- * Get contributions for a single contact.
- *
- * @param int $contactID
- *
- * @return array
- * @throws \CRM_Core_Exception
- */
-function getContactContributions(int $contactID): array {
-  $contributions = civicrm_api3('Contribution', 'get', [
-    'contact_id' => $contactID,
-    'return' => ['contribution_id'],
-    'sequential' => TRUE,
-  ])['values'];
-  return array_column($contributions, 'id');
-}
-
-/**
- * Get AccountInvoice data for contributions with errors.
- *
- * @param array $contributions
- *
- * @return array
- *
- * @throws \CRM_Core_Exception
- */
-function getErroredInvoicesOfContributions(array $contributions): array {
-  return civicrm_api3('AccountInvoice', 'get', [
-    'plugin' => 'xero',
-    'sequential' => TRUE,
-    'contribution_id' => ['IN' => $contributions],
-    'error_data' => ['<>' => ''],
-  ]);
-}
-
-/**
  * Implementation of hook_civicrm_check.
  *
  * Add a check to the status page. Check if there are any account contact or invoice sync errors.
