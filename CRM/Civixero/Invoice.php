@@ -400,9 +400,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'LineItems' => ['LineItem' => $lineItems],
     ];
     if (!empty($xeroInvoiceUUID)) {
-      if (!empty($xeroContactUUID)) {
-        $new_invoice['InvoiceID'] = $xeroContactUUID;
-      }
+      $new_invoice['InvoiceID'] = $xeroInvoiceUUID;
     }
 
     /* Use due date and period from the invoice settings when available. */
