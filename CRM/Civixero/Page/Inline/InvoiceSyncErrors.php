@@ -19,10 +19,12 @@ class CRM_Civixero_Page_Inline_InvoiceSyncErrors extends CRM_Core_Page {
    */
   public static function addInvoiceSyncErrorsBlock($page, int $contactID): void {
     try {
+      $connectors = _civixero_get_connectors();
       $erroredInvoiceCount = AccountInvoice::get(FALSE)
         ->selectRowCount()
         ->addWhere('contribution_id.contact_id', '=', $contactID)
         ->addWhere('plugin', '=', 'xero')
+        ->addWhere('connector_id', 'IN', array_keys($connectors))
         ->addWhere('error_data', 'IS NOT EMPTY')
         ->addWhere('is_error_resolved', '=', FALSE)
         ->execute()

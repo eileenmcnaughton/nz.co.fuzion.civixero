@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\AccountContact;
+
 class CRM_Civixero_Page_Inline_ContactSyncErrors extends CRM_Core_Page {
 
   public function run() {
@@ -16,29 +18,27 @@ class CRM_Civixero_Page_Inline_ContactSyncErrors extends CRM_Core_Page {
    * @param int $contactID
    */
   public static function addContactSyncErrorsBlock($page, $contactID) {
-    $hasContactErrors = FALSE;
-
     try {
       $connectors = _civixero_get_connectors();
-      $account_contact = civicrm_api3('AccountContact', 'getsingle', [
-        'contact_id' => $contactID,
-        'return' => 'accounts_contact_id, accounts_needs_update, connector_id, error_data, id, contact_id',
-        'plugin' => 'xero',
-        'connector_id' => ['IN' => array_keys($connectors)],
-      ]);
+      $accountContact = AccountContact::get(FALSE)
+        ->addWhere('contact_id', '=', $contactID)
+        ->addWhere('plugin', '=', 'xero')
+        ->addWhere('connector_id', 'IN', array_keys($connectors))
+        ->addWhere('error_data', 'IS NOT EMPTY')
+        ->addWhere('is_error_resolved', '=', FALSE)
+        ->execute()
+        ->first();
 
-      if (!empty($account_contact['error_data'])) {
+      if (!empty($accountContact)) {
         $hasContactErrors = TRUE;
       }
-
     }
     catch (Exception $e) {
 
     }
 
-    $page->assign('hasContactErrors_xero', $hasContactErrors);
+    $page->assign('hasContactErrors_xero', $hasContactErrors ?? FALSE);
     $page->assign('contactID_xero', $contactID);
-
   }
 
 }
