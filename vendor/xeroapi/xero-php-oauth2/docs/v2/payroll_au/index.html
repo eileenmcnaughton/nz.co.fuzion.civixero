@@ -1469,7 +1469,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "employees"
 };
       defs["EmploymentBasis"] = {
   "title" : "",
@@ -1644,7 +1644,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "leave_applications"
 };
       defs["LeaveBalance"] = {
   "title" : "",
@@ -1778,7 +1778,7 @@ ul.nav-tabs {
     }
   },
   "description" : "The leave type lines",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "employee"
 };
       defs["LeavePeriod"] = {
   "title" : "",
@@ -2027,7 +2027,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "pay_items"
 };
       defs["PayOutType"] = {
   "title" : "",
@@ -2162,7 +2162,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "pay_runs"
 };
       defs["PayTemplate"] = {
   "title" : "",
@@ -2272,7 +2272,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "payroll_calendars"
 };
       defs["Payslip"] = {
   "title" : "",
@@ -2560,7 +2560,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "payslips"
 };
       defs["RateType"] = {
   "title" : "",
@@ -2611,7 +2611,7 @@ ul.nav-tabs {
     }
   },
   "description" : "The reimbursement type lines",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "reimbursement_lines"
 };
       defs["ReimbursementType"] = {
   "title" : "",
@@ -2865,7 +2865,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "super_fund_products"
 };
       defs["SuperFundType"] = {
   "title" : "",
@@ -2885,7 +2885,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "super_funds"
 };
       defs["SuperLine"] = {
   "title" : "",
@@ -3307,7 +3307,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "timesheets"
 };
       defs["ValidationError"] = {
   "title" : "",
@@ -3411,7 +3411,7 @@ ul.nav-tabs {
           <nav id="scrollingNav">
             <ul class="sidenav nav nav-list">
               <li class="nav-header" data-group="PayrollAu"><strong>SDK: </strong><span id='sdk-name'></span></li>
-              <li class="nav-header" data-group="PayrollAu"><strong>VSN: </strong>6.0.0</li>
+              <li class="nav-header" data-group="PayrollAu"><strong>VSN: </strong>10.4.0</li>
               <li class="nav-header" data-group="PayrollAu"><a href="#api-PayrollAu">Methods</a></li>
               <li data-group="PayrollAu" data-name="approveLeaveApplication" class="">
                 <a href="#api-PayrollAu-approveLeaveApplication">approveLeaveApplication</a>
@@ -4156,7 +4156,25 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/PayItem"
       },
-      "example" : "{ \"EarningsRates\": [ { \"Name\": \"MyRate\", \"AccountCode\": \"400\", \"TypeOfUnits\": \"4.00\", \"IsExemptFromTax\": true, \"IsExemptFromSuper\": true, \"IsReportableAsW1\": false, \"AllowanceContributesToAnnualLeaveRate\": false, \"AllowanceContributesToOvertimeRate\": false, \"EarningsType\": \"ORDINARYTIMEEARNINGS\", \"EarningsRateID\": \"1fa4e226-b711-46ba-a8a7-4344c9c5fb87\", \"RateType\": \"MULTIPLE\", \"RatePerUnit\": \"10.0\", \"Multiplier\": 1.5, \"Amount\": 5, \"EmploymentTerminationPaymentType\": \"O\" } ] }"
+      "example" : {
+        "EarningsRates" : [ {
+          "Name" : "MyRate",
+          "AccountCode" : "400",
+          "TypeOfUnits" : "4.00",
+          "IsExemptFromTax" : true,
+          "IsExemptFromSuper" : true,
+          "IsReportableAsW1" : false,
+          "AllowanceContributesToAnnualLeaveRate" : false,
+          "AllowanceContributesToOvertimeRate" : false,
+          "EarningsType" : "ORDINARYTIMEEARNINGS",
+          "EarningsRateID" : "1fa4e226-b711-46ba-a8a7-4344c9c5fb87",
+          "RateType" : "MULTIPLE",
+          "RatePerUnit" : "10.0",
+          "Multiplier" : 1.5,
+          "Amount" : 5,
+          "EmploymentTerminationPaymentType" : "O"
+        } ]
+      }
     }
   },
   "required" : true
@@ -8275,7 +8293,16 @@ This allows you to safely retry requests without the risk of duplicate processin
           "$ref" : "#/components/schemas/PayslipLines"
         }
       },
-      "example" : "{ \"Payslip\": { \"EmployeeID\": \"cdfb8371-0b21-4b8a-8903-1024df6c391e\", \"DeductionLines\": [ { \"DeductionTypeID\": \"727af5e8-b347-4ae7-85fc-9b82266d0aec\", \"CalculationType\": \"FIXEDAMOUNT\", \"NumberOfUnits\": 10 } ] } }"
+      "example" : {
+        "Payslip" : {
+          "EmployeeID" : "cdfb8371-0b21-4b8a-8903-1024df6c391e",
+          "DeductionLines" : [ {
+            "DeductionTypeID" : "727af5e8-b347-4ae7-85fc-9b82266d0aec",
+            "CalculationType" : "FIXEDAMOUNT",
+            "NumberOfUnits" : 10
+          } ]
+        }
+      }
     }
   },
   "required" : true
