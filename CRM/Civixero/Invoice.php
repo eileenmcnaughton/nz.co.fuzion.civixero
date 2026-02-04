@@ -294,6 +294,20 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
             continue;
           }
+
+          $invoices = new XeroAPI\XeroPHP\Models\Accounting\Invoices;
+          $invoices->setInvoices([$accountsInvoice]);
+          try {
+            $xeroTenantId = $this->getTenantID();
+            // $xeroTenantId, $invoices, $summarizeErrors, $unitdp, $idempotencyKey
+            $result = $this->getAccountingApiInstance()->updateOrCreateInvoices($xeroTenantId, $invoices, FALSE, 2);
+            // throws \XeroAPI\XeroPHP\ApiException on non-2xx response
+            // throws \InvalidArgumentException
+            // return \XeroAPI\XeroPHP\Models\Accounting\Invoices|\XeroAPI\XeroPHP\Models\Accounting\Error
+          } catch (Exception $e) {
+            echo 'Exception when calling AccountingApi->updateOrCreateInvoices: ', $e->getMessage(), PHP_EOL;
+          }
+
           $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
           $responseErrors = $this->savePushResponse($result, $record);
           $count++;
@@ -344,20 +358,22 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   Contact Object/ array as expected by accounts package
    * @throws \CRM_Core_Exception
    */
-  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID) {
+  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID): XeroAPI\XeroPHP\Models\Accounting\Invoice|bool {
     // Get the tax mode from the CiviCRM setting. This should be 'exclusive' if
     // tax is enabled (but for historical reasons we force that later on).
     $line_amount_types = Civi::settings()->get('xero_tax_mode');
     $total_amount = 0;
+
+    // Build lineItems
     $lineItems = [];
     foreach ($invoiceData['line_items'] as $lineItem) {
-      $lineItems[] = [
-        'Description' => $lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']),
-        // Xero does not like negative quantity so for a refund make the price negative instead.
-        'Quantity' => abs($lineItem['qty']),
-        'UnitAmount' => $lineItem['qty'] >= 0 ? $lineItem['unit_price'] : (-$lineItem['unit_price']),
-        'AccountCode' => !empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode(),
-      ];
+      $xeroLineItem = new XeroAPI\XeroPHP\Models\Accounting\LineItem;
+      $xeroLineItem->setDescription($lineItem['display_name'] . ' ' . str_replace(['&nbsp;'], ' ', $lineItem['label']));
+      // Xero does not like negative quantity so for a refund make the price negative instead.
+      $xeroLineItem->setQuantity(abs($lineItem['qty']));
+      $xeroLineItem->setUnitAmount($lineItem['qty'] >= 0 ? $lineItem['unit_price'] : (-$lineItem['unit_price']));
+      $xeroLineItem->setAccountCode(!empty($lineItem['accounting_code']) ? $lineItem['accounting_code'] : $this->getDefaultAccountCode());
+
       $total_amount += $lineItem['qty'] * $lineItem['unit_price'];
 
       // Historically 'tax_amount' might come at us as NULL, the empty string,
@@ -367,11 +383,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         // If we discover a non-zero tax_amount, switch to tax exclusive amounts.
         $line_amount_types = 'Exclusive';
       }
+      $lineItems[] = $xeroLineItem;
     }
 
     if ($total_amount < 0) {
       foreach ($lineItems as $index => $lineItem) {
-        $lineItems[$index]['UnitAmount'] = -$lineItem['UnitAmount'];
+        $lineItems[$index]->setUnitAmount(-$lineItem->getUnitAmount());
       }
     }
 
@@ -382,41 +399,46 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     if (empty($prefix)) {
       $prefix = '';
     }
-    $new_invoice = [
-      'Type' => ($total_amount > 0) ? 'ACCREC' : 'ACCPAY',
-      'Contact' => [
-        'ContactID' => $invoiceData['accounts_contact_id'],
-      ],
-      'Date' => substr($invoiceData['receive_date'], 0, 10),
-      'DueDate' => substr($invoiceData['receive_date'], 0, 10),
-      'Status' => $status,
-      'InvoiceNumber' => $prefix . $invoiceData['id'],
-      'CurrencyCode' => $invoiceData['currency'],
-      'Reference' => $invoiceData['display_name'] . ' ' . $invoiceData['contribution_source'],
-      'LineAmountTypes' => $line_amount_types,
-      'LineItems' => ['LineItem' => $lineItems],
-    ];
+
+    $contact = new XeroAPI\XeroPHP\Models\Accounting\Contact;
+    $contact->setContactID($invoiceData['accounts_contact_id']);
+
+    $xeroInvoice = new XeroAPI\XeroPHP\Models\Accounting\Invoice;
+    if ($total_amount > 0) {
+      $xeroInvoice->setType(XeroAPI\XeroPHP\Models\Accounting\Invoice::TYPE_ACCREC);
+    }
+    else {
+      $xeroInvoice->setType(XeroAPI\XeroPHP\Models\Accounting\Invoice::TYPE_ACCPAY);
+    }
+    $xeroInvoice->setContact($contact);
+    $xeroInvoice->setDate(substr($invoiceData['receive_date'], 0, 10));
+    $xeroInvoice->setDueDate(substr($invoiceData['receive_date'], 0, 10));
+    // Eg. XeroAPI\XeroPHP\Models\Accounting\Invoice::STATUS_SUBMITTED but we are using setting
+    $xeroInvoice->setStatus($status);
+    $xeroInvoice->setInvoiceNumber($prefix . $invoiceData['id']);
+    $xeroInvoice->setCurrencyCode($invoiceData['currency']);
+    $xeroInvoice->setReference($invoiceData['display_name'] . ' ' . $invoiceData['contribution_source']);
+    $xeroInvoice->setLineAmountTypes($line_amount_types);
+    $xeroInvoice->setLineItems($lineItems);
     if (!empty($xeroInvoiceUUID)) {
-      if (!empty($xeroContactUUID)) {
-        $new_invoice['InvoiceID'] = $xeroContactUUID;
-      }
+      $xeroInvoice->setInvoiceId($xeroInvoiceUUID);
     }
 
     /* Use due date and period from the invoice settings when available. */
     $invoiceDueDate = Civi::settings()->get('invoice_due_date');
     $invoiceDueDatePeriod = Civi::settings()->get('invoice_due_date_period');
     if ($invoiceDueDate && $invoiceDueDatePeriod !== 'select') {
-      $new_invoice['DueDate'] = strftime('%Y-%m-%d', strtotime($invoiceData['receive_date'] . ' + ' . $invoiceDueDate . ' ' . $invoiceDueDatePeriod));
+      $xeroInvoice->setDueDate(strftime('%Y-%m-%d', strtotime($invoiceData['receive_date'] . ' + ' . $invoiceDueDate . ' ' . $invoiceDueDatePeriod)));
     }
 
     $proceed = TRUE;
-    CRM_Accountsync_Hook::accountPushAlterMapped('invoice', $invoiceData, $proceed, $new_invoice);
+    CRM_Accountsync_Hook::accountPushAlterMapped('invoice', $invoiceData, $proceed, $xeroInvoice);
     if (!$proceed) {
       return FALSE;
     }
 
-    $this->validatePrerequisites($new_invoice);
-    return [$new_invoice];
+    $this->validatePrerequisites($xeroInvoice);
+    return [$xeroInvoice];
   }
 
   /**
@@ -477,24 +499,16 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   /**
    * Validate an invoice by checking the tracking category exists (if set).
    *
-   * @param array $invoice array ready for Xero
+   * @param XeroAPI\XeroPHP\Models\Accounting\Invoice $invoice array ready for Xero
    *
    * @throws \CRM_Core_Exception
    */
   protected function validatePrerequisites($invoice): void {
-    if (empty($invoice['LineItems'])) {
+    if (empty($invoice->getLineItems())) {
       return;
     }
-    foreach ($invoice['LineItems']['LineItem'] as $lineItems) {
-      if (array_key_exists('LineItem', $lineItems)) {
-        // multiple line items  - need to go one deeper
-        foreach ($lineItems as $lineItem) {
-          $this->validateTrackingCategory($lineItem);
-        }
-      }
-      else {
-        $this->validateTrackingCategory($lineItems);
-      }
+    foreach ($invoice->getLineItems() as $lineItem) {
+      $this->validateTrackingCategory($lineItem);
     }
   }
 
@@ -505,12 +519,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * the api so potentially we could now create rather than throw an exception if
    * the category does not exist).
    *
-   * @param array $lineItem
+   * @param XeroAPI\XeroPHP\Models\Accounting\LineItem $lineItem
    *
    * @throws \CRM_Core_Exception
    */
   protected function validateTrackingCategory($lineItem): void {
-    if (empty($lineItem['TrackingCategory'])) {
+    if (empty($lineItem->getTracking())) {
       return;
     }
     static $trackingOptions = [];
@@ -518,10 +532,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $trackingOptions = civicrm_api3('civixero', 'trackingcategorypull', []);
       $trackingOptions = $trackingOptions['values'];
     }
-    foreach ($lineItem['TrackingCategory'] as $tracking) {
-      if (!array_key_exists($tracking['Name'], $trackingOptions)
-        || !in_array($tracking['Option'], $trackingOptions[$tracking['Name']])) {
-        throw new CRM_Core_Exception(ts('Tracking Category Does Not Exist ') . $tracking['Name'] . ' ' . $tracking['Option'], 'invalid_tracking', $tracking);
+    foreach ($lineItem->getTracking() as $tracking) {
+      if (!array_key_exists($tracking->getName(), $trackingOptions)
+        || !in_array($tracking->getOption(), $trackingOptions[$tracking->getName()])) {
+        throw new CRM_Core_Exception(ts('Tracking Category Does Not Exist ') . $tracking->getName() . ' ' . $tracking->getOption(), 'invalid_tracking', $tracking);
       }
     }
   }
@@ -564,7 +578,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return array|false
    * @throws \CRM_Core_Exception
    */
-  protected function getAccountsInvoice(array $record) {
+  protected function getAccountsInvoice(array $record): XeroAPI\XeroPHP\Models\Accounting\Invoice|array|bool {
     if ($record['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
       return FALSE;
     }
