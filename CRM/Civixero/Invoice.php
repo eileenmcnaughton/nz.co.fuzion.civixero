@@ -162,7 +162,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         'accounts_modified_date' => date('Y-m-d H:i:s', strtotime($xeroInvoice['updated_date_utc'])),
         'accounts_invoice_id' => $xeroInvoice['invoice_id'],
         'accounts_data' => json_encode($xeroInvoice),
-        'accounts_status_id' => $this->mapStatus($xeroInvoice['status']),
+        'accounts_status_id' => $this->mapXeroInvoiceStatusToAccountInvoiceStatusID($xeroInvoice['status']),
         'accounts_needs_update' => FALSE,
       ];
 
@@ -453,6 +453,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
 
   /**
    * Map Xero Status values against CiviCRM status values.
+   * See also \Civi\Api4\Action\AccountInvoice\GetAccountsDataXero::mapStatusToContributionStatus()
    *
    * @param string $status
    *   Status string from Xero.
@@ -460,7 +461,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return int
    *   CiviCRM equivalent status ID.
    */
-  protected function mapStatus(string $status): int {
+  protected function mapXeroInvoiceStatusToAccountInvoiceStatusID(string $status): int {
     $accountsStatusIDs = array_column(Civi::entity('AccountInvoice')->getOptions('accounts_status_id'), 'id', 'name');
 
     $statuses = [
@@ -633,7 +634,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $record['accounts_invoice_id'] = $result['BankTransactions']['BankTransaction']['BankTransactionID'];
           $record['accounts_modified_date'] = $result['BankTransactions']['BankTransaction']['UpdatedDateUTC'];
           $record['accounts_data'] = json_encode($result['BankTransactions']['BankTransaction']);
-          $record['accounts_status_id'] = $this->mapStatus($result['BankTransactions']['BankTransaction']['Status']);
+          $record['accounts_status_id'] = $this->mapXeroInvoiceStatusToAccountInvoiceStatusID($result['BankTransactions']['BankTransaction']['Status']);
           $record['accounts_needs_update'] = 0;
         }
         else {
@@ -645,7 +646,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           // It can get too long for the db if we include everything.
           unset($accountsData['Contact'], $accountsData['LineItems']);
           $record['accounts_data'] = json_encode($accountsData);
-          $record['accounts_status_id'] = $this->mapStatus($result['Invoices']['Invoice']['Status']);
+          $record['accounts_status_id'] = $this->mapXeroInvoiceStatusToAccountInvoiceStatusID($result['Invoices']['Invoice']['Status']);
           $record['accounts_needs_update'] = 0;
         }
       }
