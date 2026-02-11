@@ -294,7 +294,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
             continue;
           }
-          $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
+          $result = $this->pushToXero($accountsInvoice, $params['connector_id'], $record);
           $responseErrors = $this->savePushResponse($result, $record);
           $count++;
         }
@@ -688,20 +688,28 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * Push record to Xero.
    *
    * @param array|false $accountsInvoice
-   *
+   * @param array $record
    * @param int $connector_id
    *   ID of the connector (0 if nz.co.fuzion.connectors not installed.
    *
    * @return array|false
    * @throws \CRM_Core_Exception
    */
-  protected function pushToXero($accountsInvoice, $connector_id) {
+  protected function pushToXero($accountsInvoice, $connector_id, $record) {
     if ($accountsInvoice === FALSE) {
       return FALSE;
     }
     try {
       /** @noinspection PhpUndefinedMethodInspection */
-      return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+      $invoice = $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+
+      $entity = 'invoice';
+      $null = NULL;
+      CRM_Utils_Hook::singleton()->invoke(['entity', 'responseData', 'data', 'record', 'xero'],
+        $entity, $invoice, $accountsInvoice, $record, $this->getSingleton($connector_id), $null,
+        'civicrm_accountPushPostSave'
+      );
+      return $invoice;
     }
     catch (XeroThrottleException $e) {
       throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
