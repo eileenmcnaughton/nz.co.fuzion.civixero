@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\AccountInvoice;
+
 class CRM_Civixero_Page_Inline_InvoiceSyncErrors extends CRM_Core_Page {
 
   public function run() {
@@ -16,35 +18,27 @@ class CRM_Civixero_Page_Inline_InvoiceSyncErrors extends CRM_Core_Page {
    * @param int $contactID
    */
   public static function addInvoiceSyncErrorsBlock($page, int $contactID): void {
-
-    $hasInvoiceErrors = FALSE;
-
     try {
       $connectors = _civixero_get_connectors();
-      $account_contact = civicrm_api3('AccountContact', 'getsingle', [
-        'contact_id' => $contactID,
-        'return' => 'accounts_contact_id, accounts_needs_update, connector_id, error_data, id, contact_id',
-        'plugin' => 'xero',
-        'connector_id' => ['IN' => array_keys($connectors)],
-      ]);
-
-      $contributions = getContactContributions($account_contact['contact_id']);
-      if (count($contributions)) {
-        $invoices = getErroredInvoicesOfContributions($contributions);
-        if ($invoices['count']) {
-          $hasInvoiceErrors = TRUE;
-          $page->assign('erroredInvoices_xero', $invoices['count']);
-        }
+      $erroredInvoiceCount = AccountInvoice::get(FALSE)
+        ->selectRowCount()
+        ->addWhere('contribution_id.contact_id', '=', $contactID)
+        ->addWhere('plugin', '=', 'xero')
+        ->addWhere('connector_id', 'IN', array_keys($connectors))
+        ->addWhere('error_data', 'IS NOT EMPTY')
+        ->addWhere('is_error_resolved', '=', FALSE)
+        ->execute()
+        ->countMatched();
+      if ($erroredInvoiceCount > 0) {
+        $hasInvoiceErrors = TRUE;
+        $page->assign('erroredInvoices_xero', $erroredInvoiceCount);
       }
-
     }
     catch (Exception $e) {
 
     }
-
-    $page->assign('hasInvoiceErrors_xero', $hasInvoiceErrors);
+    $page->assign('hasInvoiceErrors_xero', $hasInvoiceErrors ?? FALSE);
     $page->assign('contactID_xero', $contactID);
-
   }
 
 }
