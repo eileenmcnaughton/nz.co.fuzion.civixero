@@ -128,7 +128,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         if (empty($invoices)) {
           break;
         }
-        $this->processPull($invoices, $params['connector_id'] ?? 0);
+        $this->processPull($invoices, $params['connector_id'] ?? 0, $params['create_contributions_in_civicrm'] ?? FALSE);
         unset($invoices);
         $page++;
       }
@@ -146,12 +146,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * We call the civicrm_accountPullPreSave hook so other modules can alter if required
    *
-   * @param array $params
+   * @param array $invoices
+   * @param int $connectorID
+   * @param bool $createContributionInCiviCRM
    *
    * @return int
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  private function processPull($invoices, int $connectorID) {
+  private function processPull(array $invoices, int $connectorID, bool $createContributionInCiviCRM = FALSE) {
     $count = 0;
     $errors = $ids = [];
     foreach ($invoices as $xeroInvoiceID => $xeroInvoice) {
@@ -238,7 +241,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             }
           }
         }
-        if (!empty($params['create_contributions_in_civicrm'])) {
+        if ($createContributionInCiviCRM) {
           $this->createContributionFromAccountsInvoice($xeroInvoice, $accountInvoiceParams);
         }
       }
@@ -799,14 +802,14 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   }
 
   /**
-   * @param \XeroAPI\XeroPHP\Models\Accounting\Invoice $invoice
+   * @param array $invoice
    * @param array $accountInvoiceParams
    *
    * @return bool
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  private function createContributionFromAccountsInvoice(Invoice $invoice, array $accountInvoiceParams): bool {
+  private function createContributionFromAccountsInvoice(array $invoice, array $accountInvoiceParams): bool {
     $accountInvoiceParams = AccountInvoice::get(FALSE)
       ->addWhere('accounts_invoice_id', '=', $accountInvoiceParams['accounts_invoice_id'])
       ->execute()
@@ -821,7 +824,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       return FALSE;
     }
 
-    $accountsContactID = $invoice->getContact()->getContactId() ?? NULL;
+    /** @var XeroAPI\XeroPHP\Models\Accounting\Contact $invoice['contact'] */
+    $accountsContactID = $invoice['contact']->getContactId() ?? NULL;
     if (empty($accountsContactID)) {
       $errorMessage = __FUNCTION__ . ': missing ContactID in AccountsInvoice';
       $this->recordAccountInvoiceError($accountInvoiceParams['id'], $errorMessage);
@@ -856,10 +860,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ->addValue('contribution_status_id:name', 'Pending')
       ->addValue('contact_id', $accountContact['contact_id'])
       ->addValue('financial_type_id.name', 'Donation')
-      ->addValue('receive_date', $invoice->getDateAsDate()->format('YmdHis'))
-      ->addValue('total_amount', $invoice->getTotal())
-      ->addValue('currency', $invoice->getCurrencyCode())
-      ->addValue('source', 'Xero: ' . $invoice->getInvoiceNumber() . ' ' . $invoice->getReference())
+      ->addValue('receive_date', $invoice['date'])
+      ->addValue('total_amount', $invoice['total'])
+      ->addValue('currency', $invoice['currency_code'])
+      ->addValue('source', 'Xero: ' . $invoice['invoice_number'] . ' ' . $invoice['reference'])
       ->execute()
       ->first();
     AccountInvoice::update(FALSE)
