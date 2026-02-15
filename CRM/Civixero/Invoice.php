@@ -92,7 +92,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       \Civi::log('civixero')->error('Exception when calling AccountingApi->getInvoices: ' . $e->getMessage());
       throw $e;
     }
-    return $invoices;
+    return $invoices ?? [];
   }
 
   /**

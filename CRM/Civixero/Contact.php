@@ -53,7 +53,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       \Civi::log('civixero')->error('Exception when calling AccountingApi->getContacts: ' . $e->getMessage());
       throw $e;
     }
-    return $contacts;
+    return $contacts ?? [];
   }
 
   /**
