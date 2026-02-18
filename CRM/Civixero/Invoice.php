@@ -111,7 +111,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     try {
       while (TRUE) {
         $invoicePull = \Civi\Api4\Xero::invoicePull(FALSE)
-          ->setIfModifiedSinceDateTime($params['start_date'])
           ->setConnectorID($params['connector_id'] ?? 0)
           ->setPage($page)
           ->setPageSize($pageSize);
@@ -123,6 +122,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         }
         if (!empty($params['invoice_number'])) {
           $invoicePull->setXeroInvoiceNumbers($params['invoice_number']);
+        }
+        if (empty($params['xero_contact_id']) && empty($params['xero_invoice_id']) && empty($params['xero_invoice_number'])) {
+          // Ignore start/modified date if we specified IDs
+          $invoicePull->setIfModifiedSinceDateTime($params['start_date']);
         }
         $invoices = $invoicePull->execute()->getArrayCopy();
         if (empty($invoices)) {
