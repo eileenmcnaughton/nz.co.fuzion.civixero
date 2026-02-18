@@ -546,7 +546,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $accountInvoices = AccountInvoice::get(FALSE)
       ->addWhere('plugin', '=', 'xero')
       ->addWhere('connector_id', '=', $params['connector_id'])
-      ->addClause('OR', ['accounts_status_id', 'IS NULL'], ['accounts_status_id', 'NOT IN', [CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')]])
+      ->addClause('OR', ['accounts_status_id', 'IS NULL'], ['accounts_status_id:name', 'NOT IN', ['cancelled', 'completed']])
       ->addOrderBy('error_data')
       ->setLimit($limit);
 
@@ -577,18 +577,19 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $contributionID = $record['contribution_id'];
     $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', [
       'id' => $contributionID,
-    ]);
+    ])['values'][$contributionID] ?? [];
 
-    $civiCRMInvoice = $civiCRMInvoice['values'][$contributionID];
-    $statuses = civicrm_api3('Contribution', 'getoptions', ['field' => 'contribution_status_id']);
-    $contributionStatus = $statuses['values'][$civiCRMInvoice['contribution_status_id']];
+    $contributionStatusName = CRM_Core_PseudoConstant::getName('CRM_Contribute_DAO_Contribution', 'contribution_status_id', $civiCRMInvoice['contribution_status_id']);
     $cancelledStatuses = ['Failed', 'Cancelled'];
-
-    if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
+    if (empty($civiCRMInvoice) || in_array($contributionStatusName, $cancelledStatuses)) {
       return $this->mapCancelled($contributionID, $xeroInvoiceUUID);
     }
-
-    return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    elseif ($contributionStatusName === 'Pending') {
+      return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    }
+    else {
+      throw new CRM_Core_Exception('Xero Invoice Push: Contribution ID: ' . $contributionID . ' Invalid contribution status: ' . $contributionStatusName);
+    }
   }
 
   /**
@@ -783,6 +784,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * Get the Xero tax modes.
    *
    * This is accessed from the settings.
+   * See \XeroAPI\XeroPHP\Models\Accounting\LineAmountTypes
    *
    * @return array[]
    */
