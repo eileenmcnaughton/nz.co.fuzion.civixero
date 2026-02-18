@@ -279,44 +279,44 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \CRM_Core_Exception
    */
   public function push($params, $limit = 10) {
-    $records = $this->getContributionsRequiringPushUpdate($params, $limit);
-    if (empty($records)) {
+    $accountInvoices = $this->getAccountInvoicesToPush($params, $limit);
+    if (empty($accountInvoices)) {
       return 0;
     }
     $errors = [];
 
     $count = 0;
     try {
-      foreach ($records as $record) {
+      foreach ($accountInvoices as $accountInvoice) {
         try {
-          $accountsInvoice = $this->getAccountsInvoice($record);
-          if ($accountsInvoice === FALSE) {
+          $mappedAccountInvoice = $this->getMappedAccountInvoice($accountInvoice);
+          if ($mappedAccountInvoice === FALSE) {
             // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
             AccountInvoice::update(FALSE)
-              ->addWhere('id', '=', $record['id'])
+              ->addWhere('id', '=', $accountInvoice['id'])
               ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
               ->addValue('accounts_needs_update', FALSE)
               ->execute();
             // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
             continue;
           }
-          $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
-          $responseErrors = $this->savePushResponse($result, $record);
+          $pushResult = $this->pushToXero($mappedAccountInvoice, $params['connector_id']);
+          $responseErrors = $this->savePushResponse($pushResult, $accountInvoice);
           $count++;
         }
         catch (CRM_Core_Exception $e) {
-          $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsContactID: %2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
+          $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsInvoiceID: %2)', [1 => $accountInvoice['contribution_id'], 2 => $accountInvoice['accounts_invoice_id']])
             . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors, TRUE)
             . E::ts('%1 Push failed', [1 => $this->xero_entity]);
 
           AccountInvoice::update(FALSE)
-            ->addWhere('id', '=', $record['id'])
+            ->addWhere('id', '=', $accountInvoice['id'])
             ->addValue('is_error_resolved', FALSE)
             ->addValue('error_data', json_encode([
               'error' => $e->getMessage(),
-              'error_data' => $record['error_data'],
+              'error_data' => $accountInvoice['error_data'],
             ]))
-            ->addValue('accounts_data', json_encode($record))
+            ->addValue('accounts_data', json_encode($accountInvoice))
             ->execute();
           $errors[] = $errorMessage;
         }
@@ -543,7 +543,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return array
    * @throws \CRM_Core_Exception
    */
-  protected function getContributionsRequiringPushUpdate(array $params, int $limit): array {
+  protected function getAccountInvoicesToPush(array $params, int $limit): array {
     $accountInvoices = AccountInvoice::get(FALSE)
       ->addWhere('plugin', '=', 'xero')
       ->addWhere('connector_id', '=', $params['connector_id'])
@@ -569,7 +569,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return array|false
    * @throws \CRM_Core_Exception
    */
-  protected function getAccountsInvoice(array $record) {
+  protected function getMappedAccountInvoice(array $record) {
     if ($record['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
       return FALSE;
     }
@@ -589,7 +589,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
     }
     else {
-      throw new CRM_Core_Exception('Xero Invoice Push: Contribution ID: ' . $contributionID . ' Invalid contribution status: ' . $contributionStatusName);
+      throw new CRM_Core_Exception('Invalid contribution status: ' . $contributionStatusName);
     }
   }
 
