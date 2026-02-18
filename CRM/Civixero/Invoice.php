@@ -368,11 +368,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param ?string $xeroInvoiceUUID
    *   The Xero invoice uuid.
    *
-   * @return array|bool
-   *   Contact Object/ array as expected by accounts package
+   * @return array
+   *   Invoice array as expected by accounts package
    * @throws \CRM_Core_Exception
    */
-  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID) {
+  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID): array {
     // Get the tax mode from the CiviCRM setting. This should be 'exclusive' if
     // tax is enabled (but for historical reasons we force that later on).
     $line_amount_types = Civi::settings()->get('xero_tax_mode');
@@ -628,7 +628,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       return NULL;
     }
 
-    return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    if (!$xeroInvoiceUUID) {
+      // If the invoice does not exist in Xero we'll push it using the default invoice status.
+      return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    }
+
+    // We can't push an invoice that has already been created because:
+    //   - we don't know how to update an existing Xero invoice so Xero will reject it
+    //   - we use the CiviXero default invoice status which is authorized/submitted etc. and NOT Completed.
+    throw new CRM_Core_Exception('AccountInvoice already exists in Xero');
   }
 
   /**
