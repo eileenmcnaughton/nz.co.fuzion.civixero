@@ -303,7 +303,16 @@ class Items implements ModelInterface, ArrayAccess, \Countable, \IteratorAggrega
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return AccountingObjectSerializer::sanitizeForSerialization($this)->Items;
+       $sanitizedObject = AccountingObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['Items'] = $sanitizedObject->Items;
+        return $json;
     }
 
     /**

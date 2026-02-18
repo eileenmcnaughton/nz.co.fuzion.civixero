@@ -111,7 +111,6 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     try {
       while (TRUE) {
         $invoicePull = \Civi\Api4\Xero::invoicePull(FALSE)
-          ->setIfModifiedSinceDateTime($params['start_date'])
           ->setConnectorID($params['connector_id'] ?? 0)
           ->setPage($page)
           ->setPageSize($pageSize);
@@ -123,6 +122,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         }
         if (!empty($params['invoice_number'])) {
           $invoicePull->setXeroInvoiceNumbers($params['invoice_number']);
+        }
+        if (empty($params['xero_contact_id']) && empty($params['xero_invoice_id']) && empty($params['xero_invoice_number'])) {
+          // Ignore start/modified date if we specified IDs
+          $invoicePull->setIfModifiedSinceDateTime($params['start_date']);
         }
         $invoices = $invoicePull->execute()->getArrayCopy();
         if (empty($invoices)) {
@@ -276,44 +279,44 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \CRM_Core_Exception
    */
   public function push($params, $limit = 10) {
-    $records = $this->getContributionsRequiringPushUpdate($params, $limit);
-    if (empty($records)) {
+    $accountInvoices = $this->getAccountInvoicesToPush($params, $limit);
+    if (empty($accountInvoices)) {
       return 0;
     }
     $errors = [];
 
     $count = 0;
     try {
-      foreach ($records as $record) {
+      foreach ($accountInvoices as $accountInvoice) {
         try {
-          $accountsInvoice = $this->getAccountsInvoice($record);
-          if ($accountsInvoice === FALSE) {
+          $mappedAccountInvoice = $this->getMappedAccountInvoice($accountInvoice);
+          if ($mappedAccountInvoice === FALSE) {
             // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
             AccountInvoice::update(FALSE)
-              ->addWhere('id', '=', $record['id'])
+              ->addWhere('id', '=', $accountInvoice['id'])
               ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
               ->addValue('accounts_needs_update', FALSE)
               ->execute();
             // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
             continue;
           }
-          $result = $this->pushToXero($accountsInvoice, $params['connector_id']);
-          $responseErrors = $this->savePushResponse($result, $record);
+          $pushResult = $this->pushToXero($mappedAccountInvoice, $params['connector_id']);
+          $responseErrors = $this->savePushResponse($pushResult, $accountInvoice);
           $count++;
         }
         catch (CRM_Core_Exception $e) {
-          $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsContactID: %2)', [1 => $record['contribution_id'], 2 => $record['accounts_contact_id']])
+          $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsInvoiceID: %2)', [1 => $accountInvoice['contribution_id'], 2 => $accountInvoice['accounts_invoice_id']])
             . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors, TRUE)
             . E::ts('%1 Push failed', [1 => $this->xero_entity]);
 
           AccountInvoice::update(FALSE)
-            ->addWhere('id', '=', $record['id'])
+            ->addWhere('id', '=', $accountInvoice['id'])
             ->addValue('is_error_resolved', FALSE)
             ->addValue('error_data', json_encode([
               'error' => $e->getMessage(),
-              'error_data' => $record['error_data'],
+              'error_data' => $accountInvoice['error_data'],
             ]))
-            ->addValue('accounts_data', json_encode($record))
+            ->addValue('accounts_data', json_encode($accountInvoice))
             ->execute();
           $errors[] = $errorMessage;
         }
@@ -400,9 +403,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'LineItems' => ['LineItem' => $lineItems],
     ];
     if (!empty($xeroInvoiceUUID)) {
-      if (!empty($xeroContactUUID)) {
-        $new_invoice['InvoiceID'] = $xeroContactUUID;
-      }
+      $new_invoice['InvoiceID'] = $xeroInvoiceUUID;
     }
 
     /* Use due date and period from the invoice settings when available. */
@@ -542,11 +543,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return array
    * @throws \CRM_Core_Exception
    */
-  protected function getContributionsRequiringPushUpdate(array $params, int $limit): array {
+  protected function getAccountInvoicesToPush(array $params, int $limit): array {
     $accountInvoices = AccountInvoice::get(FALSE)
       ->addWhere('plugin', '=', 'xero')
       ->addWhere('connector_id', '=', $params['connector_id'])
-      ->addClause('OR', ['accounts_status_id', 'IS NULL'], ['accounts_status_id', 'NOT IN', [CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')]])
+      ->addClause('OR', ['accounts_status_id', 'IS NULL'], ['accounts_status_id:name', 'NOT IN', ['cancelled', 'completed']])
       ->addOrderBy('error_data')
       ->setLimit($limit);
 
@@ -568,7 +569,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return array|false
    * @throws \CRM_Core_Exception
    */
-  protected function getAccountsInvoice(array $record) {
+  protected function getMappedAccountInvoice(array $record) {
     if ($record['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
       return FALSE;
     }
@@ -577,18 +578,19 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $contributionID = $record['contribution_id'];
     $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', [
       'id' => $contributionID,
-    ]);
+    ])['values'][$contributionID] ?? [];
 
-    $civiCRMInvoice = $civiCRMInvoice['values'][$contributionID];
-    $statuses = civicrm_api3('Contribution', 'getoptions', ['field' => 'contribution_status_id']);
-    $contributionStatus = $statuses['values'][$civiCRMInvoice['contribution_status_id']];
+    $contributionStatusName = CRM_Core_PseudoConstant::getName('CRM_Contribute_DAO_Contribution', 'contribution_status_id', $civiCRMInvoice['contribution_status_id']);
     $cancelledStatuses = ['Failed', 'Cancelled'];
-
-    if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
+    if (empty($civiCRMInvoice) || in_array($contributionStatusName, $cancelledStatuses)) {
       return $this->mapCancelled($contributionID, $xeroInvoiceUUID);
     }
-
-    return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    elseif ($contributionStatusName === 'Pending') {
+      return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    }
+    else {
+      throw new CRM_Core_Exception('Invalid contribution status: ' . $contributionStatusName);
+    }
   }
 
   /**
@@ -704,7 +706,14 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     try {
       /** @noinspection PhpUndefinedMethodInspection */
-      return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+      $result = $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+      // Note: One day it would be nice to switch to the new Xero PHP SDK method for pushing invoices.
+      // For some reason pushing certain invoices seems to result in a completely empty response
+      //   but our calling code (in savePushResponse) expects false in this case. So we'll just hack that in here.
+      if (empty($result)) {
+        return FALSE;
+      }
+      return $result;
     }
     catch (XeroThrottleException $e) {
       throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
@@ -776,6 +785,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * Get the Xero tax modes.
    *
    * This is accessed from the settings.
+   * See \XeroAPI\XeroPHP\Models\Accounting\LineAmountTypes
    *
    * @return array[]
    */

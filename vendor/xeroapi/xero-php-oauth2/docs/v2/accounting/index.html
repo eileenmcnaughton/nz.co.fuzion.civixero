@@ -989,7 +989,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "accounts"
 };
       defs["AccountsPayable"] = {
   "title" : "",
@@ -1056,7 +1056,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "actions"
 };
       defs["Address"] = {
   "title" : "",
@@ -1245,7 +1245,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "allocations"
 };
       defs["Attachment"] = {
   "title" : "",
@@ -1298,7 +1298,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "attachments"
 };
       defs["BalanceDetails"] = {
   "title" : "",
@@ -1465,6 +1465,16 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "BankTransactions" : {
       "type" : "array",
       "items" : {
@@ -1473,7 +1483,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "bank_transactions"
 };
       defs["BankTransfer"] = {
   "title" : "",
@@ -1577,7 +1587,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "bank_transfers"
 };
       defs["BatchPayment"] = {
   "title" : "",
@@ -1767,7 +1777,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "batch_payments"
 };
       defs["Bill"] = {
   "title" : "",
@@ -1837,7 +1847,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "branding_themes"
 };
       defs["Budget"] = {
   "title" : "",
@@ -1950,7 +1960,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "budgets"
 };
       defs["CISOrgSetting"] = {
   "title" : "",
@@ -1988,7 +1998,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "cis_settings"
 };
       defs["CISSetting"] = {
   "title" : "",
@@ -2022,7 +2032,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "cis_settings"
 };
       defs["Contact"] = {
   "title" : "",
@@ -2093,6 +2103,11 @@ ul.nav-tabs {
       "maxLength" : 50,
       "type" : "string",
       "description" : "Tax number of contact – this is also known as the ABN (Australia), GST Number (New Zealand), VAT Number (UK) or Tax ID Number (US and global) in the Xero UI depending on which regionalized version of Xero you are using (max length = 50)"
+    },
+    "TaxNumberType" : {
+      "type" : "string",
+      "description" : "Identifier of the regional type of tax number, such as US, UK, or other regional tax identifiers",
+      "enum" : [ "SSN", "EIN", "ITIN", "ATIN" ]
     },
     "AccountsReceivableTaxType" : {
       "type" : "string",
@@ -2288,7 +2303,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "contact_groups"
 };
       defs["ContactPerson"] = {
   "title" : "",
@@ -2320,6 +2335,16 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "Contacts" : {
       "type" : "array",
       "items" : {
@@ -2328,7 +2353,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "contacts"
 };
       defs["ConversionBalances"] = {
   "title" : "",
@@ -2474,7 +2499,7 @@ ul.nav-tabs {
     },
     "SentToContact" : {
       "type" : "boolean",
-      "description" : "boolean to indicate if a credit note has been sent to a contact via  the Xero app (currently read only)",
+      "description" : "Boolean to set whether the credit note in the Xero app should be marked as “sent”. This can be set only on credit notes that have been approved",
       "readOnly" : true
     },
     "CurrencyRate" : {
@@ -2544,6 +2569,13 @@ ul.nav-tabs {
       "items" : {
         "$ref" : "#/components/schemas/ValidationError"
       }
+    },
+    "InvoiceAddresses" : {
+      "type" : "array",
+      "description" : "An array of addresses used to auto calculate sales tax",
+      "items" : {
+        "$ref" : "#/components/schemas/InvoiceAddress"
+      }
     }
   },
   "description" : "",
@@ -2555,6 +2587,16 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "CreditNotes" : {
       "type" : "array",
       "items" : {
@@ -2563,7 +2605,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "credit_notes"
 };
       defs["Currencies"] = {
   "title" : "",
@@ -2577,7 +2619,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "currencies"
 };
       defs["Currency"] = {
   "title" : "",
@@ -2712,7 +2754,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "employees"
 };
       defs["Error"] = {
   "title" : "",
@@ -2836,7 +2878,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "expense_claims"
 };
       defs["ExternalLink"] = {
   "title" : "",
@@ -2859,267 +2901,6 @@ ul.nav-tabs {
   "externalDocs" : {
     "url" : "http://developer.xero.com/documentation/api/organisation/"
   }
-};
-      defs["GetBankTransactionsResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "BankTransactions" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/BankTransaction"
-      }
-    }
-  },
-  "description" : ""
-};
-      defs["GetContactsResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "Contacts" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/Contact"
-      }
-    }
-  },
-  "description" : ""
-};
-      defs["GetCreditNotesResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "CreditNotes" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/CreditNote"
-      }
-    }
-  },
-  "description" : ""
-};
-      defs["GetInvoicesResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "Invoices" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/Invoice"
-      }
-    }
-  },
-  "description" : ""
-};
-      defs["GetManualJournalsResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "ManualJournals" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/ManualJournal"
-      }
-    }
-  },
-  "description" : ""
-};
-      defs["GetOverpaymentsResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "Overpayments" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/Overpayment"
-      }
-    }
-  },
-  "description" : ""
-};
-      defs["GetPaymentsResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "Payments" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/Payment"
-      }
-    }
-  },
-  "description" : ""
-};
-      defs["GetPrepaymentsResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "Prepayments" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/Prepayment"
-      }
-    }
-  },
-  "description" : ""
-};
-      defs["GetPurchaseOrdersResponse"] = {
-  "title" : "",
-  "type" : "object",
-  "properties" : {
-    "Id" : {
-      "type" : "string"
-    },
-    "Status" : {
-      "type" : "string"
-    },
-    "ProviderName" : {
-      "type" : "string"
-    },
-    "DateTimeUTC" : {
-      "type" : "string"
-    },
-    "PageInfo" : {
-      "$ref" : "#/components/schemas/PageInfo"
-    },
-    "PurchaseOrders" : {
-      "minItems" : 1,
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/PurchaseOrder"
-      }
-    }
-  },
-  "description" : ""
 };
       defs["HistoryRecord"] = {
   "title" : "",
@@ -3162,7 +2943,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "history_records"
 };
       defs["ImportSummary"] = {
   "title" : "",
@@ -3490,12 +3271,63 @@ ul.nav-tabs {
       "items" : {
         "$ref" : "#/components/schemas/ValidationError"
       }
+    },
+    "InvoiceAddresses" : {
+      "type" : "array",
+      "description" : "An array of addresses used to auto calculate sales tax",
+      "items" : {
+        "$ref" : "#/components/schemas/InvoiceAddress"
+      }
     }
   },
   "description" : "",
   "externalDocs" : {
     "url" : "http://developer.xero.com/documentation/api/invoices/"
   }
+};
+      defs["InvoiceAddress"] = {
+  "title" : "",
+  "type" : "object",
+  "properties" : {
+    "InvoiceAddressType" : {
+      "type" : "string",
+      "description" : "Indicates whether the address is defined as origin (FROM) or destination (TO)",
+      "enum" : [ "FROM", "TO" ]
+    },
+    "AddressLine1" : {
+      "type" : "string",
+      "description" : "First line of a physical address"
+    },
+    "AddressLine2" : {
+      "type" : "string",
+      "description" : "Second line of a physical address"
+    },
+    "AddressLine3" : {
+      "type" : "string",
+      "description" : "Third line of a physical address"
+    },
+    "AddressLine4" : {
+      "type" : "string",
+      "description" : "Fourth line of a physical address"
+    },
+    "City" : {
+      "type" : "string",
+      "description" : "City of a physical address"
+    },
+    "Region" : {
+      "type" : "string",
+      "description" : "Region or state of a physical address"
+    },
+    "PostalCode" : {
+      "type" : "string",
+      "description" : "Postal code of a physical address"
+    },
+    "Country" : {
+      "type" : "string",
+      "description" : "Country of a physical address"
+    }
+  },
+  "description" : ""
 };
       defs["InvoiceReminder"] = {
   "title" : "",
@@ -3523,12 +3355,22 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "invoice_reminders"
 };
       defs["Invoices"] = {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "Invoices" : {
       "type" : "array",
       "items" : {
@@ -3537,7 +3379,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "invoices"
 };
       defs["Item"] = {
   "title" : "",
@@ -3639,7 +3481,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "items"
 };
       defs["Journal"] = {
   "title" : "",
@@ -3775,6 +3617,13 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "Journals" : {
       "type" : "array",
       "items" : {
@@ -3783,7 +3632,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "journals"
 };
       defs["LineAmountTypes"] = {
   "title" : "",
@@ -3874,6 +3723,22 @@ ul.nav-tabs {
       "description" : "The Xero identifier for a Repeating Invoice",
       "format" : "uuid",
       "example" : "00000000-0000-0000-0000-000000000000"
+    },
+    "Taxability" : {
+      "type" : "string",
+      "description" : "The type of taxability",
+      "enum" : [ "TAXABLE", "NON_TAXABLE", "EXEMPT", "PART_TAXABLE", "NOT_APPLICABLE" ]
+    },
+    "SalesTaxCodeId" : {
+      "type" : "number",
+      "description" : "The ID of the sales tax code"
+    },
+    "TaxBreakdown" : {
+      "type" : "array",
+      "description" : "An array of tax components defined for this line item",
+      "items" : {
+        "$ref" : "#/components/schemas/TaxBreakdownComponent"
+      }
     }
   },
   "description" : "",
@@ -4016,7 +3881,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "linked_transactions"
 };
       defs["ManualJournal"] = {
   "title" : "",
@@ -4165,6 +4030,16 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "ManualJournals" : {
       "type" : "array",
       "items" : {
@@ -4173,7 +4048,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "manual_journals"
 };
       defs["OnlineInvoice"] = {
   "title" : "",
@@ -4201,7 +4076,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "online_invoices"
 };
       defs["Organisation"] = {
   "title" : "",
@@ -4323,7 +4198,7 @@ ul.nav-tabs {
     "Class" : {
       "type" : "string",
       "description" : "Organisation Classes describe which plan the Xero organisation is on (e.g. DEMO, TRIAL, PREMIUM)",
-      "enum" : [ "DEMO", "TRIAL", "STARTER", "STANDARD", "PREMIUM", "PREMIUM_20", "PREMIUM_50", "PREMIUM_100", "LEDGER", "GST_CASHBOOK", "NON_GST_CASHBOOK", "ULTIMATE", "LITE", "IGNITE", "GROW", "COMPREHENSIVE" ]
+      "enum" : [ "DEMO", "TRIAL", "STARTER", "STANDARD", "PREMIUM", "PREMIUM_20", "PREMIUM_50", "PREMIUM_100", "LEDGER", "GST_CASHBOOK", "NON_GST_CASHBOOK", "ULTIMATE", "LITE", "ULTIMATE_10", "ULTIMATE_20", "ULTIMATE_50", "ULTIMATE_100", "IGNITE", "GROW", "COMPREHENSIVE", "SIMPLE" ]
     },
     "Edition" : {
       "type" : "string",
@@ -4376,7 +4251,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "organisations"
 };
       defs["Overpayment"] = {
   "title" : "",
@@ -4482,6 +4357,11 @@ ul.nav-tabs {
       "example" : false,
       "default" : false
     },
+    "Reference" : {
+      "type" : "string",
+      "description" : "An optional description for Overpayment",
+      "example" : "Ref for payment"
+    },
     "Attachments" : {
       "type" : "array",
       "description" : "See Attachments",
@@ -4499,6 +4379,16 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "Overpayments" : {
       "type" : "array",
       "items" : {
@@ -4507,26 +4397,26 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "overpayments"
 };
-      defs["PageInfo"] = {
+      defs["Pagination"] = {
   "title" : "",
   "type" : "object",
   "properties" : {
-    "Page" : {
+    "page" : {
       "type" : "integer"
     },
-    "PageSize" : {
+    "pageSize" : {
       "type" : "integer"
     },
-    "TotalPages" : {
+    "pageCount" : {
       "type" : "integer"
     },
-    "TotalRows" : {
+    "itemCount" : {
       "type" : "integer"
     }
   },
-  "description" : "Pagination information"
+  "description" : ""
 };
       defs["Payment"] = {
   "title" : "",
@@ -4736,7 +4626,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "payment_services"
 };
       defs["PaymentTerm"] = {
   "title" : "",
@@ -4764,6 +4654,16 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "Payments" : {
       "type" : "array",
       "items" : {
@@ -4772,7 +4672,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "payments"
 };
       defs["Phone"] = {
   "title" : "",
@@ -4929,6 +4829,16 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "Prepayments" : {
       "type" : "array",
       "items" : {
@@ -4937,7 +4847,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "prepayments"
 };
       defs["Purchase"] = {
   "title" : "",
@@ -5128,6 +5038,16 @@ ul.nav-tabs {
   "title" : "",
   "type" : "object",
   "properties" : {
+    "pagination" : {
+      "$ref" : "#/components/schemas/Pagination"
+    },
+    "Warnings" : {
+      "type" : "array",
+      "description" : "Displays array of warning messages from the API",
+      "items" : {
+        "$ref" : "#/components/schemas/ValidationError"
+      }
+    },
     "PurchaseOrders" : {
       "type" : "array",
       "items" : {
@@ -5136,7 +5056,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "purchase_orders"
 };
       defs["Quote"] = {
   "title" : "",
@@ -5295,7 +5215,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "quotes"
 };
       defs["Receipt"] = {
   "title" : "",
@@ -5416,7 +5336,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "receipts"
 };
       defs["RepeatingInvoice"] = {
   "title" : "",
@@ -5544,7 +5464,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "repeating_invoices"
 };
       defs["Report"] = {
   "title" : "",
@@ -5756,7 +5676,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "reports"
 };
       defs["RequestEmpty"] = {
   "title" : "",
@@ -5863,6 +5783,55 @@ ul.nav-tabs {
   "externalDocs" : {
     "url" : "https://developer.xero.com/documentation/api-guides/conversions"
   }
+};
+      defs["TaxBreakdownComponent"] = {
+  "title" : "",
+  "type" : "object",
+  "properties" : {
+    "TaxComponentId" : {
+      "type" : "string",
+      "description" : "The unique ID number of this component",
+      "format" : "uuid"
+    },
+    "Type" : {
+      "type" : "string",
+      "description" : "The type of the jurisdiction",
+      "enum" : [ "SYSGST/USCOUNTRY", "SYSGST/USSTATE", "SYSGST/USCOUNTY", "SYSGST/USCITY", "SYSGST/USSPECIAL" ]
+    },
+    "Name" : {
+      "type" : "string",
+      "description" : "The name of the jurisdiction"
+    },
+    "TaxPercentage" : {
+      "type" : "number",
+      "description" : "The percentage of the tax"
+    },
+    "TaxAmount" : {
+      "type" : "number",
+      "description" : "The amount of the tax"
+    },
+    "TaxableAmount" : {
+      "type" : "number",
+      "description" : "The amount that is taxable"
+    },
+    "NonTaxableAmount" : {
+      "type" : "number",
+      "description" : "The amount that is not taxable"
+    },
+    "ExemptAmount" : {
+      "type" : "number",
+      "description" : "The amount that is exempt"
+    },
+    "StateAssignedNo" : {
+      "type" : "string",
+      "description" : "The state assigned number of the jurisdiction"
+    },
+    "JurisdictionRegion" : {
+      "type" : "string",
+      "description" : "Name identifying the region within the country"
+    }
+  },
+  "description" : ""
 };
       defs["TaxComponent"] = {
   "title" : "",
@@ -5978,7 +5947,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "tax_rates"
 };
       defs["TaxType"] = {
   "title" : "",
@@ -6138,7 +6107,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "tracking_categories"
 };
       defs["TrackingCategory"] = {
   "title" : "",
@@ -6224,7 +6193,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "options"
 };
       defs["User"] = {
   "title" : "",
@@ -6261,7 +6230,7 @@ ul.nav-tabs {
     "OrganisationRole" : {
       "type" : "string",
       "description" : "User role that defines permissions in Xero and via API (READONLY, INVOICEONLY, STANDARD, FINANCIALADVISER, etc)",
-      "enum" : [ "READONLY", "INVOICEONLY", "STANDARD", "FINANCIALADVISER", "MANAGEDCLIENT", "CASHBOOKCLIENT", "UNKNOWN" ]
+      "enum" : [ "READONLY", "INVOICEONLY", "STANDARD", "FINANCIALADVISER", "MANAGEDCLIENT", "CASHBOOKCLIENT", "UNKNOWN", "REMOVED" ]
     }
   },
   "description" : "",
@@ -6281,7 +6250,7 @@ ul.nav-tabs {
     }
   },
   "description" : "",
-  "x-isObjectArray" : true
+  "x-objectArrayKey" : "users"
 };
       defs["ValidationError"] = {
   "title" : "",
@@ -6379,7 +6348,7 @@ ul.nav-tabs {
           <nav id="scrollingNav">
             <ul class="sidenav nav nav-list">
               <li class="nav-header" data-group="Accounting"><strong>SDK: </strong><span id='sdk-name'></span></li>
-              <li class="nav-header" data-group="Accounting"><strong>VSN: </strong>6.0.0</li>
+              <li class="nav-header" data-group="Accounting"><strong>VSN: </strong>10.4.0</li>
               <li class="nav-header" data-group="Accounting"><a href="#api-Accounting">Methods</a></li>
               <li data-group="Accounting" data-name="createAccount" class="">
                 <a href="#api-Accounting-createAccount">createAccount</a>
@@ -7251,7 +7220,12 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Account"
       },
-      "example" : "{ \"Code\":\"123456\", \"Name\":\"Foobar\", \"Type\":\"EXPENSE\", \"Description\":\"Hello World\" }"
+      "example" : {
+        "Code" : "123456",
+        "Name" : "Foobar",
+        "Type" : "EXPENSE",
+        "Description" : "Hello World"
+      }
     }
   },
   "required" : true
@@ -7852,7 +7826,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -8024,7 +8002,23 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/BankTransactions"
       },
-      "example" : "{ bankTransactions: [{ type: BankTransaction.TypeEnum.SPEND, contact: { contactID: \"00000000-0000-0000-0000-000000000000\" }, lineItems: [{ description: \"Foobar\", quantity: 1.0, unitAmount: 20.0, accountCode: \"000\" } ], bankAccount: { code: \"000\" }}]}"
+      "example" : {
+        "bankTransactions" : [ {
+          "type" : "BankTransaction.TypeEnum.SPEND",
+          "contact" : {
+            "contactID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "lineItems" : [ {
+            "description" : "Foobar",
+            "quantity" : 1.0,
+            "unitAmount" : 20.0,
+            "accountCode" : "000"
+          } ],
+          "bankAccount" : {
+            "code" : "000"
+          }
+        } ]
+      }
     }
   },
   "required" : true
@@ -8232,7 +8226,50 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/BankTransfers"
       },
-      "example" : "{ \"BankTransfers\": [ { \"FromBankAccount\": { \"Code\": \"090\", \"Name\": \"My Savings\", \"AccountID\": \"00000000-0000-0000-0000-000000000000\", \"Type\": \"BANK\", \"BankAccountNumber\": \"123455\", \"Status\": \"ACTIVE\", \"BankAccountType\": \"BANK\", \"CurrencyCode\": \"USD\", \"TaxType\": \"NONE\", \"EnablePaymentsToAccount\": false, \"ShowInExpenseClaims\": false, \"Class\": \"ASSET\", \"ReportingCode\": \"ASS\", \"ReportingCodeName\": \"Assets\", \"HasAttachments\": false, \"UpdatedDateUTC\": \"2016-10-17T13:45:33.993-07:00\" }, \"ToBankAccount\": { \"Code\": \"088\", \"Name\": \"Business Wells Fargo\", \"AccountID\": \"00000000-0000-0000-0000-000000000000\", \"Type\": \"BANK\", \"BankAccountNumber\": \"123455\", \"Status\": \"ACTIVE\", \"BankAccountType\": \"BANK\", \"CurrencyCode\": \"USD\", \"TaxType\": \"NONE\", \"EnablePaymentsToAccount\": false, \"ShowInExpenseClaims\": false, \"Class\": \"ASSET\", \"ReportingCode\": \"ASS\", \"ReportingCodeName\": \"Assets\", \"HasAttachments\": false, \"UpdatedDateUTC\": \"2016-06-03T08:31:14.517-07:00\" }, \"Amount\": \"50.00\", \"FromIsReconciled\": true, \"ToIsReconciled\": true, \"Reference\": \"Sub 098801\" } ] }"
+      "example" : {
+        "BankTransfers" : [ {
+          "FromBankAccount" : {
+            "Code" : "090",
+            "Name" : "My Savings",
+            "AccountID" : "00000000-0000-0000-0000-000000000000",
+            "Type" : "BANK",
+            "BankAccountNumber" : "123455",
+            "Status" : "ACTIVE",
+            "BankAccountType" : "BANK",
+            "CurrencyCode" : "USD",
+            "TaxType" : "NONE",
+            "EnablePaymentsToAccount" : false,
+            "ShowInExpenseClaims" : false,
+            "Class" : "ASSET",
+            "ReportingCode" : "ASS",
+            "ReportingCodeName" : "Assets",
+            "HasAttachments" : false,
+            "UpdatedDateUTC" : "2016-10-17T13:45:33.993-07:00"
+          },
+          "ToBankAccount" : {
+            "Code" : "088",
+            "Name" : "Business Wells Fargo",
+            "AccountID" : "00000000-0000-0000-0000-000000000000",
+            "Type" : "BANK",
+            "BankAccountNumber" : "123455",
+            "Status" : "ACTIVE",
+            "BankAccountType" : "BANK",
+            "CurrencyCode" : "USD",
+            "TaxType" : "NONE",
+            "EnablePaymentsToAccount" : false,
+            "ShowInExpenseClaims" : false,
+            "Class" : "ASSET",
+            "ReportingCode" : "ASS",
+            "ReportingCodeName" : "Assets",
+            "HasAttachments" : false,
+            "UpdatedDateUTC" : "2016-06-03T08:31:14.517-07:00"
+          },
+          "Amount" : "50.00",
+          "FromIsReconciled" : true,
+          "ToIsReconciled" : true,
+          "Reference" : "Sub 098801"
+        } ]
+      }
     }
   },
   "required" : true
@@ -8626,7 +8663,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -8801,7 +8842,28 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/BatchPayments"
       },
-      "example" : "{ \"BatchPayments\": [ { \"Account\": { \"AccountID\": \"00000000-0000-0000-0000-000000000000\" }, \"Reference\": \"ref\", \"Date\": \"2018-08-01\", \"Payments\": [ { \"Account\": { \"Code\": \"001\" }, \"Date\": \"2019-12-31\", \"Amount\": 500, \"Invoice\": { \"InvoiceID\": \"00000000-0000-0000-0000-000000000000\", \"LineItems\": [], \"Contact\": {}, \"Type\": \"ACCPAY\" } } ] } ] }"
+      "example" : {
+        "BatchPayments" : [ {
+          "Account" : {
+            "AccountID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "Reference" : "ref",
+          "Date" : "2018-08-01",
+          "Payments" : [ {
+            "Account" : {
+              "Code" : "001"
+            },
+            "Date" : "2019-12-31",
+            "Amount" : 500,
+            "Invoice" : {
+              "InvoiceID" : "00000000-0000-0000-0000-000000000000",
+              "LineItems" : [ ],
+              "Contact" : { },
+              "Type" : "ACCPAY"
+            }
+          } ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -9015,7 +9077,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -9205,7 +9271,15 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/PaymentServices"
       },
-      "example" : "{ \"PaymentServices\": [ { \"PaymentServiceID\": \"54b3b4f6-0443-4fba-bcd1-61ec0c35ca55\", \"PaymentServiceName\": \"PayUpNow\", \"PaymentServiceUrl\": \"https://www.payupnow.com/\", \"PaymentServiceType\": \"Custom\", \"PayNowText\": \"Time To Pay\" } ] }"
+      "example" : {
+        "PaymentServices" : [ {
+          "PaymentServiceID" : "54b3b4f6-0443-4fba-bcd1-61ec0c35ca55",
+          "PaymentServiceName" : "PayUpNow",
+          "PaymentServiceUrl" : "https://www.payupnow.com/",
+          "PaymentServiceType" : "Custom",
+          "PayNowText" : "Time To Pay"
+        } ]
+      }
     }
   },
   "required" : true
@@ -9565,7 +9639,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/ContactGroups"
       },
-      "example" : "{ \"ContactGroups\": [{ \"Name\": \"VIPs\" }]}"
+      "example" : {
+        "ContactGroups" : [ {
+          "Name" : "VIPs"
+        } ]
+      }
     }
   },
   "required" : true
@@ -9752,7 +9830,13 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Contacts"
       },
-      "example" : "{ \"Contacts\": [ { \"ContactID\": \"a3675fc4-f8dd-4f03-ba5b-f1870566bcd7\" }, { \"ContactID\": \"4e1753b9-018a-4775-b6aa-1bc7871cfee3\" } ] }"
+      "example" : {
+        "Contacts" : [ {
+          "ContactID" : "a3675fc4-f8dd-4f03-ba5b-f1870566bcd7"
+        }, {
+          "ContactID" : "4e1753b9-018a-4775-b6aa-1bc7871cfee3"
+        } ]
+      }
     }
   },
   "required" : true
@@ -9939,7 +10023,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -10101,7 +10189,66 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Contacts"
       },
-      "example" : "{ \"Contacts\": [ { \"ContactID\": \"3ff6d40c-af9a-40a3-89ce-3c1556a25591\", \"ContactStatus\": \"ACTIVE\", \"Name\": \"Foo9987\", \"EmailAddress\": \"sid32476@blah.com\", \"BankAccountDetails\": \"\", \"Addresses\": [ { \"AddressType\": \"STREET\", \"City\": \"\", \"Region\": \"\", \"PostalCode\": \"\", \"Country\": \"\" }, { \"AddressType\": \"POBOX\", \"City\": \"\", \"Region\": \"\", \"PostalCode\": \"\", \"Country\": \"\" } ], \"Phones\": [ { \"PhoneType\": \"DEFAULT\", \"PhoneNumber\": \"\", \"PhoneAreaCode\": \"\", \"PhoneCountryCode\": \"\" }, { \"PhoneType\": \"DDI\", \"PhoneNumber\": \"\", \"PhoneAreaCode\": \"\", \"PhoneCountryCode\": \"\" }, { \"PhoneType\": \"FAX\", \"PhoneNumber\": \"\", \"PhoneAreaCode\": \"\", \"PhoneCountryCode\": \"\" }, { \"PhoneType\": \"MOBILE\", \"PhoneNumber\": \"555-1212\", \"PhoneAreaCode\": \"415\", \"PhoneCountryCode\": \"\" } ], \"UpdatedDateUTC\": \"/Date(1551399321043+0000)/\", \"ContactGroups\": [], \"IsSupplier\": false, \"IsCustomer\": false, \"SalesTrackingCategories\": [], \"PurchasesTrackingCategories\": [], \"PaymentTerms\": { \"Bills\": { \"Day\": 15, \"Type\": \"OFCURRENTMONTH\" }, \"Sales\": { \"Day\": 10, \"Type\": \"DAYSAFTERBILLMONTH\" } }, \"ContactPersons\": [] } ] }"
+      "example" : {
+        "Contacts" : [ {
+          "ContactID" : "3ff6d40c-af9a-40a3-89ce-3c1556a25591",
+          "ContactStatus" : "ACTIVE",
+          "Name" : "Foo9987",
+          "EmailAddress" : "sid32476@blah.com",
+          "BankAccountDetails" : "",
+          "Addresses" : [ {
+            "AddressType" : "STREET",
+            "City" : "",
+            "Region" : "",
+            "PostalCode" : "",
+            "Country" : ""
+          }, {
+            "AddressType" : "POBOX",
+            "City" : "",
+            "Region" : "",
+            "PostalCode" : "",
+            "Country" : ""
+          } ],
+          "Phones" : [ {
+            "PhoneType" : "DEFAULT",
+            "PhoneNumber" : "",
+            "PhoneAreaCode" : "",
+            "PhoneCountryCode" : ""
+          }, {
+            "PhoneType" : "DDI",
+            "PhoneNumber" : "",
+            "PhoneAreaCode" : "",
+            "PhoneCountryCode" : ""
+          }, {
+            "PhoneType" : "FAX",
+            "PhoneNumber" : "",
+            "PhoneAreaCode" : "",
+            "PhoneCountryCode" : ""
+          }, {
+            "PhoneType" : "MOBILE",
+            "PhoneNumber" : "555-1212",
+            "PhoneAreaCode" : "415",
+            "PhoneCountryCode" : ""
+          } ],
+          "UpdatedDateUTC" : "/Date(1551399321043+0000)/",
+          "ContactGroups" : [ ],
+          "IsSupplier" : false,
+          "IsCustomer" : false,
+          "SalesTrackingCategories" : [ ],
+          "PurchasesTrackingCategories" : [ ],
+          "PaymentTerms" : {
+            "Bills" : {
+              "Day" : 15,
+              "Type" : "OFCURRENTMONTH"
+            },
+            "Sales" : {
+              "Day" : 10,
+              "Type" : "DAYSAFTERBILLMONTH"
+            }
+          },
+          "ContactPersons" : [ ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -10322,7 +10469,16 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Allocations"
       },
-      "example" : "{ \"Allocations\": [ { \"Invoice\": { \"LineItems\": [], \"InvoiceID\": \"c45720a1-ade3-4a38-a064-d15489be6841\" }, \"Amount\": 1, \"Date\": \"2019-03-05\" } ] }"
+      "example" : {
+        "Allocations" : [ {
+          "Invoice" : {
+            "LineItems" : [ ],
+            "InvoiceID" : "c45720a1-ade3-4a38-a064-d15489be6841"
+          },
+          "Amount" : 1,
+          "Date" : "2019-03-05"
+        } ]
+      }
     }
   },
   "required" : true
@@ -10771,7 +10927,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -10941,7 +11101,21 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/CreditNotes"
       },
-      "example" : "{ \"CreditNotes\":[ { \"Type\":\"ACCPAYCREDIT\", \"Contact\":{ \"ContactID\":\"430fa14a-f945-44d3-9f97-5df5e28441b8\" }, \"Date\":\"2019-01-05\", \"LineItems\":[ { \"Description\":\"Foobar\", \"Quantity\":2.0, \"UnitAmount\":20.0, \"AccountCode\":\"400\" } ] } ] }"
+      "example" : {
+        "CreditNotes" : [ {
+          "Type" : "ACCPAYCREDIT",
+          "Contact" : {
+            "ContactID" : "430fa14a-f945-44d3-9f97-5df5e28441b8"
+          },
+          "Date" : "2019-01-05",
+          "LineItems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 2.0,
+            "UnitAmount" : 20.0,
+            "AccountCode" : "400"
+          } ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -11137,7 +11311,10 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Currency"
       },
-      "example" : "{ \"Code\": \"USD\", \"Description\": \"United States Dollar\" }"
+      "example" : {
+        "Code" : "USD",
+        "Description" : "United States Dollar"
+      }
     }
   },
   "required" : true
@@ -11156,7 +11333,7 @@ This allows you to safely retry requests without the risk of duplicate processin
                   <div class="pull-right"></div>
                   <div class="clearfix"></div>
                   <p></p>
-                  <p class="marked"></p>
+                  <p class="marked">This endpoint is deprecated and will be removed April 28, 2026</p>
                   <p></p>
                   <br />
                   <pre class="prettyprint language-html prettyprinted" data-type="put"><code><span class="pln">/Employees</span></code></pre>
@@ -11292,7 +11469,15 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Employees"
       },
-      "example" : "{ \"Employees\": [ { \"FirstName\": \"Nick\", \"LastName\": \"Fury\", \"ExternalLink\": { \"Url\": \"http://twitter.com/#!/search/Nick+Fury\" } } ] }"
+      "example" : {
+        "Employees" : [ {
+          "FirstName" : "Nick",
+          "LastName" : "Fury",
+          "ExternalLink" : {
+            "Url" : "http://twitter.com/#!/search/Nick+Fury"
+          }
+        } ]
+      }
     }
   },
   "required" : true
@@ -11506,7 +11691,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -11671,7 +11860,18 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/ExpenseClaims"
       },
-      "example" : "{ \"ExpenseClaims\": [ { \"Status\": \"SUBMITTED\", \"User\": { \"UserID\": \"d1164823-0ac1-41ad-987b-b4e30fe0b273\" }, \"Receipts\": [ { \"Lineitems\": [], \"ReceiptID\": \"dc1c7f6d-0a4c-402f-acac-551d62ce5816\" } ] } ] }"
+      "example" : {
+        "ExpenseClaims" : [ {
+          "Status" : "SUBMITTED",
+          "User" : {
+            "UserID" : "d1164823-0ac1-41ad-987b-b4e30fe0b273"
+          },
+          "Receipts" : [ {
+            "Lineitems" : [ ],
+            "ReceiptID" : "dc1c7f6d-0a4c-402f-acac-551d62ce5816"
+          } ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -12093,7 +12293,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -12274,7 +12478,26 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Invoices"
       },
-      "example" : "{ \"Invoices\": [ { \"Type\": \"ACCREC\", \"Contact\": { \"ContactID\": \"430fa14a-f945-44d3-9f97-5df5e28441b8\" }, \"LineItems\": [ { \"Description\": \"Acme Tires\", \"Quantity\": 2, \"UnitAmount\": 20, \"AccountCode\": \"200\", \"TaxType\": \"NONE\", \"LineAmount\": 40 } ], \"Date\": \"2019-03-11\", \"DueDate\": \"2018-12-10\", \"Reference\": \"Website Design\", \"Status\": \"AUTHORISED\" } ] }"
+      "example" : {
+        "Invoices" : [ {
+          "Type" : "ACCREC",
+          "Contact" : {
+            "ContactID" : "430fa14a-f945-44d3-9f97-5df5e28441b8"
+          },
+          "LineItems" : [ {
+            "Description" : "Acme Tires",
+            "Quantity" : 2,
+            "UnitAmount" : 20,
+            "AccountCode" : "200",
+            "TaxType" : "NONE",
+            "LineAmount" : 40
+          } ],
+          "Date" : "2019-03-11",
+          "DueDate" : "2018-12-10",
+          "Reference" : "Website Design",
+          "Status" : "AUTHORISED"
+        } ]
+      }
     }
   },
   "required" : true
@@ -12508,7 +12731,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -12670,7 +12897,17 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Items"
       },
-      "example" : "{ \"Items\": [ { \"Code\": \"code123\", \"Name\": \"Item Name XYZ\", \"Description\": \"Foobar\", \"InventoryAssetAccountCode\": \"140\", \"PurchaseDetails\": { \"COGSAccountCode\": \"500\" } } ] }"
+      "example" : {
+        "Items" : [ {
+          "Code" : "code123",
+          "Name" : "Item Name XYZ",
+          "Description" : "Foobar",
+          "InventoryAssetAccountCode" : "140",
+          "PurchaseDetails" : {
+            "COGSAccountCode" : "500"
+          }
+        } ]
+      }
     }
   },
   "required" : true
@@ -12866,7 +13103,12 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/LinkedTransaction"
       },
-      "example" : "{ \"LinkedTransactions\": [ { \"SourceTransactionID\": \"a848644a-f20f-4630-98c3-386bd7505631\", \"SourceLineItemID\": \"b0df260d-3cc8-4ced-9bd6-41924f624ed3\" } ] }"
+      "example" : {
+        "LinkedTransactions" : [ {
+          "SourceTransactionID" : "a848644a-f20f-4630-98c3-386bd7505631",
+          "SourceLineItemID" : "b0df260d-3cc8-4ced-9bd6-41924f624ed3"
+        } ]
+      }
     }
   },
   "required" : true
@@ -13260,7 +13502,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -13310,13 +13556,13 @@ $dateValue = new DateTime('2019-10-10');
 $manualJournalLines = [];
 
 $credit = new XeroAPI\XeroPHP\Models\Accounting\ManualJournalLine;
-$credit->setLineAmount(100.0);
+$credit->setLineAmount(-100.0);
 $credit->setAccountCode('400');
 $credit->setDescription('Hello there');
 array_push($manualJournalLines, $credit);
 
 $debit = new XeroAPI\XeroPHP\Models\Accounting\ManualJournalLine;
-$debit->setLineAmount(-100.0);
+$debit->setLineAmount(100.0);
 $debit->setAccountCode('120');
 $debit->setDescription('Hello there');
 array_push($manualJournalLines, $debit);
@@ -13430,7 +13676,25 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/ManualJournals"
       },
-      "example" : "{ \"ManualJournals\": [ { \"Narration\": \"Journal Desc\", \"JournalLines\": [ { \"LineAmount\": 100, \"AccountCode\": \"400\", \"Description\": \"Money Movement\" }, { \"LineAmount\": -100, \"AccountCode\": \"400\", \"Description\": \"Prepayment of things\", \"Tracking\": [ { \"Name\": \"North\", \"Option\": \"Region\" } ] } ], \"Date\": \"2019-03-14\" } ] }"
+      "example" : {
+        "ManualJournals" : [ {
+          "Narration" : "Journal Desc",
+          "JournalLines" : [ {
+            "LineAmount" : 100,
+            "AccountCode" : "400",
+            "Description" : "Money Movement"
+          }, {
+            "LineAmount" : -100,
+            "AccountCode" : "400",
+            "Description" : "Prepayment of things",
+            "Tracking" : [ {
+              "Name" : "North",
+              "Option" : "Region"
+            } ]
+          } ],
+          "Date" : "2019-03-14"
+        } ]
+      }
     }
   },
   "required" : true
@@ -13651,7 +13915,18 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Allocations"
       },
-      "example" : "{ \"Allocations\": [ { \"Invoice\": { \"InvoiceID\": \"00000000-0000-0000-0000-000000000000\", \"LineItems\": [], \"Contact\": {}, \"Type\": \"ACCPAY\" }, \"Amount\": 10.00, \"Date\": \"2019-03-12\" } ] }"
+      "example" : {
+        "Allocations" : [ {
+          "Invoice" : {
+            "InvoiceID" : "00000000-0000-0000-0000-000000000000",
+            "LineItems" : [ ],
+            "Contact" : { },
+            "Type" : "ACCPAY"
+          },
+          "Amount" : 10.0,
+          "Date" : "2019-03-12"
+        } ]
+      }
     }
   },
   "required" : true
@@ -13865,7 +14140,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -14028,7 +14307,19 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Payment"
       },
-      "example" : "{ \"Payments\": [ { \"Invoice\": { \"LineItems\": [], \"InvoiceID\": \"00000000-0000-0000-0000-000000000000\" }, \"Account\": { \"Code\": \"970\" }, \"Date\": \"2019-03-12\", \"Amount\": 1 } ] }"
+      "example" : {
+        "Payments" : [ {
+          "Invoice" : {
+            "LineItems" : [ ],
+            "InvoiceID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "Account" : {
+            "Code" : "970"
+          },
+          "Date" : "2019-03-12",
+          "Amount" : 1
+        } ]
+      }
     }
   },
   "required" : true
@@ -14215,7 +14506,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -14370,7 +14665,13 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/PaymentServices"
       },
-      "example" : "{ \"PaymentServices\": [ { \"PaymentServiceName\": \"PayUpNow\", \"PaymentServiceUrl\": \"https://www.payupnow.com/\", \"PayNowText\": \"Time To Pay\" } ] }"
+      "example" : {
+        "PaymentServices" : [ {
+          "PaymentServiceName" : "PayUpNow",
+          "PaymentServiceUrl" : "https://www.payupnow.com/",
+          "PayNowText" : "Time To Pay"
+        } ]
+      }
     }
   },
   "required" : true
@@ -14534,7 +14835,19 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Payments"
       },
-      "example" : "{ \"Payments\": [ { \"Invoice\": { \"LineItems\": [], \"InvoiceID\": \"00000000-0000-0000-0000-000000000000\" }, \"Account\": { \"Code\": \"970\" }, \"Date\": \"2019-03-12\", \"Amount\": 1 } ] }"
+      "example" : {
+        "Payments" : [ {
+          "Invoice" : {
+            "LineItems" : [ ],
+            "InvoiceID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "Account" : {
+            "Code" : "970"
+          },
+          "Date" : "2019-03-12",
+          "Amount" : 1
+        } ]
+      }
     }
   },
   "required" : true
@@ -14755,7 +15068,16 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Allocations"
       },
-      "example" : "{ \"Allocations\": [ { \"Invoice\": { \"LineItems\": [], \"InvoiceID\": \"00000000-0000-0000-0000-000000000000\" }, \"Amount\": 1, \"Date\": \"2019-01-10\" } ] }"
+      "example" : {
+        "Allocations" : [ {
+          "Invoice" : {
+            "LineItems" : [ ],
+            "InvoiceID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "Amount" : 1,
+          "Date" : "2019-01-10"
+        } ]
+      }
     }
   },
   "required" : true
@@ -14969,7 +15291,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -15363,7 +15689,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -15531,7 +15861,20 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/PurchaseOrders"
       },
-      "example" : "{ \"PurchaseOrders\": [ { \"Contact\": { \"ContactID\": \"00000000-0000-0000-0000-000000000000\" }, \"LineItems\": [ { \"Description\": \"Foobar\", \"Quantity\": 1, \"UnitAmount\": 20, \"AccountCode\": \"710\" } ], \"Date\": \"2019-03-13\" } ] }"
+      "example" : {
+        "PurchaseOrders" : [ {
+          "Contact" : {
+            "ContactID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "LineItems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 1,
+            "UnitAmount" : 20,
+            "AccountCode" : "710"
+          } ],
+          "Date" : "2019-03-13"
+        } ]
+      }
     }
   },
   "required" : true
@@ -15952,7 +16295,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -16120,7 +16467,20 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Quotes"
       },
-      "example" : "{ \"Quotes\": [ { \"Contact\": { \"ContactID\": \"00000000-0000-0000-0000-000000000000\" }, \"LineItems\": [ { \"Description\": \"Foobar\", \"Quantity\": 1, \"UnitAmount\": 20, \"AccountCode\": \"12775\" } ], \"Date\": \"2020-02-01\" } ] }"
+      "example" : {
+        "Quotes" : [ {
+          "Contact" : {
+            "ContactID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "LineItems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 1,
+            "UnitAmount" : 20,
+            "AccountCode" : "12775"
+          } ],
+          "Date" : "2020-02-01"
+        } ]
+      }
     }
   },
   "required" : true
@@ -16319,7 +16679,26 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Receipts"
       },
-      "example" : "{ \"Receipts\": [ { \"Contact\": { \"ContactID\": \"00000000-0000-0000-0000-000000000000\" }, \"Lineitems\": [ { \"Description\": \"Foobar\", \"Quantity\": 2, \"UnitAmount\": 20, \"AccountCode\": \"400\", \"TaxType\": \"NONE\", \"LineAmount\": 40 } ], \"User\": { \"UserID\": \"00000000-0000-0000-0000-000000000000\" }, \"LineAmountTypes\": \"NoTax\", \"Status\": \"DRAFT\" } ] }"
+      "example" : {
+        "Receipts" : [ {
+          "Contact" : {
+            "ContactID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "Lineitems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 2,
+            "UnitAmount" : 20,
+            "AccountCode" : "400",
+            "TaxType" : "NONE",
+            "LineAmount" : 40
+          } ],
+          "User" : {
+            "UserID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "LineAmountTypes" : "NoTax",
+          "Status" : "DRAFT"
+        } ]
+      }
     }
   },
   "required" : true
@@ -16740,7 +17119,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -17134,7 +17517,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/HistoryRecords"
       },
-      "example" : "{ \"HistoryRecords\": [ { \"Details\": \"Hello World\" } ] }"
+      "example" : {
+        "HistoryRecords" : [ {
+          "Details" : "Hello World"
+        } ]
+      }
     }
   },
   "required" : true
@@ -17280,7 +17667,42 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/RepeatingInvoices"
       },
-      "example" : "{ \"RepeatingInvoices\": [ { \"Schedule\": { \"Period\": 1, \"Unit\": \"MONTHLY\", \"DueDate\": 10, \"DueDateType\": \"OFFOLLOWINGMONTH\", \"StartDate\": \"\\/Date(1555286400000+0000)\\/\" }, \"Type\": \"ACCREC\", \"Reference\": \"[Week]\", \"ApprovedForSending\": false, \"SendCopy\": false, \"MarkAsSent\": false, \"IncludePDF\": false, \"Contact\": { \"ContactID\": \"430fa14a-f945-44d3-9f97-5df5e28441b8\", \"Name\": \"Liam Gallagher\" }, \"Status\": \"AUTHORISED\", \"LineAmountTypes\": \"Exclusive\", \"LineItems\": [ { \"Description\": \"Guitars Fender Strat\", \"UnitAmount\": 5000.00, \"TaxType\": \"OUTPUT2\", \"TaxAmount\": 750.00, \"LineAmount\": 5000.00, \"AccountCode\": \"200\", \"Tracking\": [], \"Quantity\": 1.0000, \"LineItemID\": \"13a8353c-d2af-4d5b-920c-438449f08900\", \"DiscountEnteredAsPercent\": true } ], \"CurrencyCode\": \"NZD\" } ] }"
+      "example" : {
+        "RepeatingInvoices" : [ {
+          "Schedule" : {
+            "Period" : 1,
+            "Unit" : "MONTHLY",
+            "DueDate" : 10,
+            "DueDateType" : "OFFOLLOWINGMONTH",
+            "StartDate" : "/Date(1555286400000+0000)/"
+          },
+          "Type" : "ACCREC",
+          "Reference" : "[Week]",
+          "ApprovedForSending" : false,
+          "SendCopy" : false,
+          "MarkAsSent" : false,
+          "IncludePDF" : false,
+          "Contact" : {
+            "ContactID" : "430fa14a-f945-44d3-9f97-5df5e28441b8",
+            "Name" : "Liam Gallagher"
+          },
+          "Status" : "AUTHORISED",
+          "LineAmountTypes" : "Exclusive",
+          "LineItems" : [ {
+            "Description" : "Guitars Fender Strat",
+            "UnitAmount" : 5000.0,
+            "TaxType" : "OUTPUT2",
+            "TaxAmount" : 750.0,
+            "LineAmount" : 5000.0,
+            "AccountCode" : "200",
+            "Tracking" : [ ],
+            "Quantity" : 1.0,
+            "LineItemID" : "13a8353c-d2af-4d5b-920c-438449f08900",
+            "DiscountEnteredAsPercent" : true
+          } ],
+          "CurrencyCode" : "NZD"
+        } ]
+      }
     }
   },
   "required" : true
@@ -17467,7 +17889,15 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/TaxRates"
       },
-      "example" : "{ \"TaxRates\": [ { \"Name\": \"CA State Tax\", \"TaxComponents\": [ { \"Name\": \"State Tax\", \"Rate\": 2.25 } ] } ] }"
+      "example" : {
+        "TaxRates" : [ {
+          "Name" : "CA State Tax",
+          "TaxComponents" : [ {
+            "Name" : "State Tax",
+            "Rate" : 2.25
+          } ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -17615,7 +18045,9 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/TrackingCategory"
       },
-      "example" : "{ name: \"FooBar\" }"
+      "example" : {
+        "name" : "FooBar"
+      }
     }
   },
   "required" : true
@@ -17797,7 +18229,9 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/TrackingOption"
       },
-      "example" : "{ name: \" Bar\" }"
+      "example" : {
+        "name" : " Bar"
+      }
     }
   },
   "required" : true
@@ -18066,7 +18500,10 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/BatchPaymentDelete"
       },
-      "example" : "{ \"BatchPaymentID\": \"9bf296e9-0748-4d29-a3dc-24dde1098030\", \"Status\":\"DELETED\" }"
+      "example" : {
+        "BatchPaymentID" : "9bf296e9-0748-4d29-a3dc-24dde1098030",
+        "Status" : "DELETED"
+      }
     }
   },
   "required" : true
@@ -18244,7 +18681,9 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/BatchPaymentDeleteByUrlParam"
       },
-      "example" : "{ \"Status\":\"DELETED\" }"
+      "example" : {
+        "Status" : "DELETED"
+      }
     }
   },
   "required" : true
@@ -19232,7 +19671,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/PaymentDelete"
       },
-      "example" : "{ \"Payments\":[ { \"Status\":\"DELETED\" } ] }"
+      "example" : {
+        "Payments" : [ {
+          "Status" : "DELETED"
+        } ]
+      }
     }
   },
   "required" : true
@@ -19829,7 +20272,7 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/RequestEmpty"
       },
-      "example" : "{}"
+      "example" : { }
     }
   },
   "required" : true
@@ -23294,7 +23737,7 @@ try {
                     
                     <tr>
                       <td>accounting.budgets.read</td>
-                      <td></td>
+                      <td>Grant read-only access to read budgets</td>
                     </tr>
                     
                   </table>
@@ -23470,7 +23913,7 @@ try {
                     
                     <tr>
                       <td>accounting.budgets.read</td>
-                      <td></td>
+                      <td>Grant read-only access to read budgets</td>
                     </tr>
                     
                   </table>
@@ -26384,7 +26827,7 @@ Order by an any element
                   <div class="pull-right"></div>
                   <div class="clearfix"></div>
                   <p></p>
-                  <p class="marked"></p>
+                  <p class="marked">This endpoint is deprecated and will be removed April 28, 2026</p>
                   <p></p>
                   <br />
                   <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/Employees/{EmployeeID}</span></code></pre>
@@ -26510,7 +26953,7 @@ Xero identifier for Tenant
                   <div class="pull-right"></div>
                   <div class="clearfix"></div>
                   <p></p>
-                  <p class="marked"></p>
+                  <p class="marked">This endpoint is deprecated and will be removed April 28, 2026</p>
                   <p></p>
                   <br />
                   <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/Employees</span></code></pre>
@@ -28105,9 +28548,10 @@ $createdByMyApp = false;
 $unitdp = 4;
 $summaryOnly = true;
 $pageSize = 100;
+$searchTerm = "SearchTerm=REF12";
 
 try {
-  $result = $apiInstance->getInvoices($xeroTenantId, $ifModifiedSince, $where, $order, $iDs, $invoiceNumbers, $contactIDs, $statuses, $page, $includeArchived, $createdByMyApp, $unitdp, $summaryOnly, $pageSize);
+  $result = $apiInstance->getInvoices($xeroTenantId, $ifModifiedSince, $where, $order, $iDs, $invoiceNumbers, $contactIDs, $statuses, $page, $includeArchived, $createdByMyApp, $unitdp, $summaryOnly, $pageSize, $searchTerm);
 } catch (Exception $e) {
   echo 'Exception when calling AccountingApi->getInvoices: ', $e->getMessage(), PHP_EOL;
 }
@@ -28428,6 +28872,26 @@ Use summaryOnly=true in GET Contacts and Invoices endpoint to retrieve a smaller
 
                     <div class="inner description marked">
 Number of records to retrieve per page
+                    </div>
+            </div>
+        </div>
+    </div>
+</td>
+</tr>
+
+                    <tr><td style="width:150px;">searchTerm</td>
+<td>
+
+
+    <div id="d2e199_getInvoices_searchTerm">
+        <div class="json-schema-view">
+            <div class="primitive">
+                <span class="type">
+                    String
+                </span>
+
+                    <div class="inner description marked">
+Search parameter that performs a case-insensitive text search across the fields e.g. InvoiceNumber, Reference.
                     </div>
             </div>
         </div>
@@ -31330,9 +31794,11 @@ $where = "Status==&quot;&apos; . \XeroAPI\XeroPHP\Models\Accounting\Overpayment:
 $order = "Status ASC";
 $page = 1;
 $unitdp = 4;
+$pageSize = 100;
+$references = array(&quot;Ref1&quot;, &quot;Ref2&quot;)
 
 try {
-  $result = $apiInstance->getOverpayments($xeroTenantId, $ifModifiedSince, $where, $order, $page, $unitdp);
+  $result = $apiInstance->getOverpayments($xeroTenantId, $ifModifiedSince, $where, $order, $page, $unitdp, $pageSize, $references);
 } catch (Exception $e) {
   echo 'Exception when calling AccountingApi->getOverpayments: ', $e->getMessage(), PHP_EOL;
 }
@@ -31487,6 +31953,46 @@ e.g. page=1 – Up to 100 overpayments will be returned in a single API call wit
 
                     <div class="inner description marked">
 e.g. unitdp=4 – (Unit Decimal Places) You can opt in to use four decimal places for unit amounts
+                    </div>
+            </div>
+        </div>
+    </div>
+</td>
+</tr>
+
+                    <tr><td style="width:150px;">pageSize</td>
+<td>
+
+
+    <div id="d2e199_getOverpayments_pageSize">
+        <div class="json-schema-view">
+            <div class="primitive">
+                <span class="type">
+                    Integer
+                </span>
+
+                    <div class="inner description marked">
+Number of records to retrieve per page
+                    </div>
+            </div>
+        </div>
+    </div>
+</td>
+</tr>
+
+                    <tr><td style="width:150px;">References</td>
+<td>
+
+
+    <div id="d2e199_getOverpayments_references">
+        <div class="json-schema-view">
+            <div class="primitive">
+                <span class="type">
+                    array[String]
+                </span>
+
+                    <div class="inner description marked">
+Filter by a comma-separated list of References
                     </div>
             </div>
         </div>
@@ -32335,9 +32841,10 @@ $where = "Status==&quot;&apos; . \XeroAPI\XeroPHP\Models\Accounting\Prepayment::
 $order = "Reference ASC";
 $page = 1;
 $unitdp = 4;
+$pageSize = 100;
 
 try {
-  $result = $apiInstance->getPrepayments($xeroTenantId, $ifModifiedSince, $where, $order, $page, $unitdp);
+  $result = $apiInstance->getPrepayments($xeroTenantId, $ifModifiedSince, $where, $order, $page, $unitdp, $pageSize);
 } catch (Exception $e) {
   echo 'Exception when calling AccountingApi->getPrepayments: ', $e->getMessage(), PHP_EOL;
 }
@@ -32492,6 +32999,26 @@ e.g. page=1 – Up to 100 prepayments will be returned in a single API call with
 
                     <div class="inner description marked">
 e.g. unitdp=4 – (Unit Decimal Places) You can opt in to use four decimal places for unit amounts
+                    </div>
+            </div>
+        </div>
+    </div>
+</td>
+</tr>
+
+                    <tr><td style="width:150px;">pageSize</td>
+<td>
+
+
+    <div id="d2e199_getPrepayments_pageSize">
+        <div class="json-schema-view">
+            <div class="primitive">
+                <span class="type">
+                    Integer
+                </span>
+
+                    <div class="inner description marked">
+Number of records to retrieve per page
                     </div>
             </div>
         </div>
@@ -39544,7 +40071,33 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Setup"
       },
-      "example" : "{ \"ConversionDate\": {}, \"ConversionBalances\": [], \"Accounts\": [ { \"Code\": \"200\", \"Name\": \"Sales\", \"Type\": \"SALES\", \"ReportingCode\": \"REV.TRA.GOO\" }, { \"Code\": \"400\", \"Name\": \"Advertising\", \"Type\": \"OVERHEADS\", \"ReportingCode\": \"EXP\" }, { \"Code\": \"610\", \"Name\": \"Accounts Receivable\", \"Type\": \"CURRENT\", \"SystemAccount\": \"DEBTORS\", \"ReportingCode\": \"ASS.CUR.REC.TRA\" }, { \"Code\": \"800\", \"Name\": \"Accounts Payable\", \"Type\": \"CURRLIAB\", \"SystemAccount\": \"CREDITORS\", \"ReportingCode\": \"LIA.CUR.PAY\" } ] }"
+      "example" : {
+        "ConversionDate" : { },
+        "ConversionBalances" : [ ],
+        "Accounts" : [ {
+          "Code" : "200",
+          "Name" : "Sales",
+          "Type" : "SALES",
+          "ReportingCode" : "REV.TRA.GOO"
+        }, {
+          "Code" : "400",
+          "Name" : "Advertising",
+          "Type" : "OVERHEADS",
+          "ReportingCode" : "EXP"
+        }, {
+          "Code" : "610",
+          "Name" : "Accounts Receivable",
+          "Type" : "CURRENT",
+          "SystemAccount" : "DEBTORS",
+          "ReportingCode" : "ASS.CUR.REC.TRA"
+        }, {
+          "Code" : "800",
+          "Name" : "Accounts Payable",
+          "Type" : "CURRLIAB",
+          "SystemAccount" : "CREDITORS",
+          "ReportingCode" : "LIA.CUR.PAY"
+        } ]
+      }
     }
   },
   "required" : true
@@ -39735,7 +40288,22 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Accounts"
       },
-      "example" : "{ \"Accounts\":[ { \"Code\":\"123456\", \"Name\":\"BarFoo\", \"AccountID\":\"99ce6032-0678-4aa0-8148-240c75fee33a\", \"Type\":\"EXPENSE\", \"Description\":\"GoodBye World\", \"TaxType\":\"INPUT\", \"EnablePaymentsToAccount\":false, \"ShowInExpenseClaims\":false, \"Class\":\"EXPENSE\", \"ReportingCode\":\"EXP\", \"ReportingCodeName\":\"Expense\", \"UpdatedDateUTC\":\"2019-02-21T16:29:47.96-08:00\" } ] }"
+      "example" : {
+        "Accounts" : [ {
+          "Code" : "123456",
+          "Name" : "BarFoo",
+          "AccountID" : "99ce6032-0678-4aa0-8148-240c75fee33a",
+          "Type" : "EXPENSE",
+          "Description" : "GoodBye World",
+          "TaxType" : "INPUT",
+          "EnablePaymentsToAccount" : false,
+          "ShowInExpenseClaims" : false,
+          "Class" : "EXPENSE",
+          "ReportingCode" : "EXP",
+          "ReportingCodeName" : "Expense",
+          "UpdatedDateUTC" : "2019-02-21T16:29:47.96-08:00"
+        } ]
+      }
     }
   },
   "required" : true
@@ -40147,7 +40715,77 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/BankTransactions"
       },
-      "example" : "{ \"BankTransactions\": [ { \"Type\": \"SPEND\", \"Contact\": { \"ContactID\": \"00000000-0000-0000-0000-000000000000\", \"ContactStatus\": \"ACTIVE\", \"Name\": \"Buzz Lightyear\", \"FirstName\": \"Buzz\", \"LastName\": \"Lightyear\", \"EmailAddress\": \"buzz.Lightyear@email.com\", \"ContactPersons\": [], \"BankAccountDetails\": \"\", \"Addresses\": [ { \"AddressType\": \"STREET\", \"City\": \"\", \"Region\": \"\", \"PostalCode\": \"\", \"Country\": \"\" }, { \"AddressType\": \"POBOX\", \"AddressLine1\": \"\", \"AddressLine2\": \"\", \"AddressLine3\": \"\", \"AddressLine4\": \"\", \"City\": \"Palo Alto\", \"Region\": \"CA\", \"PostalCode\": \"94020\", \"Country\": \"United States\" } ], \"Phones\": [ { \"PhoneType\": \"DEFAULT\", \"PhoneNumber\": \"847-1294\", \"PhoneAreaCode\": \"(626)\", \"PhoneCountryCode\": \"\" }, { \"PhoneType\": \"DDI\", \"PhoneNumber\": \"\", \"PhoneAreaCode\": \"\", \"PhoneCountryCode\": \"\" }, { \"PhoneType\": \"FAX\", \"PhoneNumber\": \"\", \"PhoneAreaCode\": \"\", \"PhoneCountryCode\": \"\" }, { \"PhoneType\": \"MOBILE\", \"PhoneNumber\": \"\", \"PhoneAreaCode\": \"\", \"PhoneCountryCode\": \"\" } ], \"UpdatedDateUTC\": \"2017-08-21T13:49:04.227-07:00\", \"ContactGroups\": [] }, \"Lineitems\": [], \"BankAccount\": { \"Code\": \"088\", \"Name\": \"Business Wells Fargo\", \"AccountID\": \"00000000-0000-0000-0000-000000000000\" }, \"IsReconciled\": false, \"Date\": \"2019-02-25\", \"Reference\": \"You just updated\", \"CurrencyCode\": \"USD\", \"CurrencyRate\": 1, \"Status\": \"AUTHORISED\", \"LineAmountTypes\": \"Inclusive\", \"TotalTax\": 1.74, \"BankTransactionID\": \"00000000-0000-0000-0000-000000000000\", \"UpdatedDateUTC\": \"2019-02-26T12:39:27.813-08:00\" } ] }"
+      "example" : {
+        "BankTransactions" : [ {
+          "Type" : "SPEND",
+          "Contact" : {
+            "ContactID" : "00000000-0000-0000-0000-000000000000",
+            "ContactStatus" : "ACTIVE",
+            "Name" : "Buzz Lightyear",
+            "FirstName" : "Buzz",
+            "LastName" : "Lightyear",
+            "EmailAddress" : "buzz.Lightyear@email.com",
+            "ContactPersons" : [ ],
+            "BankAccountDetails" : "",
+            "Addresses" : [ {
+              "AddressType" : "STREET",
+              "City" : "",
+              "Region" : "",
+              "PostalCode" : "",
+              "Country" : ""
+            }, {
+              "AddressType" : "POBOX",
+              "AddressLine1" : "",
+              "AddressLine2" : "",
+              "AddressLine3" : "",
+              "AddressLine4" : "",
+              "City" : "Palo Alto",
+              "Region" : "CA",
+              "PostalCode" : "94020",
+              "Country" : "United States"
+            } ],
+            "Phones" : [ {
+              "PhoneType" : "DEFAULT",
+              "PhoneNumber" : "847-1294",
+              "PhoneAreaCode" : "(626)",
+              "PhoneCountryCode" : ""
+            }, {
+              "PhoneType" : "DDI",
+              "PhoneNumber" : "",
+              "PhoneAreaCode" : "",
+              "PhoneCountryCode" : ""
+            }, {
+              "PhoneType" : "FAX",
+              "PhoneNumber" : "",
+              "PhoneAreaCode" : "",
+              "PhoneCountryCode" : ""
+            }, {
+              "PhoneType" : "MOBILE",
+              "PhoneNumber" : "",
+              "PhoneAreaCode" : "",
+              "PhoneCountryCode" : ""
+            } ],
+            "UpdatedDateUTC" : "2017-08-21T13:49:04.227-07:00",
+            "ContactGroups" : [ ]
+          },
+          "Lineitems" : [ ],
+          "BankAccount" : {
+            "Code" : "088",
+            "Name" : "Business Wells Fargo",
+            "AccountID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "IsReconciled" : false,
+          "Date" : "2019-02-25",
+          "Reference" : "You just updated",
+          "CurrencyCode" : "USD",
+          "CurrencyRate" : 1,
+          "Status" : "AUTHORISED",
+          "LineAmountTypes" : "Inclusive",
+          "TotalTax" : 1.74,
+          "BankTransactionID" : "00000000-0000-0000-0000-000000000000",
+          "UpdatedDateUTC" : "2019-02-26T12:39:27.813-08:00"
+        } ]
+      }
     }
   },
   "required" : true
@@ -40776,7 +41414,12 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Contacts"
       },
-      "example" : "{ \"Contacts\": [{ \"ContactID\": \"00000000-0000-0000-0000-000000000000\", \"Name\": \"Thanos\" }]}"
+      "example" : {
+        "Contacts" : [ {
+          "ContactID" : "00000000-0000-0000-0000-000000000000",
+          "Name" : "Thanos"
+        } ]
+      }
     }
   },
   "required" : true
@@ -41170,7 +41813,11 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/ContactGroups"
       },
-      "example" : "{ \"ContactGroups\":[ { \"Name\":\"Suppliers\" } ] }"
+      "example" : {
+        "ContactGroups" : [ {
+          "Name" : "Suppliers"
+        } ]
+      }
     }
   },
   "required" : true
@@ -41375,7 +42022,24 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/CreditNotes"
       },
-      "example" : "{ \"CreditNotes\": [ { \"Type\": \"ACCPAYCREDIT\", \"Contact\": { \"ContactID\": \"430fa14a-f945-44d3-9f97-5df5e28441b8\" }, \"Date\": \"2019-01-05\", \"Status\": \"AUTHORISED\", \"Reference\": \"HelloWorld\", \"LineItems\": [ { \"Description\": \"Foobar\", \"Quantity\": 2, \"UnitAmount\": 20, \"AccountCode\": \"400\" } ] } ] }"
+      "example" : {
+        "CreditNotes" : [ {
+          "Type" : "ACCPAYCREDIT",
+          "Contact" : {
+            "ContactID" : "430fa14a-f945-44d3-9f97-5df5e28441b8"
+          },
+          "Date" : "2019-01-05",
+          "Status" : "AUTHORISED",
+          "Reference" : "HelloWorld",
+          "SentToContact" : true,
+          "LineItems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 2,
+            "UnitAmount" : 20,
+            "AccountCode" : "400"
+          } ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -41807,7 +42471,18 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/ExpenseClaims"
       },
-      "example" : "{ \"ExpenseClaims\": [ { \"Status\": \"SUBMITTED\", \"User\": { \"UserID\": \"d1164823-0ac1-41ad-987b-b4e30fe0b273\" }, \"Receipts\": [ { \"Lineitems\": [], \"ReceiptID\": \"dc1c7f6d-0a4c-402f-acac-551d62ce5816\" } ] } ] }"
+      "example" : {
+        "ExpenseClaims" : [ {
+          "Status" : "SUBMITTED",
+          "User" : {
+            "UserID" : "d1164823-0ac1-41ad-987b-b4e30fe0b273"
+          },
+          "Receipts" : [ {
+            "Lineitems" : [ ],
+            "ReceiptID" : "dc1c7f6d-0a4c-402f-acac-551d62ce5816"
+          } ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -41994,7 +42669,15 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Invoices"
       },
-      "example" : "{ \"Invoices\": [{ Reference: \"May the force be with you\", \"InvoiceID\": \"00000000-0000-0000-0000-000000000000\", \"LineItems\": [], \"Contact\": {}, \"Type\": \"ACCPAY\" }]}"
+      "example" : {
+        "Invoices" : [ {
+          "Reference" : "May the force be with you",
+          "InvoiceID" : "00000000-0000-0000-0000-000000000000",
+          "LineItems" : [ ],
+          "Contact" : { },
+          "Type" : "ACCPAY"
+        } ]
+      }
     }
   },
   "required" : true
@@ -42416,7 +43099,12 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Items"
       },
-      "example" : "{ \"Items\": [ { \"Code\": \"ItemCode123\", \"Description\": \"Description 123\" } ] }"
+      "example" : {
+        "Items" : [ {
+          "Code" : "ItemCode123",
+          "Description" : "Description 123"
+        } ]
+      }
     }
   },
   "required" : true
@@ -42630,7 +43318,12 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/LinkedTransactions"
       },
-      "example" : "{ \"LinkedTransactions\": [ { \"SourceTransactionID\": \"00000000-0000-0000-0000-000000000000\", \"SourceLineItemID\": \"00000000-0000-0000-0000-000000000000\" } ] }"
+      "example" : {
+        "LinkedTransactions" : [ {
+          "SourceTransactionID" : "00000000-0000-0000-0000-000000000000",
+          "SourceLineItemID" : "00000000-0000-0000-0000-000000000000"
+        } ]
+      }
     }
   },
   "required" : true
@@ -42680,13 +43373,13 @@ $dateValue = new DateTime('2020-10-10');
 $manualJournalLines = [];
 
 $credit = new XeroAPI\XeroPHP\Models\Accounting\ManualJournalLine;
-$credit->setLineAmount(100.0);
+$credit->setLineAmount(-100.0);
 $credit->setAccountCode('400');
 $credit->setDescription('Hello there');
 array_push($manualJournalLines, $credit);
 
 $debit = new XeroAPI\XeroPHP\Models\Accounting\ManualJournalLine;
-$debit->setLineAmount(-100.0);
+$debit->setLineAmount(100.0);
 $debit->setAccountCode('120');
 $debit->setDescription('Hello there');
 array_push($manualJournalLines, $debit);
@@ -42832,7 +43525,13 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/ManualJournals"
       },
-      "example" : "{ \"ManualJournals\": [ { \"Narration\": \"Hello Xero\", \"ManualJournalID\": \"00000000-0000-0000-0000-000000000000\", \"JournalLines\": [] } ] }"
+      "example" : {
+        "ManualJournals" : [ {
+          "Narration" : "Hello Xero",
+          "ManualJournalID" : "00000000-0000-0000-0000-000000000000",
+          "JournalLines" : [ ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -43210,7 +43909,23 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/BankTransactions"
       },
-      "example" : "{ \"BankTransactions\": [ { \"Type\": \"SPEND\", \"Contact\": { \"ContactID\": \"00000000-0000-0000-0000-000000000000\" }, \"Lineitems\": [ { \"Description\": \"Foobar\", \"Quantity\": 1, \"UnitAmount\": 20, \"AccountCode\": \"400\" } ], \"BankAccount\": { \"Code\": \"088\" } } ] }"
+      "example" : {
+        "BankTransactions" : [ {
+          "Type" : "SPEND",
+          "Contact" : {
+            "ContactID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "Lineitems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 1,
+            "UnitAmount" : 20,
+            "AccountCode" : "400"
+          } ],
+          "BankAccount" : {
+            "Code" : "088"
+          }
+        } ]
+      }
     }
   },
   "required" : true
@@ -43418,7 +44133,27 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Contacts"
       },
-      "example" : "{ \"Contacts\": [ { \"Name\": \"Bruce Banner\", \"EmailAddress\": \"hulk@avengers.com\", \"Phones\": [ { \"PhoneType\": \"MOBILE\", \"PhoneNumber\": \"555-1212\", \"PhoneAreaCode\": \"415\" } ], \"PaymentTerms\": { \"Bills\": { \"Day\": 15, \"Type\": \"OFCURRENTMONTH\" }, \"Sales\": { \"Day\": 10, \"Type\": \"DAYSAFTERBILLMONTH\" } } } ] }"
+      "example" : {
+        "Contacts" : [ {
+          "Name" : "Bruce Banner",
+          "EmailAddress" : "hulk@avengers.com",
+          "Phones" : [ {
+            "PhoneType" : "MOBILE",
+            "PhoneNumber" : "555-1212",
+            "PhoneAreaCode" : "415"
+          } ],
+          "PaymentTerms" : {
+            "Bills" : {
+              "Day" : 15,
+              "Type" : "OFCURRENTMONTH"
+            },
+            "Sales" : {
+              "Day" : 10,
+              "Type" : "DAYSAFTERBILLMONTH"
+            }
+          }
+        } ]
+      }
     }
   },
   "required" : true
@@ -43615,7 +44350,23 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/CreditNotes"
       },
-      "example" : "{ \"CreditNotes\":[ { \"Type\":\"ACCPAYCREDIT\", \"Contact\":{ \"ContactID\":\"430fa14a-f945-44d3-9f97-5df5e28441b8\" }, \"Date\":\"2019-01-05\", \"Status\":\"AUTHORISED\", \"Reference\": \"HelloWorld\", \"LineItems\":[ { \"Description\":\"Foobar\", \"Quantity\":2.0, \"UnitAmount\":20.0, \"AccountCode\":\"400\" } ] } ] }"
+      "example" : {
+        "CreditNotes" : [ {
+          "Type" : "ACCPAYCREDIT",
+          "Contact" : {
+            "ContactID" : "430fa14a-f945-44d3-9f97-5df5e28441b8"
+          },
+          "Date" : "2019-01-05",
+          "Status" : "AUTHORISED",
+          "Reference" : "HelloWorld",
+          "LineItems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 2.0,
+            "UnitAmount" : 20.0,
+            "AccountCode" : "400"
+          } ]
+        } ]
+      }
     }
   },
   "required" : true
@@ -43681,7 +44432,7 @@ e.g. unitdp=4 – (Unit Decimal Places) You can opt in to use four decimal place
                   <div class="pull-right"></div>
                   <div class="clearfix"></div>
                   <p></p>
-                  <p class="marked"></p>
+                  <p class="marked">This endpoint is deprecated and will be removed April 28, 2026</p>
                   <p></p>
                   <br />
                   <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/Employees</span></code></pre>
@@ -43817,7 +44568,15 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Employees"
       },
-      "example" : "{ \"Employees\": [ { \"FirstName\": \"Nick\", \"LastName\": \"Fury\", \"ExternalLink\": { \"Url\": \"http://twitter.com/#!/search/Nick+Fury\" } } ] }"
+      "example" : {
+        "Employees" : [ {
+          "FirstName" : "Nick",
+          "LastName" : "Fury",
+          "ExternalLink" : {
+            "Url" : "http://twitter.com/#!/search/Nick+Fury"
+          }
+        } ]
+      }
     }
   },
   "required" : true
@@ -44017,7 +44776,26 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Invoices"
       },
-      "example" : "{ \"Invoices\": [ { \"Type\": \"ACCREC\", \"Contact\": { \"ContactID\": \"430fa14a-f945-44d3-9f97-5df5e28441b8\" }, \"LineItems\": [ { \"Description\": \"Acme Tires\", \"Quantity\": 2, \"UnitAmount\": 20, \"AccountCode\": \"200\", \"TaxType\": \"NONE\", \"LineAmount\": 40 } ], \"Date\": \"2019-03-11\", \"DueDate\": \"2018-12-10\", \"Reference\": \"Website Design\", \"Status\": \"AUTHORISED\" } ] }"
+      "example" : {
+        "Invoices" : [ {
+          "Type" : "ACCREC",
+          "Contact" : {
+            "ContactID" : "430fa14a-f945-44d3-9f97-5df5e28441b8"
+          },
+          "LineItems" : [ {
+            "Description" : "Acme Tires",
+            "Quantity" : 2,
+            "UnitAmount" : 20,
+            "AccountCode" : "200",
+            "TaxType" : "NONE",
+            "LineAmount" : 40
+          } ],
+          "Date" : "2019-03-11",
+          "DueDate" : "2018-12-10",
+          "Reference" : "Website Design",
+          "Status" : "AUTHORISED"
+        } ]
+      }
     }
   },
   "required" : true
@@ -44220,7 +44998,13 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Items"
       },
-      "example" : "{ \"Items\": [ { \"Code\": \"ItemCode123\", \"Name\": \"ItemName XYZ\", \"Description\": \"Item Description ABC\" } ] }"
+      "example" : {
+        "Items" : [ {
+          "Code" : "ItemCode123",
+          "Name" : "ItemName XYZ",
+          "Description" : "Item Description ABC"
+        } ]
+      }
     }
   },
   "required" : true
@@ -44317,13 +45101,13 @@ $dateValue = new DateTime('2020-10-10');
 $manualJournalLines = [];
 
 $credit = new XeroAPI\XeroPHP\Models\Accounting\ManualJournalLine;
-$credit->setLineAmount(100.0);
+$credit->setLineAmount(-100.0);
 $credit->setAccountCode('400');
 $credit->setDescription('Hello there');
 array_push($manualJournalLines, $credit);
 
 $debit = new XeroAPI\XeroPHP\Models\Accounting\ManualJournalLine;
-$debit->setLineAmount(-100.0);
+$debit->setLineAmount(100.0);
 $debit->setAccountCode('120');
 $debit->setDescription('Hello there');
 array_push($manualJournalLines, $debit);
@@ -44437,7 +45221,25 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/ManualJournals"
       },
-      "example" : "{ \"ManualJournals\": [ { \"Narration\": \"Journal Desc\", \"JournalLines\": [ { \"LineAmount\": 100, \"AccountCode\": \"400\", \"Description\": \"Money Movement\" }, { \"LineAmount\": -100, \"AccountCode\": \"400\", \"Description\": \"Prepayment of things\", \"Tracking\": [ { \"Name\": \"North\", \"Option\": \"Region\" } ] } ], \"Date\": \"2019-03-14\" } ] }"
+      "example" : {
+        "ManualJournals" : [ {
+          "Narration" : "Journal Desc",
+          "JournalLines" : [ {
+            "LineAmount" : 100,
+            "AccountCode" : "400",
+            "Description" : "Money Movement"
+          }, {
+            "LineAmount" : -100,
+            "AccountCode" : "400",
+            "Description" : "Prepayment of things",
+            "Tracking" : [ {
+              "Name" : "North",
+              "Option" : "Region"
+            } ]
+          } ],
+          "Date" : "2019-03-14"
+        } ]
+      }
     }
   },
   "required" : true
@@ -44631,7 +45433,20 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/PurchaseOrders"
       },
-      "example" : "{ \"PurchaseOrders\": [ { \"Contact\": { \"ContactID\": \"00000000-0000-0000-0000-000000000000\" }, \"LineItems\": [ { \"Description\": \"Foobar\", \"Quantity\": 1, \"UnitAmount\": 20, \"AccountCode\": \"710\" } ], \"Date\": \"2019-03-13\" } ] }"
+      "example" : {
+        "PurchaseOrders" : [ {
+          "Contact" : {
+            "ContactID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "LineItems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 1,
+            "UnitAmount" : 20,
+            "AccountCode" : "710"
+          } ],
+          "Date" : "2019-03-13"
+        } ]
+      }
     }
   },
   "required" : true
@@ -44825,7 +45640,20 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Quotes"
       },
-      "example" : "{ \"Quotes\": [ { \"Contact\": { \"ContactID\": \"00000000-0000-0000-0000-000000000000\" }, \"LineItems\": [ { \"Description\": \"Foobar\", \"Quantity\": 1, \"UnitAmount\": 20, \"AccountCode\": \"12775\" } ], \"Date\": \"2020-02-01\" } ] }"
+      "example" : {
+        "Quotes" : [ {
+          "Contact" : {
+            "ContactID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "LineItems" : [ {
+            "Description" : "Foobar",
+            "Quantity" : 1,
+            "UnitAmount" : 20,
+            "AccountCode" : "12775"
+          } ],
+          "Date" : "2020-02-01"
+        } ]
+      }
     }
   },
   "required" : true
@@ -44998,7 +45826,42 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/RepeatingInvoices"
       },
-      "example" : "{ \"RepeatingInvoices\": [ { \"Schedule\": { \"Period\": 1, \"Unit\": \"MONTHLY\", \"DueDate\": 10, \"DueDateType\": \"OFFOLLOWINGMONTH\", \"StartDate\": \"\\/Date(1555286400000+0000)\\/\" }, \"Type\": \"ACCREC\", \"Reference\": \"[Week]\", \"ApprovedForSending\": false, \"SendCopy\": false, \"MarkAsSent\": false, \"IncludePDF\": false, \"Contact\": { \"ContactID\": \"430fa14a-f945-44d3-9f97-5df5e28441b8\", \"Name\": \"Liam Gallagher\" }, \"Status\": \"AUTHORISED\", \"LineAmountTypes\": \"Exclusive\", \"LineItems\": [ { \"Description\": \"Guitars Fender Strat\", \"UnitAmount\": 5000.00, \"TaxType\": \"OUTPUT2\", \"TaxAmount\": 750.00, \"LineAmount\": 5000.00, \"AccountCode\": \"200\", \"Tracking\": [], \"Quantity\": 1.0000, \"LineItemID\": \"13a8353c-d2af-4d5b-920c-438449f08900\", \"DiscountEnteredAsPercent\": true } ], \"CurrencyCode\": \"NZD\" } ] }"
+      "example" : {
+        "RepeatingInvoices" : [ {
+          "Schedule" : {
+            "Period" : 1,
+            "Unit" : "MONTHLY",
+            "DueDate" : 10,
+            "DueDateType" : "OFFOLLOWINGMONTH",
+            "StartDate" : "/Date(1555286400000+0000)/"
+          },
+          "Type" : "ACCREC",
+          "Reference" : "[Week]",
+          "ApprovedForSending" : false,
+          "SendCopy" : false,
+          "MarkAsSent" : false,
+          "IncludePDF" : false,
+          "Contact" : {
+            "ContactID" : "430fa14a-f945-44d3-9f97-5df5e28441b8",
+            "Name" : "Liam Gallagher"
+          },
+          "Status" : "AUTHORISED",
+          "LineAmountTypes" : "Exclusive",
+          "LineItems" : [ {
+            "Description" : "Guitars Fender Strat",
+            "UnitAmount" : 5000.0,
+            "TaxType" : "OUTPUT2",
+            "TaxAmount" : 750.0,
+            "LineAmount" : 5000.0,
+            "AccountCode" : "200",
+            "Tracking" : [ ],
+            "Quantity" : 1.0,
+            "LineItemID" : "13a8353c-d2af-4d5b-920c-438449f08900",
+            "DiscountEnteredAsPercent" : true
+          } ],
+          "CurrencyCode" : "NZD"
+        } ]
+      }
     }
   },
   "required" : true
@@ -45211,7 +46074,13 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/PurchaseOrders"
       },
-      "example" : "{ \"PurchaseOrders\": [ { \"AttentionTo\": \"Peter Parker\", \"LineItems\": [], \"Contact\": {} } ] }"
+      "example" : {
+        "PurchaseOrders" : [ {
+          "AttentionTo" : "Peter Parker",
+          "LineItems" : [ ],
+          "Contact" : { }
+        } ]
+      }
     }
   },
   "required" : true
@@ -45610,7 +46479,15 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Quotes"
       },
-      "example" : "{ \"Quotes\": [ { \"Reference\": \"I am an update\", \"Contact\": { \"ContactID\": \"00000000-0000-0000-0000-000000000000\" }, \"Date\": \"2020-02-01\" } ] }"
+      "example" : {
+        "Quotes" : [ {
+          "Reference" : "I am an update",
+          "Contact" : {
+            "ContactID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "Date" : "2020-02-01"
+        } ]
+      }
     }
   },
   "required" : true
@@ -46010,7 +46887,15 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/Receipts"
       },
-      "example" : "{ \"Receipts\": [ { \"Lineitems\": [], \"User\": { \"UserID\": \"00000000-0000-0000-0000-000000000000\" }, \"Reference\": \"Foobar\" } ] }"
+      "example" : {
+        "Receipts" : [ {
+          "Lineitems" : [ ],
+          "User" : {
+            "UserID" : "00000000-0000-0000-0000-000000000000"
+          },
+          "Reference" : "Foobar"
+        } ]
+      }
     }
   },
   "required" : true
@@ -46422,7 +47307,53 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/RepeatingInvoices"
       },
-      "example" : "{ \"Schedule\": { \"Period\": 1, \"Unit\": \"MONTHLY\", \"DueDate\": 10, \"DueDateType\": \"OFFOLLOWINGMONTH\", \"StartDate\": \"\\/Date(1555286400000+0000)\\/\", \"EndDate\": \"\\/Date(1569801600000+0000)\\/\", \"NextScheduledDate\": \"\\/Date(1555286400000+0000)\\/\" }, \"RepeatingInvoiceID\": \"428c0d75-909f-4b04-8403-a48dc27283b0\", \"Type\": \"ACCREC\", \"Reference\": \"[Week]\", \"HasAttachments\": true, \"ApprovedForSending\": false, \"SendCopy\": false, \"MarkAsSent\": false, \"IncludePDF\": false, \"ID\": \"428c0d75-909f-4b04-8403-a48dc27283b0\", \"Contact\": { \"ContactID\": \"430fa14a-f945-44d3-9f97-5df5e28441b8\", \"Name\": \"Liam Gallagher\", \"Addresses\": [], \"Phones\": [], \"ContactGroups\": [], \"ContactPersons\": [], \"HasValidationErrors\": false }, \"Status\": \"DELETED\", \"LineAmountTypes\": \"Exclusive\", \"LineItems\": [ { \"Description\": \"Guitars Fender Strat\", \"UnitAmount\": 5000.00, \"TaxType\": \"OUTPUT2\", \"TaxAmount\": 750.00, \"LineAmount\": 5000.00, \"AccountCode\": \"200\", \"Tracking\": [], \"Quantity\": 1.0000, \"LineItemID\": \"13a8353c-d2af-4d5b-920c-438449f08900\", \"DiscountEnteredAsPercent\": true } ], \"SubTotal\": 5000.00, \"TotalTax\": 750.00, \"Total\": 5750.00, \"CurrencyCode\": \"NZD\" }"
+      "example" : {
+        "Schedule" : {
+          "Period" : 1,
+          "Unit" : "MONTHLY",
+          "DueDate" : 10,
+          "DueDateType" : "OFFOLLOWINGMONTH",
+          "StartDate" : "/Date(1555286400000+0000)/",
+          "EndDate" : "/Date(1569801600000+0000)/",
+          "NextScheduledDate" : "/Date(1555286400000+0000)/"
+        },
+        "RepeatingInvoiceID" : "428c0d75-909f-4b04-8403-a48dc27283b0",
+        "Type" : "ACCREC",
+        "Reference" : "[Week]",
+        "HasAttachments" : true,
+        "ApprovedForSending" : false,
+        "SendCopy" : false,
+        "MarkAsSent" : false,
+        "IncludePDF" : false,
+        "ID" : "428c0d75-909f-4b04-8403-a48dc27283b0",
+        "Contact" : {
+          "ContactID" : "430fa14a-f945-44d3-9f97-5df5e28441b8",
+          "Name" : "Liam Gallagher",
+          "Addresses" : [ ],
+          "Phones" : [ ],
+          "ContactGroups" : [ ],
+          "ContactPersons" : [ ],
+          "HasValidationErrors" : false
+        },
+        "Status" : "DELETED",
+        "LineAmountTypes" : "Exclusive",
+        "LineItems" : [ {
+          "Description" : "Guitars Fender Strat",
+          "UnitAmount" : 5000.0,
+          "TaxType" : "OUTPUT2",
+          "TaxAmount" : 750.0,
+          "LineAmount" : 5000.0,
+          "AccountCode" : "200",
+          "Tracking" : [ ],
+          "Quantity" : 1.0,
+          "LineItemID" : "13a8353c-d2af-4d5b-920c-438449f08900",
+          "DiscountEnteredAsPercent" : true
+        } ],
+        "SubTotal" : 5000.0,
+        "TotalTax" : 750.0,
+        "Total" : 5750.0,
+        "CurrencyCode" : "NZD"
+      }
     }
   },
   "required" : true
@@ -46788,7 +47719,17 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/TaxRates"
       },
-      "example" : "{ \"TaxRates\": [ { \"Name\": \"State Tax NY\", \"TaxComponents\": [ { \"Name\": \"State Tax\", \"Rate\": 2.25 } ], \"Status\": \"DELETED\", \"ReportTaxType\": \"INPUT\" } ] }"
+      "example" : {
+        "TaxRates" : [ {
+          "Name" : "State Tax NY",
+          "TaxComponents" : [ {
+            "Name" : "State Tax",
+            "Rate" : 2.25
+          } ],
+          "Status" : "DELETED",
+          "ReportTaxType" : "INPUT"
+        } ]
+      }
     }
   },
   "required" : true
@@ -46969,7 +47910,9 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/TrackingCategory"
       },
-      "example" : "{ \"Name\": \"Avengers\" }"
+      "example" : {
+        "Name" : "Avengers"
+      }
     }
   },
   "required" : true
@@ -47177,7 +48120,9 @@ This allows you to safely retry requests without the risk of duplicate processin
       "schema" : {
         "$ref" : "#/components/schemas/TrackingOption"
       },
-      "example" : "{ name: \"Vision\" }"
+      "example" : {
+        "name" : "Vision"
+      }
     }
   },
   "required" : true

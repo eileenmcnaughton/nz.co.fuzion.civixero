@@ -303,7 +303,16 @@ class Timesheets implements ModelInterface, ArrayAccess, \Countable, \IteratorAg
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return PayrollAuObjectSerializer::sanitizeForSerialization($this)->Timesheets;
+       $sanitizedObject = PayrollAuObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['Timesheets'] = $sanitizedObject->Timesheets;
+        return $json;
     }
 
     /**
