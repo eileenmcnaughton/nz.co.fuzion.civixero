@@ -60,14 +60,17 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     protected static $openAPITypes = [
         'leave_type_id' => 'string',
         'schedule_of_accrual' => 'string',
-        'hours_accrued_annually' => 'double',
+        'units_accrued_annually' => 'double',
+        'type_of_units_to_accrue' => 'string',
         'maximum_to_accrue' => 'double',
         'opening_balance' => 'double',
+        'opening_balance_type_of_units' => 'string',
         'rate_accrued_hourly' => 'double',
         'percentage_of_gross_earnings' => 'double',
         'include_holiday_pay_every_pay' => 'bool',
         'show_annual_leave_in_advance' => 'bool',
-        'annual_leave_total_amount_paid' => 'double'
+        'annual_leave_total_amount_paid' => 'double',
+        'schedule_of_accrual_date' => '\DateTime'
     ];
 
     /**
@@ -78,14 +81,17 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     protected static $openAPIFormats = [
         'leave_type_id' => 'uuid',
         'schedule_of_accrual' => null,
-        'hours_accrued_annually' => 'double',
+        'units_accrued_annually' => 'double',
+        'type_of_units_to_accrue' => null,
         'maximum_to_accrue' => 'double',
         'opening_balance' => 'double',
+        'opening_balance_type_of_units' => null,
         'rate_accrued_hourly' => 'double',
         'percentage_of_gross_earnings' => 'double',
         'include_holiday_pay_every_pay' => null,
         'show_annual_leave_in_advance' => null,
-        'annual_leave_total_amount_paid' => 'double'
+        'annual_leave_total_amount_paid' => 'double',
+        'schedule_of_accrual_date' => 'date'
     ];
 
     /**
@@ -117,14 +123,17 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     protected static $attributeMap = [
         'leave_type_id' => 'leaveTypeID',
         'schedule_of_accrual' => 'scheduleOfAccrual',
-        'hours_accrued_annually' => 'hoursAccruedAnnually',
+        'units_accrued_annually' => 'unitsAccruedAnnually',
+        'type_of_units_to_accrue' => 'typeOfUnitsToAccrue',
         'maximum_to_accrue' => 'maximumToAccrue',
         'opening_balance' => 'openingBalance',
+        'opening_balance_type_of_units' => 'openingBalanceTypeOfUnits',
         'rate_accrued_hourly' => 'rateAccruedHourly',
         'percentage_of_gross_earnings' => 'percentageOfGrossEarnings',
         'include_holiday_pay_every_pay' => 'includeHolidayPayEveryPay',
         'show_annual_leave_in_advance' => 'showAnnualLeaveInAdvance',
-        'annual_leave_total_amount_paid' => 'annualLeaveTotalAmountPaid'
+        'annual_leave_total_amount_paid' => 'annualLeaveTotalAmountPaid',
+        'schedule_of_accrual_date' => 'scheduleOfAccrualDate'
     ];
 
     /**
@@ -135,14 +144,17 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     protected static $setters = [
         'leave_type_id' => 'setLeaveTypeId',
         'schedule_of_accrual' => 'setScheduleOfAccrual',
-        'hours_accrued_annually' => 'setHoursAccruedAnnually',
+        'units_accrued_annually' => 'setUnitsAccruedAnnually',
+        'type_of_units_to_accrue' => 'setTypeOfUnitsToAccrue',
         'maximum_to_accrue' => 'setMaximumToAccrue',
         'opening_balance' => 'setOpeningBalance',
+        'opening_balance_type_of_units' => 'setOpeningBalanceTypeOfUnits',
         'rate_accrued_hourly' => 'setRateAccruedHourly',
         'percentage_of_gross_earnings' => 'setPercentageOfGrossEarnings',
         'include_holiday_pay_every_pay' => 'setIncludeHolidayPayEveryPay',
         'show_annual_leave_in_advance' => 'setShowAnnualLeaveInAdvance',
-        'annual_leave_total_amount_paid' => 'setAnnualLeaveTotalAmountPaid'
+        'annual_leave_total_amount_paid' => 'setAnnualLeaveTotalAmountPaid',
+        'schedule_of_accrual_date' => 'setScheduleOfAccrualDate'
     ];
 
     /**
@@ -153,14 +165,17 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     protected static $getters = [
         'leave_type_id' => 'getLeaveTypeId',
         'schedule_of_accrual' => 'getScheduleOfAccrual',
-        'hours_accrued_annually' => 'getHoursAccruedAnnually',
+        'units_accrued_annually' => 'getUnitsAccruedAnnually',
+        'type_of_units_to_accrue' => 'getTypeOfUnitsToAccrue',
         'maximum_to_accrue' => 'getMaximumToAccrue',
         'opening_balance' => 'getOpeningBalance',
+        'opening_balance_type_of_units' => 'getOpeningBalanceTypeOfUnits',
         'rate_accrued_hourly' => 'getRateAccruedHourly',
         'percentage_of_gross_earnings' => 'getPercentageOfGrossEarnings',
         'include_holiday_pay_every_pay' => 'getIncludeHolidayPayEveryPay',
         'show_annual_leave_in_advance' => 'getShowAnnualLeaveInAdvance',
-        'annual_leave_total_amount_paid' => 'getAnnualLeaveTotalAmountPaid'
+        'annual_leave_total_amount_paid' => 'getAnnualLeaveTotalAmountPaid',
+        'schedule_of_accrual_date' => 'getScheduleOfAccrualDate'
     ];
 
     /**
@@ -244,14 +259,17 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     {
         $this->container['leave_type_id'] = isset($data['leave_type_id']) ? $data['leave_type_id'] : null;
         $this->container['schedule_of_accrual'] = isset($data['schedule_of_accrual']) ? $data['schedule_of_accrual'] : null;
-        $this->container['hours_accrued_annually'] = isset($data['hours_accrued_annually']) ? $data['hours_accrued_annually'] : null;
+        $this->container['units_accrued_annually'] = isset($data['units_accrued_annually']) ? $data['units_accrued_annually'] : null;
+        $this->container['type_of_units_to_accrue'] = isset($data['type_of_units_to_accrue']) ? $data['type_of_units_to_accrue'] : null;
         $this->container['maximum_to_accrue'] = isset($data['maximum_to_accrue']) ? $data['maximum_to_accrue'] : null;
         $this->container['opening_balance'] = isset($data['opening_balance']) ? $data['opening_balance'] : null;
+        $this->container['opening_balance_type_of_units'] = isset($data['opening_balance_type_of_units']) ? $data['opening_balance_type_of_units'] : null;
         $this->container['rate_accrued_hourly'] = isset($data['rate_accrued_hourly']) ? $data['rate_accrued_hourly'] : null;
         $this->container['percentage_of_gross_earnings'] = isset($data['percentage_of_gross_earnings']) ? $data['percentage_of_gross_earnings'] : null;
         $this->container['include_holiday_pay_every_pay'] = isset($data['include_holiday_pay_every_pay']) ? $data['include_holiday_pay_every_pay'] : null;
         $this->container['show_annual_leave_in_advance'] = isset($data['show_annual_leave_in_advance']) ? $data['show_annual_leave_in_advance'] : null;
         $this->container['annual_leave_total_amount_paid'] = isset($data['annual_leave_total_amount_paid']) ? $data['annual_leave_total_amount_paid'] : null;
+        $this->container['schedule_of_accrual_date'] = isset($data['schedule_of_accrual_date']) ? $data['schedule_of_accrual_date'] : null;
     }
 
     /**
@@ -350,26 +368,53 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
 
 
     /**
-     * Gets hours_accrued_annually
+     * Gets units_accrued_annually
      *
      * @return double|null
      */
-    public function getHoursAccruedAnnually()
+    public function getUnitsAccruedAnnually()
     {
-        return $this->container['hours_accrued_annually'];
+        return $this->container['units_accrued_annually'];
     }
 
     /**
-     * Sets hours_accrued_annually
+     * Sets units_accrued_annually
      *
-     * @param double|null $hours_accrued_annually The number of hours accrued for the leave annually. This is 0 when the scheduleOfAccrual chosen is \"OnHourWorked\"
+     * @param double|null $units_accrued_annually The number of units accrued for the leave annually. This is 0 when the ScheduleOfAccrual chosen is \"NoAccruals\"
      *
      * @return $this
      */
-    public function setHoursAccruedAnnually($hours_accrued_annually)
+    public function setUnitsAccruedAnnually($units_accrued_annually)
     {
 
-        $this->container['hours_accrued_annually'] = $hours_accrued_annually;
+        $this->container['units_accrued_annually'] = $units_accrued_annually;
+
+        return $this;
+    }
+
+
+
+    /**
+     * Gets type_of_units_to_accrue
+     *
+     * @return string|null
+     */
+    public function getTypeOfUnitsToAccrue()
+    {
+        return $this->container['type_of_units_to_accrue'];
+    }
+
+    /**
+     * Sets type_of_units_to_accrue
+     *
+     * @param string|null $type_of_units_to_accrue The type of units accrued for the leave annually
+     *
+     * @return $this
+     */
+    public function setTypeOfUnitsToAccrue($type_of_units_to_accrue)
+    {
+
+        $this->container['type_of_units_to_accrue'] = $type_of_units_to_accrue;
 
         return $this;
     }
@@ -389,7 +434,7 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     /**
      * Sets maximum_to_accrue
      *
-     * @param double|null $maximum_to_accrue The maximum number of hours that can be accrued for the leave
+     * @param double|null $maximum_to_accrue The maximum number of units that can be accrued for the leave
      *
      * @return $this
      */
@@ -416,7 +461,7 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     /**
      * Sets opening_balance
      *
-     * @param double|null $opening_balance The initial number of hours assigned when the leave was added to the employee
+     * @param double|null $opening_balance The initial number of units assigned when the leave was added to the employee
      *
      * @return $this
      */
@@ -424,6 +469,33 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     {
 
         $this->container['opening_balance'] = $opening_balance;
+
+        return $this;
+    }
+
+
+
+    /**
+     * Gets opening_balance_type_of_units
+     *
+     * @return string|null
+     */
+    public function getOpeningBalanceTypeOfUnits()
+    {
+        return $this->container['opening_balance_type_of_units'];
+    }
+
+    /**
+     * Sets opening_balance_type_of_units
+     *
+     * @param string|null $opening_balance_type_of_units The type of units for the opening balance
+     *
+     * @return $this
+     */
+    public function setOpeningBalanceTypeOfUnits($opening_balance_type_of_units)
+    {
+
+        $this->container['opening_balance_type_of_units'] = $opening_balance_type_of_units;
 
         return $this;
     }
@@ -443,7 +515,7 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     /**
      * Sets rate_accrued_hourly
      *
-     * @param double|null $rate_accrued_hourly The number of hours added to the leave balance for every hour worked by the employee. This is normally 0, unless the scheduleOfAccrual chosen is \"OnHourWorked\"
+     * @param double|null $rate_accrued_hourly not supported in Payroll NZ
      *
      * @return $this
      */
@@ -559,6 +631,33 @@ class EmployeeLeaveType implements ModelInterface, ArrayAccess
     {
 
         $this->container['annual_leave_total_amount_paid'] = $annual_leave_total_amount_paid;
+
+        return $this;
+    }
+
+
+
+    /**
+     * Gets schedule_of_accrual_date
+     *
+     * @return \DateTime|null
+     */
+    public function getScheduleOfAccrualDate()
+    {
+        return $this->container['schedule_of_accrual_date'];
+    }
+
+    /**
+     * Sets schedule_of_accrual_date
+     *
+     * @param \DateTime|null $schedule_of_accrual_date The date when an employee becomes entitled to their accrual.
+     *
+     * @return $this
+     */
+    public function setScheduleOfAccrualDate($schedule_of_accrual_date)
+    {
+
+        $this->container['schedule_of_accrual_date'] = $schedule_of_accrual_date;
 
         return $this;
     }

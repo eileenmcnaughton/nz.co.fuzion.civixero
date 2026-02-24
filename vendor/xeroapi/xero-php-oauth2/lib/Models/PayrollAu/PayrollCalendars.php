@@ -303,7 +303,16 @@ class PayrollCalendars implements ModelInterface, ArrayAccess, \Countable, \Iter
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return PayrollAuObjectSerializer::sanitizeForSerialization($this)->PayrollCalendars;
+       $sanitizedObject = PayrollAuObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['PayrollCalendars'] = $sanitizedObject->PayrollCalendars;
+        return $json;
     }
 
     /**

@@ -303,7 +303,16 @@ class ExpenseClaims implements ModelInterface, ArrayAccess, \Countable, \Iterato
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return AccountingObjectSerializer::sanitizeForSerialization($this)->ExpenseClaims;
+       $sanitizedObject = AccountingObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['ExpenseClaims'] = $sanitizedObject->ExpenseClaims;
+        return $json;
     }
 
     /**

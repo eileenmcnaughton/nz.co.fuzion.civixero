@@ -303,7 +303,16 @@ class Accounts implements ModelInterface, ArrayAccess, \Countable, \IteratorAggr
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return AccountingObjectSerializer::sanitizeForSerialization($this)->Accounts;
+       $sanitizedObject = AccountingObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['Accounts'] = $sanitizedObject->Accounts;
+        return $json;
     }
 
     /**

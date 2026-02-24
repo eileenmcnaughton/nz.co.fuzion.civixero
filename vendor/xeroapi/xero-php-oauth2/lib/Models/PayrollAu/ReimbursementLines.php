@@ -304,7 +304,16 @@ class ReimbursementLines implements ModelInterface, ArrayAccess, \Countable, \It
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return PayrollAuObjectSerializer::sanitizeForSerialization($this)->ReimbursementLines;
+       $sanitizedObject = PayrollAuObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['ReimbursementLines'] = $sanitizedObject->ReimbursementLines;
+        return $json;
     }
 
     /**

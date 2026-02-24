@@ -303,7 +303,16 @@ class CISSettings implements ModelInterface, ArrayAccess, \Countable, \IteratorA
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return AccountingObjectSerializer::sanitizeForSerialization($this)->CISSettings;
+       $sanitizedObject = AccountingObjectSerializer::sanitizeForSerialization($this);
+        $json = [];
+        if(isset($sanitizedObject->pagination)){
+            $json['pagination'] = $sanitizedObject->pagination;
+        }
+        if(isset($sanitizedObject->warnings)){
+            $json['warnings'] = $sanitizedObject->warnings;
+        }
+        $json['CISSettings'] = $sanitizedObject->CISSettings;
+        return $json;
     }
 
     /**
