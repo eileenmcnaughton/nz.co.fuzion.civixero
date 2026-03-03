@@ -602,9 +602,9 @@ class XeroApiException extends XeroException {
 
   private string $type;
 
-  public function __construct($xml_exception) {
+  public function __construct($xml_exception, $statusCode, $e) {
     $jsonAttempt = json_decode($xml_exception, TRUE);
-    if (!$jsonAttempt !== FALSE) {
+    if ($jsonAttempt !== NULL) {
       $message = $jsonAttempt['Detail'];
       $errorNumber = $jsonAttempt['Status'];
       $type = $jsonAttempt['Type'];
@@ -616,6 +616,10 @@ class XeroApiException extends XeroException {
       [$message] = $xml->xpath('/ApiException/Message');
       [$errorNumber] = $xml->xpath('/ApiException/ErrorNumber');
       [$type] = $xml->xpath('/ApiException/Type');
+      [$errorDetail] = $xml->xpath('/ApiException/Elements/DataContractBase/ValidationErrors/ValidationError/Message');
+      if ($errorDetail) {
+        $message .= ': ' . $errorDetail;
+      }
     }
     parent::__construct((string) $type . ': ' . (string) $message, (int) $errorNumber);
 
