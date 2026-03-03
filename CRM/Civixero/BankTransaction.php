@@ -52,12 +52,13 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    *   - receive date
    *   - source
    *   - contact_id
-   * @param int $accountsID
+   * @param ?string $xeroInvoiceUUID
+   *   The Xero invoice uuid.
    *
-   * @return array|bool
-   *   BankTransaction Object/ array as expected by accounts package.
+   * @return array
+   *   BankTransaction array as expected by accounts package.
    */
-  protected function mapToAccounts($invoiceData, $accountsID) {
+  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID): array {
     $lineItems = [];
 
     foreach ($invoiceData['line_items'] as $lineItem) {
@@ -99,20 +100,18 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
         TRUE
       ),
     ];
-    if ($accountsID) {
-      $new_invoice['BankTransactionID'] = $accountsID;
+    if ($xeroInvoiceUUID) {
+      $new_invoice['BankTransactionID'] = $xeroInvoiceUUID;
     }
 
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('bank_transaction', $invoiceData, $proceed, $new_invoice);
     if (!$proceed) {
-      return FALSE;
+      throw new CRM_Core_Exception('Ignored via accountPushAlterMapped hook');
     }
 
     $this->validatePrerequisites($new_invoice);
-    return [
-      $new_invoice,
-    ];
+    return [$new_invoice];
   }
 
   /**
