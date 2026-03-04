@@ -295,8 +295,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
           AccountInvoice::update(FALSE)
             ->addWhere('id', '=', $accountInvoice['id'])
-            ->addValue('error_data', json_encode(['error' => $e->getMessage()]))
             ->addValue('accounts_needs_update', FALSE)
+            ->addValue('is_error_resolved', FALSE)
+            ->addValue('error_data', json_encode(['error' => $e->getMessage()]))
             ->execute();
           continue;
         }
@@ -577,6 +578,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
 
     $xeroInvoiceUUID = $record['accounts_invoice_id'] ?? NULL;
     $contributionID = $record['contribution_id'];
+    if (empty($contributionID)) {
+      throw new CRM_Core_Exception('Can not push AccountInvoice with no Contribution ID');
+    }
     $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', [
       'id' => $contributionID,
     ])['values'][$contributionID] ?? [];
@@ -883,6 +887,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ->first();
     AccountInvoice::update(FALSE)
       ->addValue('contribution_id', $contribution['id'])
+      ->addValue('error_data', NULL)
+      ->addValue('is_error_resolved', TRUE)
+      ->addValue('accounts_needs_update', FALSE)
       ->addWhere('accounts_invoice_id', '=', $accountInvoiceParams['accounts_invoice_id'])
       ->execute();
     $lock->release();
