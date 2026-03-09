@@ -292,11 +292,16 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $mappedAccountInvoice = $this->getMappedAccountInvoice($accountInvoice);
         }
         catch (CRM_Core_Exception $e) {
+          // It might be nice to have another flag indicating if it is an error or not instead of checking exception messages
+          // For an AccountInvoice that is already completed we record it but mark error resolved (since there is nothing to do).
+          // For all other exceptions we mark error unresolved so user can see it in error report.
+          // In all cases we set accounts_needs_update = FALSE otherwise system will keep trying to push.
+          $e->getMessage() === 'AccountInvoice already completed in Xero' ? $isErrorResolved = TRUE : $isErrorResolved = FALSE;
           // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
           AccountInvoice::update(FALSE)
             ->addWhere('id', '=', $accountInvoice['id'])
             ->addValue('accounts_needs_update', FALSE)
-            ->addValue('is_error_resolved', FALSE)
+            ->addValue('is_error_resolved', $isErrorResolved)
             ->addValue('error_data', json_encode(['error' => $e->getMessage()]))
             ->execute();
           continue;
