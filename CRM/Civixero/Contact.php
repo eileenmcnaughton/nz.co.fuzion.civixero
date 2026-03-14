@@ -323,7 +323,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           ->execute();
       }
       catch (CRM_Civixero_Exception_XeroThrottle $e) {
-        throw new CRM_Core_Exception('Contact Push aborted due to throttling by Xero' . print_r($errors, TRUE));
+        $errors[] = E::ts('Contact Push aborted due to throttling by Xero');
+        CRM_Civixero_Base::setApiRateLimitExceeded($e->getRetryAfter());
+        break;
       }
       catch (\Exception $e) {
         // Note: Using \Exception here as we may get various exception types from the Xero API/SDK
