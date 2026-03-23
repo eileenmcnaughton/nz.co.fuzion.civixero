@@ -290,16 +290,23 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       foreach ($accountInvoices as $accountInvoice) {
         try {
           $mappedAccountInvoice = $this->getMappedAccountInvoice($accountInvoice);
-          if ($mappedAccountInvoice === FALSE) {
-            // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
-            AccountInvoice::update(FALSE)
-              ->addWhere('id', '=', $accountInvoice['id'])
-              ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
-              ->addValue('accounts_needs_update', FALSE)
-              ->execute();
-            // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
-            continue;
-          }
+        }
+        catch (CRM_Core_Exception $e) {
+          // It might be nice to have another flag indicating if it is an error or not instead of checking exception messages
+          // For an AccountInvoice that is already completed we record it but mark error resolved (since there is nothing to do).
+          // For all other exceptions we mark error unresolved so user can see it in error report.
+          // In all cases we set accounts_needs_update = FALSE otherwise system will keep trying to push.
+          $e->getMessage() === 'AccountInvoice already completed in Xero' ? $isErrorResolved = TRUE : $isErrorResolved = FALSE;
+          // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
+          AccountInvoice::update(FALSE)
+            ->addWhere('id', '=', $accountInvoice['id'])
+            ->addValue('accounts_needs_update', FALSE)
+            ->addValue('is_error_resolved', $isErrorResolved)
+            ->addValue('error_data', json_encode(['error' => $e->getMessage()]))
+            ->execute();
+          continue;
+        }
+        try {
           $pushResult = $this->pushToXero($mappedAccountInvoice, $params['connector_id']);
           $responseErrors = $this->savePushResponse($pushResult, $accountInvoice);
           $count++;
@@ -346,11 +353,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param ?string $xeroInvoiceUUID
    *   The Xero invoice uuid.
    *
-   * @return array|bool
-   *   Contact Object/ array as expected by accounts package
+   * @return array
+   *   Invoice array as expected by accounts package
    * @throws \CRM_Core_Exception
    */
-  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID) {
+  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID): array {
     // Get the tax mode from the CiviCRM setting. This should be 'exclusive' if
     // tax is enabled (but for historical reasons we force that later on).
     $line_amount_types = Civi::settings()->get('xero_tax_mode');
@@ -416,7 +423,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('invoice', $invoiceData, $proceed, $new_invoice);
     if (!$proceed) {
-      return FALSE;
+      throw new CRM_Core_Exception('Ignored via accountPushAlterMapped hook');
     }
 
     $this->validatePrerequisites($new_invoice);
@@ -545,9 +552,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   protected function getAccountInvoicesToPush(array $params, int $limit): array {
     $accountInvoices = AccountInvoice::get(FALSE)
+      ->addSelect('*', 'accounts_status_id:name')
       ->addWhere('plugin', '=', 'xero')
       ->addWhere('connector_id', '=', $params['connector_id'])
-      ->addClause('OR', ['accounts_status_id', 'IS NULL'], ['accounts_status_id', 'NOT IN', [CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')]])
+      ->addClause('OR', ['accounts_status_id', 'IS NULL'], ['accounts_status_id:name', 'NOT IN', ['cancelled']])
       ->addOrderBy('error_data')
       ->setLimit($limit);
 
@@ -566,30 +574,38 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $record
    *
-   * @return array|false
+   * @return array
    * @throws \CRM_Core_Exception
    */
-  protected function getMappedAccountInvoice(array $record) {
-    if ($record['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
-      return FALSE;
+  protected function getMappedAccountInvoice(array $record): array {
+    if ($record['accounts_status_id:name'] === 'cancelled') {
+      throw new CRM_Core_Exception('AccountInvoice is cancelled');
     }
 
     $xeroInvoiceUUID = $record['accounts_invoice_id'] ?? NULL;
     $contributionID = $record['contribution_id'];
+    if (empty($contributionID)) {
+      throw new CRM_Core_Exception('Can not push AccountInvoice with no Contribution ID');
+    }
     $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', [
       'id' => $contributionID,
-    ]);
+    ])['values'][$contributionID] ?? [];
 
-    $civiCRMInvoice = $civiCRMInvoice['values'][$contributionID];
-    $statuses = civicrm_api3('Contribution', 'getoptions', ['field' => 'contribution_status_id']);
-    $contributionStatus = $statuses['values'][$civiCRMInvoice['contribution_status_id']];
+    $contributionStatusName = CRM_Core_PseudoConstant::getName('CRM_Contribute_DAO_Contribution', 'contribution_status_id', $civiCRMInvoice['contribution_status_id']);
     $cancelledStatuses = ['Failed', 'Cancelled'];
-
-    if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
+    if (empty($civiCRMInvoice) || in_array($contributionStatusName, $cancelledStatuses)) {
       return $this->mapCancelled($contributionID, $xeroInvoiceUUID);
     }
-
-    return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    elseif (!$xeroInvoiceUUID || ($record['accounts_status_id:name'] !== 'completed')) {
+      // If the invoice does not exist or is not yet "completed" (Paid) in Xero we'll push it using the default invoice status.
+      return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    }
+    else {
+      // We can't push an invoice that is already "completed" in Xero because:
+      //   - Updates to "Paid"/completed invoices will be rejected by Xero API.
+      //   - we always push using the CiviXero default invoice status (see mapToAccounts) which is authorized/submitted etc. and NOT Completed.
+      throw new CRM_Core_Exception('AccountInvoice already completed in Xero');
+    }
   }
 
   /**
@@ -785,6 +801,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * Get the Xero tax modes.
    *
    * This is accessed from the settings.
+   * See \XeroAPI\XeroPHP\Models\Accounting\LineAmountTypes
    *
    * @return array[]
    */
@@ -877,6 +894,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ->first();
     AccountInvoice::update(FALSE)
       ->addValue('contribution_id', $contribution['id'])
+      ->addValue('error_data', NULL)
+      ->addValue('is_error_resolved', TRUE)
+      ->addValue('accounts_needs_update', FALSE)
       ->addWhere('accounts_invoice_id', '=', $accountInvoiceParams['accounts_invoice_id'])
       ->execute();
     $lock->release();
