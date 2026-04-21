@@ -49,10 +49,20 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
     // This may need revising, depending on the operations being performed.
     'offline_access',
     'accounting.settings',
-    'accounting.transactions',
+    'accounting.invoices',
+    'accounting.payments',
+    'accounting.banktransactions',
+    'accounting.manualjournals',
     'accounting.contacts',
     'accounting.journals.read',
-    'accounting.reports.read'
+    'accounting.reports.aged.read',
+    'accounting.reports.balancesheet.read',
+    'accounting.reports.banksummary.read',
+    'accounting.reports.budgetsummary.read',
+    'accounting.reports.executivesummary.read',
+    'accounting.reports.profitandloss.read',
+    'accounting.reports.trialbalance.read',
+    'accounting.reports.taxreports.read'
   ];
 
   /**
