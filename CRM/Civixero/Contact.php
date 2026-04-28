@@ -10,6 +10,14 @@ use Civi\Api4\LocationType;
 
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
+  /**
+   * Cached Xero contact group ID for the configured group name.
+   * FALSE means we already looked it up and it wasn't found.
+   *
+   * @var string|false|null
+   */
+  private static $cachedContactGroupId = NULL;
+
   public function pullFromXero(
     array $filters,
     bool $includeArchived,
@@ -321,6 +329,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           ->setValues($record)
           ->addValue('accounts_needs_update', FALSE)
           ->execute();
+        $this->addContactToXeroGroup($record['accounts_contact_id']);
       }
       catch (CRM_Civixero_Exception_XeroThrottle $e) {
         $errors[] = E::ts('Contact Push aborted due to throttling by Xero');
@@ -351,6 +360,72 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       throw new CRM_Core_Exception(E::ts('Not all contacts were saved') . print_r($errors, TRUE), 'incomplete', $errors);
     }
     return TRUE;
+  }
+
+  /**
+   * Add a contact to the configured Xero Contact Group after a successful push.
+   *
+   * Does nothing if no group name is configured in settings.
+   * Logs a warning if the group cannot be found; does not throw so as not to
+   * disrupt the contact push itself.
+   *
+   * @param string $xeroContactId
+   */
+  private function addContactToXeroGroup(string $xeroContactId): void {
+    $groupName = Civi::settings()->get('xero_contact_group');
+    if (empty($groupName)) {
+      return;
+    }
+    $groupId = $this->getXeroContactGroupId($groupName);
+    if ($groupId === FALSE) {
+      return;
+    }
+    try {
+      $contact = new \XeroAPI\XeroPHP\Models\Accounting\Contact();
+      $contact->setContactId($xeroContactId);
+      $contacts = new \XeroAPI\XeroPHP\Models\Accounting\Contacts();
+      $contacts->setContacts([$contact]);
+      $this->getAccountingApiInstance()->createContactGroupContacts(
+        $this->getTenantID(),
+        $groupId,
+        $contacts
+      );
+      \Civi::log('civixero')->info(sprintf('CiviXero: Successfully added contact %s to Xero group "%s"', $xeroContactId, $groupName));
+    }
+    catch (\Exception $e) {
+      \Civi::log('civixero')->warning(sprintf('CiviXero: Failed to add contact %s to Xero group "%s": %s', $xeroContactId, $groupName, $e->getMessage()));
+    }
+  }
+
+  /**
+   * Get the Xero Contact Group ID for the given group name, with static caching.
+   *
+   * Returns FALSE if the group was not found, so we do not repeat the lookup.
+   *
+   * @param string $groupName
+   *
+   * @return string|false
+   */
+  private function getXeroContactGroupId(string $groupName) {
+    if (self::$cachedContactGroupId !== NULL) {
+      return self::$cachedContactGroupId;
+    }
+    try {
+      $contactGroups = $this->getAccountingApiInstance()
+        ->getContactGroups($this->getTenantID(), 'Name=="' . addslashes($groupName) . '"');
+      foreach ($contactGroups->getContactGroups() as $group) {
+        if ($group->getName() === $groupName) {
+          self::$cachedContactGroupId = $group->getContactGroupId();
+          return self::$cachedContactGroupId;
+        }
+      }
+    }
+    catch (\Exception $e) {
+      \Civi::log('civixero')->warning(sprintf('CiviXero: Failed to look up Xero Contact Group "%s": %s', $groupName, $e->getMessage()));
+    }
+    // Group not found or lookup failed — cache FALSE to avoid repeated API calls.
+    self::$cachedContactGroupId = FALSE;
+    return FALSE;
   }
 
   /**
