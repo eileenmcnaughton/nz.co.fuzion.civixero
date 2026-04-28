@@ -693,6 +693,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'This document cannot be edited as it has a payment or credit note allocated to it.',
       'The status SUBMITTED cannot be applied to the invoice because it has payments or credit notes allocated to it.',
       'The status AUTHORISED cannot be applied to the invoice because it has payments or credit notes allocated to it.',
+      'The status DRAFT cannot be applied to the invoice because it has payments or credit notes allocated to it.',
     ];
   }
 
