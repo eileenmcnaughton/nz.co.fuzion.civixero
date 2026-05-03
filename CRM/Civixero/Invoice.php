@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Payment;
 use CRM_Civixero_ExtensionUtil as E;
 use Civi\Api4\AccountInvoice;
 use Civi\Api4\AccountContact;
@@ -898,12 +899,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     unset(\Civi::$statics['data.accountsync.createcontribution']['createnew']);
 
     if ($accountInvoiceParams['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'completed')) {
-      civicrm_api3('Payment', 'create', [
-        'contribution_id' => $contribution['id'],
-        'total_amount' => $contribution['total_amount'],
-        'trxn_date' => $contribution['receive_date'],
-        'is_send_contribution_notification' => 0,
-      ]);
+      Payment::create(FALSE)
+        ->setNotificationForPayment(FALSE)
+        ->setNotificationForCompleteOrder(FALSE)
+        ->addValue('contribution_id', $contribution['id'])
+        ->addValue('total_amount', $contribution['total_amount'])
+        ->addValue('trxn_date', $contribution['receive_date'])
+        ->execute();
     }
     elseif ($accountInvoiceParams['accounts_status_id'] === (int) CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
       Contribution::update(FALSE)
