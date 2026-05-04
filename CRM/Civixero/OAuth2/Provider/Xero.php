@@ -54,7 +54,6 @@ class CRM_Civixero_OAuth2_Provider_Xero extends \League\OAuth2\Client\Provider\G
     'accounting.banktransactions',
     'accounting.manualjournals',
     'accounting.contacts',
-    'accounting.journals.read',
     'accounting.reports.aged.read',
     'accounting.reports.balancesheet.read',
     'accounting.reports.banksummary.read',
