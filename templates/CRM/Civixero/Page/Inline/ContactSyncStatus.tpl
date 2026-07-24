@@ -9,6 +9,9 @@
           {ts}Contact is synced with Xero{/ts}
       {elseif $syncStatus_xero == 2}
           {ts}Contact is queued for sync with Xero{/ts}
+          {if $canPushXero_xero}
+            &nbsp;<a href='#' id='xero-push-now' data-contact-id={$contactID_xero} data-connector-id={$connectorID_xero}>{ts}Push Now{/ts}</a>
+          {/if}
       {/if}
   </div>
 
@@ -32,6 +35,28 @@
         });
       </script>
 
+    {/literal}
+    {/if}
+    {if $syncStatus_xero == 2 && $canPushXero_xero}
+    {literal}
+      <script type="text/javascript">
+        CRM.$('#xero-push-now').click(function(event) {
+          event.preventDefault();
+          var $link = CRM.$(this);
+          $link.text('{/literal}{ts escape="js"}Pushing...{/ts}{literal}').off('click');
+          CRM.api3('Civixero', 'contactpush', {
+            'contact_id' : $link.data('contact-id'),
+            'connector_id' : $link.data('connector-id'),
+          }).done(function(result) {
+            if (result.hasOwnProperty('error_message')) {
+              $link.replaceWith(result.error_message);
+            }
+            else {
+              $link.closest('.crm-content').text('{/literal}{ts}Contact is synced with Xero{/ts}{literal}');
+            }
+          });
+        });
+      </script>
     {/literal}
     {/if}
 </div>

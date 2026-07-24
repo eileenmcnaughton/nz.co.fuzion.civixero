@@ -39,6 +39,8 @@ class CRM_Civixero_Page_Inline_ContactSyncStatus extends CRM_Core_Page {
 
     $page->assign('syncStatus_xero', $syncStatus);
     $page->assign('contactID_xero', $contactID);
+    $page->assign('connectorID_xero', $account_contact['connector_id'] ?? 0);
+    $page->assign('canPushXero_xero', CRM_Core_Permission::check('administer CiviCRM system'));
   }
 
 }

@@ -360,3 +360,16 @@ function civixero_civicrm_contactSummaryBlocks(&$blocks) {
   ];
 
 }
+
+/**
+ * Implements hook_civicrm_alterAPIPermissions().
+ *
+ * Contactpush is otherwise governed by core's generic 'administer CiviCRM'
+ * default (CRM_Core_Permission::getEntityActionPermissions()); the manual
+ * "Push Now" button on the contact summary page calls this API with
+ * check_permissions set, so declare the (lesser) permission that's
+ * actually required for that on-demand, single-contact push.
+ */
+function civixero_civicrm_alterAPIPermissions($entity, $action, &$params, &$permissions) {
+  $permissions['civixero']['contactpush'] = ['administer CiviCRM system'];
+}
