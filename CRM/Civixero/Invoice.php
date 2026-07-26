@@ -290,6 +290,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       foreach ($accountInvoices as $accountInvoice) {
         try {
           $mappedAccountInvoice = $this->getMappedAccountInvoice($accountInvoice);
+          if ($mappedAccountInvoice === NULL) {
+            // Contact not yet synced to Xero — leave accounts_needs_update set and try again next run.
+            continue;
+          }
           if ($mappedAccountInvoice === FALSE) {
             // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
             AccountInvoice::update(FALSE)
@@ -566,7 +570,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @param array $record
    *
-   * @return array|false
+   * @return array|false|null
+   *   Invoice payload for Xero, FALSE to skip permanently, NULL to defer until later.
    * @throws \CRM_Core_Exception
    */
   protected function getMappedAccountInvoice(array $record) {
@@ -587,6 +592,17 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
 
     if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
       return $this->mapCancelled($contributionID, $xeroInvoiceUUID);
+    }
+
+    // New invoices need a Xero ContactID. If the contact has not been pushed yet,
+    // defer (return NULL) so we do not write a permanent Guid-format error that
+    // blocks automatic retries after the contact push job runs.
+    // @see https://github.com/eileenmcnaughton/nz.co.fuzion.civixero/issues/177
+    if (empty($xeroInvoiceUUID) && empty($civiCRMInvoice['accounts_contact_id'])) {
+      \Civi::log('civixero')->info('CiviXero: deferring invoice push for contribution {id} until contact is synced to Xero', [
+        'id' => $contributionID,
+      ]);
+      return NULL;
     }
 
     return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
