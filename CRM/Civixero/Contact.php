@@ -101,10 +101,17 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
   }
 
-  private function processPull($contacts, int $connectorID) {
+  /**
+   * @param $contacts
+   * @param int $connectorID
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  private function processPull(array $contacts, int $connectorID) {
     $errors = $ids = [];
 
-    foreach ($contacts as $xeroContactID => $xeroContact) {
+    foreach ($contacts as $xeroContact) {
       $or = [];
       $accountContactParams = [
         'plugin' => $this->_plugin,
@@ -272,8 +279,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           $responseErrors = [];
         }
         else {
-          /** @noinspection PhpUndefinedMethodInspection */
-          $result = $this->getSingleton($params['connector_id'])->Contacts($accountsContact);
+          $result = $this->pushContactToXero($accountsContact, $params['connector_id']);
           $responseErrors = $this->validateResponse($result);
         }
         if ($result === FALSE) {
@@ -669,5 +675,17 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       $locTypes[$locationType['id']] = $locationType['display_name'];
     }
     return $locTypes;
+  }
+
+  /**
+   * @param array|bool $accountsContact
+   * @param $connector_id
+   *
+   * @return mixed
+   */
+  public function pushContactToXero(array|bool $accountsContact, $connector_id) {
+    /** @noinspection PhpUndefinedMethodInspection */
+    $result = $this->getSingleton($connector_id)->Contacts($accountsContact);
+    return $result;
   }
 }
