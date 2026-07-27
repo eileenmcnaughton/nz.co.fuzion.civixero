@@ -301,6 +301,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             AccountInvoice::update(FALSE)
               ->addWhere('id', '=', $accountInvoice['id'])
               ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
+              ->addValue('is_error_resolved', FALSE)
               ->addValue('accounts_needs_update', FALSE)
               ->execute();
             // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
@@ -907,6 +908,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     AccountInvoice::update(FALSE)
       ->addValue('contribution_id', $contribution['id'])
       ->addWhere('accounts_invoice_id', '=', $accountInvoiceParams['accounts_invoice_id'])
+      ->addValue('error_data', NULL)
+      ->addValue('is_error_resolved', TRUE)
+      ->addValue('accounts_needs_update', FALSE)
       ->execute();
     $lock->release();
     unset(\Civi::$statics['data.accountsync.createcontribution']['createnew']);
