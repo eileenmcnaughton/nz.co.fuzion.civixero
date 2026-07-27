@@ -320,4 +320,37 @@ class CRM_Civixero_Base {
    return $this->settings->get($setting);
   }
 
+  protected function generateIdempotencyKey(string $scope, array $payload): string {
+    return substr('civixero-' . preg_replace('/[^A-Za-z0-9._-]/', '', $scope) . '-' . md5(json_encode($payload) . '|' . microtime(TRUE) . '|' . bin2hex(random_bytes(8))), 0, 128);
+  }
+
+  /**
+   * Per-attempt idempotency key. Xero caps keys at 128 characters.
+   *
+   * Deliberately NOT a pure content hash: Xero caches responses per key for
+   * 24h and replays them WITHOUT performing the write, so a content-hashed
+   * key silently no-ops legitimate re-pushes of unchanged data (e.g.
+   * restoring a Xero record that drifted on the Xero side).
+   * The key protects a single attempt against
+   * transport-level double-delivery only, so each attempt gets a fresh key.
+   */
+  /**
+   * Assert a value destined for a Xero GUID field is a well-formed GUID.
+   *
+   * Xero's deserializer fails malformed GUIDs with the opaque
+   * "PostDataInvalidException: JSON request body could not be read", which
+   * masks the real problem. Failing fast here surfaces a clear, actionable
+   * message in the worklist instead.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function assertValidXeroGuid(string $value, string $context): void {
+    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value)) {
+      throw new CRM_Core_Exception(
+        'stored ' . $context . ' is not a valid Xero ID ("'
+        . substr($value, 0, 64) . '"). The stored reference is corrupt - re-match or re-sync this record.'
+      );
+    }
+  }
+
 }

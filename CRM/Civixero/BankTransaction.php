@@ -1,5 +1,9 @@
 <?php
 
+use XeroAPI\XeroPHP\Models\Accounting\Account;
+use XeroAPI\XeroPHP\Models\Accounting\BankTransaction;
+use XeroAPI\XeroPHP\Models\Accounting\BankTransactions;
+
 /**
  * Class CRM_Civixero_BankTransaction.
  *
@@ -25,23 +29,6 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    * @var string
    */
   protected string $xero_entity = 'BankTransaction';
-
-  /**
-   * Push record to Xero.
-   *
-   * @param array|false $accountsInvoice
-   *
-   * @param int $connector_id
-   *   ID of the connector (0 if nz.co.fuzion.connectors not installed.
-   *
-   * @return array|false
-   */
-  protected function pushToXero($accountsInvoice, $connector_id) {
-    if ($accountsInvoice === FALSE) {
-      return FALSE;
-    }
-    return $this->getSingleton($connector_id)->BankTransactions($accountsInvoice);
-  }
 
   /**
    * Map civicrm Array to Accounts package field names.
@@ -138,6 +125,79 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
     return [
       'This Bank Transaction cannot be edited as it has been reconciled with a Bank Statement.',
     ];
+  }
+
+
+  /**
+   * Push one bank transaction via AccountingApi::updateOrCreateBankTransactions.
+   *
+   * @return array
+   *   Legacy-shaped result consumed by savePushResponse():
+   *   ['BankTransactions' => ['BankTransaction' => snapshot]] or
+   *   ['ValidationErrors' => [...]].
+   *
+   * @throws \XeroAPI\XeroPHP\ApiException
+   * @throws \CRM_Core_Exception
+   */
+  private function pushViaApi(array $mapped): array {
+    $bankTransaction = new BankTransaction();
+    $bankTransaction->setType($mapped['Type'] ?? 'RECEIVE');
+    if (!empty($mapped['BankTransactionID'])) {
+      $this->assertValidXeroGuid((string) $mapped['BankTransactionID'], 'Xero bank transaction reference (BankTransactionID)');
+      $bankTransaction->setBankTransactionId($mapped['BankTransactionID']);
+    }
+    $contactRef = $this->buildSdkContactRef($mapped);
+    if ($contactRef !== NULL) {
+      $bankTransaction->setContact($contactRef);
+    }
+    if (!empty($mapped['Date'])) {
+      $bankTransaction->setDate($mapped['Date']);
+    }
+    if (!empty($mapped['Status'])) {
+      $bankTransaction->setStatus($mapped['Status']);
+    }
+    if (!empty($mapped['CurrencyCode'])) {
+      $bankTransaction->setCurrencyCode($mapped['CurrencyCode']);
+    }
+    if (isset($mapped['Reference'])) {
+      $bankTransaction->setReference(mb_substr((string) $mapped['Reference'], 0, 255));
+    }
+    if (!empty($mapped['Url'])) {
+      $bankTransaction->setUrl($mapped['Url']);
+    }
+    if (!empty($mapped['BankAccount']['Code'])) {
+      $bankAccount = new Account();
+      $bankAccount->setCode((string) $mapped['BankAccount']['Code']);
+      $bankTransaction->setBankAccount($bankAccount);
+    }
+    $bankTransaction->setLineItems($this->buildSdkLineItems($mapped));
+
+    $collection = new BankTransactions();
+    $collection->setBankTransactions([$bankTransaction]);
+
+    $response = $this->getAccountingApiInstance()->updateOrCreateBankTransactions(
+      $this->getTenantID(),
+      $collection,
+      FALSE,
+      NULL,
+      $this->generateIdempotencyKey('banktransaction-' . ($mapped['Reference'] ?? '0'), $mapped)
+    );
+
+    $returned = $response->getBankTransactions()[0] ?? NULL;
+    if ($returned === NULL) {
+      throw new CRM_Core_Exception('Xero returned no bank transaction from updateOrCreateBankTransactions');
+    }
+    $validationErrors = $this->extractValidationErrors($returned);
+    if ($validationErrors !== []) {
+      return ['ValidationErrors' => $validationErrors];
+    }
+
+    $snapshot = json_decode((string) $returned, TRUE) ?: [];
+    $updated = $returned->getUpdatedDateUtcAsDate();
+    $snapshot['BankTransactionID'] = $returned->getBankTransactionId();
+    $snapshot['UpdatedDateUTC'] = $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s');
+    $snapshot['Status'] = $returned->getStatus();
+    return ['BankTransactions' => ['BankTransaction' => $snapshot]];
   }
 
 }
