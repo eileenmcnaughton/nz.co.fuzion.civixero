@@ -21,7 +21,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @var string
    */
-  protected $xero_entity = 'Invoice';
+  protected string $xero_entity = 'Invoice';
 
   /**
    * Default account code to be used when another cannot be identified.
@@ -85,10 +85,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         }
         $invoices[$invoice['invoice_id']] = $invoice;
       }
-    } catch (\InvalidArgumentException $e) {
+    }
+    catch (\InvalidArgumentException $e) {
       // This means there are no invoices returned for the requested page. That's ok!
       return [];
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       \Civi::log('civixero')->error('Exception when calling AccountingApi->getInvoices: ' . $e->getMessage());
       throw $e;
     }
