@@ -589,7 +589,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    */
   protected function getMappedAccountInvoice(array $record): array|null|bool {
     if ($record['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
-      return FALSE;
+      throw new CRM_Core_Exception('AccountInvoice is cancelled');
     }
 
     $xeroInvoiceUUID = $record['accounts_invoice_id'] ?? NULL;
@@ -598,11 +598,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'id' => $contributionID,
     ])['values'][$contributionID] ?? [];
 
-    $statuses = civicrm_api3('Contribution', 'getoptions', ['field' => 'contribution_status_id']);
-    $contributionStatus = $statuses['values'][$civiCRMInvoice['contribution_status_id']];
+    $contributionStatusName = CRM_Core_PseudoConstant::getName('CRM_Contribute_DAO_Contribution', 'contribution_status_id', $civiCRMInvoice['contribution_status_id']);;
     $cancelledStatuses = ['Failed', 'Cancelled'];
 
-    if (empty($civiCRMInvoice) || in_array($contributionStatus, $cancelledStatuses)) {
+    if (empty($civiCRMInvoice) || in_array($contributionStatusName, $cancelledStatuses)) {
       return $this->mapCancelled($contributionID, $xeroInvoiceUUID);
     }
 
