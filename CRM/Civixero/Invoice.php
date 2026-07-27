@@ -304,6 +304,17 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
             // Hook accountPushAlterMapped might set $accountsInvoice to FALSE if we should not sync
             continue;
           }
+        }
+        catch (CRM_Core_Exception $e) {
+          // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
+          AccountInvoice::update(FALSE)
+            ->addWhere('id', '=', $accountInvoice['id'])
+            ->addValue('error_data', json_encode(['error' => $e->getMessage()]))
+            ->addValue('accounts_needs_update', FALSE)
+            ->execute();
+          continue;
+        }
+        try {
           $pushResult = $this->pushToXero($mappedAccountInvoice, $params['connector_id']);
           $responseErrors = $this->savePushResponse($pushResult, $accountInvoice);
           $count++;
@@ -420,7 +431,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('invoice', $invoiceData, $proceed, $new_invoice);
     if (!$proceed) {
-      return FALSE;
+      throw new CRM_Core_Exception('Ignored via accountPushAlterMapped hook');
     }
 
     $this->validatePrerequisites($new_invoice);
