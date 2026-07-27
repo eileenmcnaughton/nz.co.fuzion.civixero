@@ -58,7 +58,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       // This means there are no contacts returned for the requested page. That's ok!
       return [];
     } catch (\Exception $e) {
-      \Civi::log('civixero')->error('Exception when calling AccountingApi->getContacts: ' . $e->getMessage());
+      \Civi::log(E::SHORT_NAME)->error('Exception when calling AccountingApi->getContacts: ' . $e->getMessage());
       throw $e;
     }
     return $contacts ?? [];
@@ -97,7 +97,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       }
     }
     catch (\Throwable $e) {
-      \Civi::log('civixero')->error('CiviXero: Error when running Contact Pull: ' . $e->getMessage());
+      \Civi::log(E::SHORT_NAME)->error('CiviXero: Error when running Contact Pull: ' . $e->getMessage());
     }
   }
 
@@ -211,12 +211,12 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       }
     }
     if ($errors) {
-      \Civi::log('xero')->warning('Not all records were saved {errors}', ['errors' => $errors]);
+      \Civi::log(E::SHORT_NAME)->warning('Not all records were saved {errors}', ['errors' => $errors]);
       // Since we expect this to wind up in the job log we'll print the errors
       throw new CRM_Core_Exception(E::ts('Not all records were saved') . ': ' . print_r($errors, TRUE), 'incomplete', $errors);
     }
     if (!empty($ids)) {
-      \Civi::log('xero')->info('Xero Contact Pull: {count} IDs retrieved {ids}', ['count' => count($ids), 'ids' => implode(', ', $ids)]);
+      \Civi::log(E::SHORT_NAME)->info('Xero Contact Pull: {count} IDs retrieved {ids}', ['count' => count($ids), 'ids' => implode(', ', $ids)]);
     }
   }
 
@@ -390,10 +390,10 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $groupId,
         $contacts
       );
-      \Civi::log('civixero')->info(sprintf('CiviXero: Successfully added contact %s to Xero group "%s"', $xeroContactId, $groupName));
+      \Civi::log(E::SHORT_NAME)->info(sprintf('CiviXero: Successfully added contact %s to Xero group "%s"', $xeroContactId, $groupName));
     }
     catch (\Exception $e) {
-      \Civi::log('civixero')->warning(sprintf('CiviXero: Failed to add contact %s to Xero group "%s": %s', $xeroContactId, $groupName, $e->getMessage()));
+      \Civi::log(E::SHORT_NAME)->warning(sprintf('CiviXero: Failed to add contact %s to Xero group "%s": %s', $xeroContactId, $groupName, $e->getMessage()));
     }
   }
 
@@ -421,7 +421,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       }
     }
     catch (\Exception $e) {
-      \Civi::log('civixero')->warning(sprintf('CiviXero: Failed to look up Xero Contact Group "%s": %s', $groupName, $e->getMessage()));
+      \Civi::log(E::SHORT_NAME)->warning(sprintf('CiviXero: Failed to look up Xero Contact Group "%s": %s', $groupName, $e->getMessage()));
     }
     // Group not found or lookup failed — cache FALSE to avoid repeated API calls.
     self::$cachedContactGroupId = FALSE;
