@@ -587,11 +587,20 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *   Contact Object/ array as expected by accounts package
    */
   protected function mapToAccounts(array $contact, ?string $xeroContactUUID) {
+    // Xero limits Name/FirstName/LastName/EmailAddress to 255 characters.
+    // The ' - <id>' suffix keeps Xero names unique, so truncate the
+    // display-name part, never the suffix.
+    $nameSuffix = ' - ' . $contact['id'];
+    $email = (string) ($contact['email'] ?? '');
+    if ($email !== '' && !CRM_Utils_Rule::email($email)) {
+      \Civi::log(E::SHORT_NAME)->warning('Contact ' . $contact['id'] . ' has an invalid email - pushing without an email address');
+      $email = '';
+    }
     $new_contact = [
-      'Name' => $contact['display_name'] . ' - ' . $contact['id'],
-      'FirstName' => $contact['first_name'] ?? '',
-      'LastName' => $contact['last_name'] ?? '',
-      'EmailAddress' => CRM_Utils_Rule::email($contact['email']) ? $contact['email'] : '',
+      'Name' => \CRM_Utils_String::ellipsify((string) $contact['display_name'], 255, $nameSuffix),
+      'FirstName' => \CRM_Utils_String::ellipsify($contact['first_name'] ?? '',255),
+      'LastName' => \CRM_Utils_String::ellipsify($contact['last_name'] ?? '', 255),
+      'EmailAddress' => $email,
       'ContactNumber' => $contact['id'],
     ];
 
