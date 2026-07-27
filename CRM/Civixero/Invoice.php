@@ -587,7 +587,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   Invoice payload for Xero, FALSE to skip permanently, NULL to defer until later.
    * @throws \CRM_Core_Exception
    */
-  protected function getMappedAccountInvoice(array $record) {
+  protected function getMappedAccountInvoice(array $record): array|null|bool {
     if ($record['accounts_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Accountsync_BAO_AccountInvoice', 'accounts_status_id', 'cancelled')) {
       return FALSE;
     }
@@ -596,9 +596,8 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $contributionID = $record['contribution_id'];
     $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', [
       'id' => $contributionID,
-    ]);
+    ])['values'][$contributionID] ?? [];
 
-    $civiCRMInvoice = $civiCRMInvoice['values'][$contributionID];
     $statuses = civicrm_api3('Contribution', 'getoptions', ['field' => 'contribution_status_id']);
     $contributionStatus = $statuses['values'][$civiCRMInvoice['contribution_status_id']];
     $cancelledStatuses = ['Failed', 'Cancelled'];
