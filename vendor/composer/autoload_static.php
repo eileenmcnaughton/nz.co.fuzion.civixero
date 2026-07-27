@@ -7,30 +7,30 @@ namespace Composer\Autoload;
 class ComposerStaticInit65b15d65cd479acd14e32cf4926ccd68
 {
     public static $prefixLengthsPsr4 = array (
-        'X' => 
+        'X' =>
         array (
             'XeroAPI\\XeroPHP\\' => 16,
         ),
-        'L' => 
+        'L' =>
         array (
             'League\\OAuth2\\Client\\' => 21,
         ),
-        'F' => 
+        'F' =>
         array (
             'Firebase\\JWT\\' => 13,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'XeroAPI\\XeroPHP\\' => 
+        'XeroAPI\\XeroPHP\\' =>
         array (
             0 => __DIR__ . '/..' . '/xeroapi/xero-php-oauth2/lib',
         ),
-        'League\\OAuth2\\Client\\' => 
+        'League\\OAuth2\\Client\\' =>
         array (
             0 => __DIR__ . '/..' . '/league/oauth2-client/src',
         ),
-        'Firebase\\JWT\\' => 
+        'Firebase\\JWT\\' =>
         array (
             0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
         ),
