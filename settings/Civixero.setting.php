@@ -160,6 +160,21 @@ return [
     'pseudoconstant' => ['callback' => 'CRM_Civixero_Contact::getLocationTypes'],
     'settings_pages' => ['xero' => ['weight' => 4]],
   ],
+  'xero_contact_group' => [
+    'name' => 'xero_contact_group',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'default' => '',
+    'title' => 'Xero Contact Group',
+    'description' => 'Name of the Xero Contact Group to automatically add contacts to when pushed from CiviCRM. Leave blank to disable.',
+    'help_text' => 'The contact group must already exist in Xero. e.g. "Membership".',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 50,
+    ],
+    'settings_pages' => ['xero' => ['weight' => 5]],
+  ],
   'xero_oauth_rate_exceeded' => [
     'name' => 'xero_oauth_rate_exceeded',
     'type' => 'String',
