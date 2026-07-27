@@ -7,6 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Email;
 use Civi\Api4\Phone;
 use Civi\Api4\LocationType;
+use XeroAPI\XeroPHP\AccountingObjectSerializer;
 
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
@@ -31,7 +32,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     $ifModifiedSince = new DateTime($ifModifiedSinceDateTime);
     $where = $filters['where'] ?? NULL;
     $order = "Name ASC";
-    $ids = NULL; //$iDs = ["00000000-0000-0000-0000-000000000000"];
+    //$iDs = ["00000000-0000-0000-0000-000000000000"];
+    $ids = NULL;
+    $contact = [];
 
     try {
       $xeroContacts = $this->getAccountingApiInstance()
@@ -49,7 +52,13 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
               break;
 
             default:
-              $contact[$localName] = $xeroContact->$getter();
+              // Nested SDK models (phones, addresses, contact_persons, ...)
+              // do not implement JsonSerializable, so a raw json_encode()
+              // in processPull() would flatten them to {} and the phone
+              // duplicate-guard index would see no phone data. Sanitize into
+              // plain values with the SDK's own serializer (CamelCase keys,
+              // matching what getXeroPhoneIndex() expects).
+              $contact[$localName] = AccountingObjectSerializer::sanitizeForSerialization($xeroContact->$getter());
           }
         }
         $contacts[$contact['contact_id']] = $contact;
