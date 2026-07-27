@@ -452,10 +452,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return array
    */
   protected function mapCancelled(int $contributionID, ?string $xeroInvoiceUUID): array {
+    $prefix = $this->settings->get('xero_invoice_number_prefix') ?: '';
     return [
       'Invoice' => [
         'InvoiceID' => $xeroInvoiceUUID,
-        'InvoiceNumber' => $contributionID,
+        'InvoiceNumber' => $prefix . $contributionID,
         'Type' => 'ACCREC',
         'Reference' => 'Cancelled',
         'Date' => date('Y-m-d'),
