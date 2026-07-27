@@ -496,6 +496,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       'AUTHORISED' => $accountsStatusIDs['pending'],
       'SUBMITTED' => $accountsStatusIDs['pending'],
     ];
+    if (!isset($statuses[$status])) {
+      // Unknown/new Xero status: default to the inert 'pending' rather than
+      // crashing the pull.
+      \Civi::log('civixero')->warning('Unknown Xero invoice status ' . $status . ' - defaulting to pending');
+      return $accountsStatusIDs['pending'];
+    }
     return $statuses[$status];
   }
 
