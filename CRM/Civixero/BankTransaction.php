@@ -24,7 +24,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    *
    * @var string
    */
-  protected $xero_entity = 'BankTransaction';
+  protected string $xero_entity = 'BankTransaction';
 
   /**
    * Push record to Xero.
