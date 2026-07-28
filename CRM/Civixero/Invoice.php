@@ -5,6 +5,7 @@ use CRM_Civixero_ExtensionUtil as E;
 use Civi\Api4\AccountInvoice;
 use Civi\Api4\AccountContact;
 use Civi\Api4\Contribution;
+use XeroAPI\XeroPHP\AccountingObjectSerializer;
 use XeroAPI\XeroPHP\Models\Accounting\Invoice;
 
 /**
@@ -81,7 +82,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               break;
 
             default:
-              $invoice[$localName] = $xeroInvoice->$getter();
+              // Same nested-model flattening fix as Contact::pullFromXero -
+              // raw json_encode() turns SDK models into {} in accounts_data.
+              $invoice[$localName] = AccountingObjectSerializer::sanitizeForSerialization($xeroInvoice->$getter());
           }
         }
         $invoices[$invoice['invoice_id']] = $invoice;
