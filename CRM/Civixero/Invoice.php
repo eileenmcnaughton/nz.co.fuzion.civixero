@@ -329,7 +329,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $count++;
         }
         catch (CRM_Core_Exception $e) {
-          $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsContactID: %2)', [1 => $accountInvoice['contribution_id'], 2 => $accountInvoice['accounts_contact_id']])
+          $errorMessage = E::ts('Failed to push contributionID: %1', [1 => $accountInvoice['contribution_id']])
             . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
             . E::ts('%1 Push failed', [1 => $this->xero_entity]);
 
