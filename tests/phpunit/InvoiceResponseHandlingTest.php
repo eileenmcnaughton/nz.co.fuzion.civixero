@@ -145,6 +145,28 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
     $this->assertEquals(json_encode($errors), $saved['error_data']);
   }
 
+  /**
+   * pushViaApi() (added by PR #215, the Xero-SDK migration) returns
+   * ['ValidationErrors' => [...]] on a Xero validation failure - a
+   * top-level key distinct from the legacy package's nested
+   * Elements.DataContractBase.ValidationErrors shape. Without the fix in
+   * validateResponse(), this fell through to the "success" branch and
+   * crashed reading $result['Invoices']['Invoice']['UpdatedDateUTC'] from a
+   * response that doesn't have it. See InvoiceSdkPushTest for pushViaApi()
+   * actually producing this shape from a mocked Xero response.
+   */
+  public function testSavePushResponseRecognisesNewSdkTopLevelValidationErrorsShape(): void {
+    $record = $this->createBaseAccountInvoiceRecord();
+    $result = ['ValidationErrors' => ['Account code must be specified']];
+
+    $errors = $this->getInvoice()->callSavePushResponse($result, $record);
+
+    $this->assertEquals(['Account code must be specified'], $errors);
+    $saved = $this->getAccountInvoice($record['id']);
+    $this->assertEquals(1, $saved['accounts_needs_update']);
+    $this->assertEquals(json_encode($errors), $saved['error_data']);
+  }
+
   public function testSavePushResponseNotUpdateCandidateClearsNeedsUpdateFlag(): void {
     $record = $this->createBaseAccountInvoiceRecord();
     $result = [
