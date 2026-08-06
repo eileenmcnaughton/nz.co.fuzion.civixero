@@ -151,6 +151,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       if ($accountContacts->count() === 1) {
         // We have exactly one match. Update existing
         $accountContactParams['id'] = $accountContacts->first()['id'];
+        if (!empty($accountContacts->first()['do_not_sync'])) {
+          // Row carries the durable-unmatch lock: refresh the Xero-side
+          // data but never (re)derive the CiviCRM link for it.
+          unset($accountContactParams['contact_id']);
+        }
       }
       elseif ($accountContacts->count() > 1) {
         // We found more than one matching record
@@ -198,6 +203,15 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             'accounts_contact_id',
             'accounts_needs_update',
           ];
+          // The ContactNumber-derived CiviCRM link is part of what pull
+          // maintains: if it differs from the stored link (e.g. re-match
+          // after the durable-unmatch lock was cleared), that alone must
+          // trigger the update - the Xero-side fields may be unchanged.
+          if (array_key_exists('contact_id', $accountContactParams)
+            && (int) $accountContactParams['contact_id'] !== (int) ($accountContacts->first()['contact_id'] ?? 0)) {
+            $modifiedFieldKeys[] = 'contact_id';
+            $accountContactParams['contact_id'] = (int) $accountContactParams['contact_id'];
+          }
           foreach ($modifiedFieldKeys as $key) {
             // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
             // So check if anything actually changed before updating.
@@ -277,25 +291,64 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $xeroContactUUID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
         $accountsContact = $this->mapToAccounts($contact, $xeroContactUUID);
         if ($accountsContact === FALSE) {
-          $result = FALSE;
-          $responseErrors = [];
+          // A hook listener vetoed the push for this contact: skip it cleanly.
+          // (Upstream fell through here and read array keys off boolean FALSE.)
+          continue;
         }
-        else {
-          /** @noinspection PhpUndefinedMethodInspection */
-          $result = $this->getSingleton($params['connector_id'])->Contacts($accountsContact);
-          $responseErrors = $this->validateResponse($result);
+
+        // Duplicate guard: when about to CREATE (no ContactID yet), check
+        // whether Xero already holds this contact - first by ContactNumber
+        // (which this extension sets to the CiviCRM contact ID), then by
+        // exact email match. If found, update that record instead of
+        // creating a duplicate. Never fuzzy-matches on name.
+        if (empty($accountsContact['ContactID']) && empty($params['skip_duplicate_guard'])) {
+          // skip_duplicate_guard is only ever set in-memory by
+          // Matcher::forceCreateInXero() after explicit human confirmation.
+          $existingUUID = $this->findExistingXeroContact($contact);
+          if ($existingUUID !== NULL) {
+            $accountsContact['ContactID'] = $existingUUID;
+            \Civi::log(E::SHORT_NAME)->info('Contact Push linked CiviCRM contact ' . $record['contact_id'] . ' to existing Xero contact ' . $existingUUID . ' instead of creating a duplicate');
+          }
         }
-        if ($result === FALSE) {
-          unset($record['accounts_modified_date']);
+
+        // Pre-push conflict check: if the target Xero contact is already
+        // linked to a DIFFERENT (non-deleted) CiviCRM contact, fail BEFORE
+        // writing to Xero. Live testing showed the post-push check further
+        // down only rejected the link AFTER the push had already renamed
+        // the other contact's Xero record.
+        if (!empty($accountsContact['ContactID'])) {
+          $preMatch = AccountContact::get(FALSE)
+            ->addWhere('accounts_contact_id', '=', $accountsContact['ContactID'])
+            ->addWhere('plugin', '=', $this->_plugin)
+            ->addWhere('connector_id', '=', $params['connector_id'])
+            ->addWhere('contact_id', 'IS NOT NULL')
+            ->addWhere('contact_id', '<>', $record['contact_id'])
+            ->execute()
+            ->first();
+          if (!empty($preMatch)) {
+            $preMatchContactIsDeleted = Contact::get(FALSE)
+              ->addWhere('id', '=', $preMatch['contact_id'])
+              ->addWhere('is_deleted', '=', TRUE)
+              ->execute()
+              ->first()['is_deleted'] ?? FALSE;
+            if (!$preMatchContactIsDeleted) {
+              // Same wording as the post-push check so both land in the
+              // worklist identically.
+              throw new CRM_Core_Exception(ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2. ', [
+                1 => $record['contact_id'],
+                2 => $preMatch['contact_id'],
+              ]), 'xero_dup_contact');
+            }
+            // Linked contact is deleted: allow the push; the post-push
+            // logic below repairs the stale row.
+          }
         }
-        if ($responseErrors) {
-          $record['error_data'] = json_encode($responseErrors);
-          throw new CRM_Core_Exception('Error in response from Xero');
-        }
+
+        $result = $this->pushContactToXero($accountsContact);
 
         /* When Xero returns an ID that matches an existing account_contact, update it instead. */
         $matchingAccountContact = AccountContact::get(FALSE)
-          ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
+          ->addWhere('accounts_contact_id', '=', $result['ContactID'])
           ->addWhere('plugin', '=', $this->_plugin)
           ->addWhere('connector_id', '=', $params['connector_id'])
           ->execute()->first() ?? [];
@@ -327,11 +380,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
         $record['error_data'] = NULL;
         if (empty($record['accounts_contact_id'])) {
-          $record['accounts_contact_id'] = $result['Contacts']['Contact']['ContactID'];
+          $record['accounts_contact_id'] = $result['ContactID'];
         }
-        $record['accounts_modified_date'] = $result['Contacts']['Contact']['UpdatedDateUTC'];
-        $record['accounts_data'] = json_encode($result['Contacts']['Contact']);
-        $record['accounts_display_name'] = $result['Contacts']['Contact']['Name'];
+        $record['accounts_modified_date'] = $result['UpdatedDateUTC'];
+        $record['accounts_data'] = $result['accounts_data'];
+        $record['accounts_display_name'] = $result['Name'];
         // This will update the last sync date.
         unset($record['last_sync_date']);
         AccountContact::update(FALSE)
@@ -352,6 +405,9 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           . E::ts('Record: ') . print_r($record,TRUE) . '; '
           . E::ts('Contact Push failed');
 
+        // Deliberately do NOT overwrite accounts_data here - upstream stored
+        // the CiviCRM contact array into it on failure, destroying the
+        // last-known Xero snapshot for this record.
         AccountContact::update(FALSE)
           ->addWhere('id', '=', $record['id'])
           ->addValue('is_error_resolved', FALSE)
@@ -359,7 +415,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             'error' => $e->getMessage(),
             'error_data' => $record['error_data']
           ]))
-          ->addValue('accounts_data', json_encode($contact))
           ->execute();
         $errors[] = $errorMessage;
       }
@@ -657,6 +712,369 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       return FALSE;
     }
     return $new_contact;
+  }
+
+  /**
+   * Push a single mapped contact to Xero via the official SDK.
+   *
+   * Replaces the legacy hand-rolled client (packages/Xero/Xero.php) which
+   * disabled SSL peer verification on every request.
+   *
+   * @param array $mappedContact
+   *   CamelCase-keyed contact array as produced by mapToAccounts().
+   *
+   * @return array
+   *   ContactID, UpdatedDateUTC ('Y-m-d H:i:s'), Name, accounts_data (JSON snapshot).
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function pushContactToXero(array $mappedContact): array {
+    $xeroContact = $this->mappedArrayToXeroContact($mappedContact);
+
+    // Validate locally before spending an API call; fails with a clearer
+    // message than the remote 400 would give.
+    $invalidProperties = $xeroContact->listInvalidProperties();
+    if ($invalidProperties !== []) {
+      throw new CRM_Core_Exception('contact failed local validation: ' . implode('; ', $invalidProperties));
+    }
+
+    $contacts = new \XeroAPI\XeroPHP\Models\Accounting\Contacts();
+    $contacts->setContacts([$xeroContact]);
+
+    try {
+      // summarize_errors = FALSE: per-contact validation errors come back on
+      // the contact object instead of a blanket HTTP 400.
+      $response = $this->getAccountingApiInstance()->updateOrCreateContacts(
+        $this->getTenantID(),
+        $contacts,
+        FALSE,
+        $this->generateIdempotencyKey('contact-' . ($mappedContact['ContactNumber'] ?? '0'), $mappedContact)
+      );
+    }
+    catch (\XeroAPI\XeroPHP\ApiException $e) {
+      $this->handleApiException($e, 'updateOrCreateContacts');
+    }
+
+    $returned = $response->getContacts()[0] ?? NULL;
+    if ($returned === NULL) {
+      throw new CRM_Core_Exception('Xero returned no contact from updateOrCreateContacts');
+    }
+    $validationErrors = $returned->getValidationErrors() ?? [];
+    if ($validationErrors !== []) {
+      $messages = [];
+      foreach ($validationErrors as $validationError) {
+        $messages[] = $validationError->getMessage();
+      }
+      throw new CRM_Core_Exception('Xero rejected the contact: ' . implode('; ', $messages));
+    }
+
+    $updated = $returned->getUpdatedDateUtcAsDate();
+    return [
+      'ContactID' => $returned->getContactId(),
+      'UpdatedDateUTC' => $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s'),
+      'Name' => $returned->getName(),
+      'accounts_data' => (string) $returned,
+    ];
+  }
+
+  /**
+   * Convert a CamelCase mapped-contact array to an SDK Contact model.
+   *
+   * Field lengths are clamped to Xero's documented limits so a single bad
+   * value cannot fail the whole push batch.
+   */
+  private function mappedArrayToXeroContact(array $mappedContact): \XeroAPI\XeroPHP\Models\Accounting\Contact {
+    $xeroContact = new \XeroAPI\XeroPHP\Models\Accounting\Contact();
+    if (!empty($mappedContact['ContactID'])) {
+      $this->assertValidXeroGuid((string) $mappedContact['ContactID'], 'Xero contact reference (ContactID)');
+      $xeroContact->setContactId($mappedContact['ContactID']);
+    }
+    $xeroContact->setName($mappedContact['Name']);
+    $xeroContact->setContactNumber((string) $mappedContact['ContactNumber']);
+    if (($mappedContact['FirstName'] ?? '') !== '') {
+      $xeroContact->setFirstName($mappedContact['FirstName']);
+    }
+    if (($mappedContact['LastName'] ?? '') !== '') {
+      $xeroContact->setLastName($mappedContact['LastName']);
+    }
+    if (($mappedContact['EmailAddress'] ?? '') !== '') {
+      $xeroContact->setEmailAddress($mappedContact['EmailAddress']);
+    }
+
+    if (!empty($mappedContact['Phones']['Phone']['PhoneNumber'])) {
+      $phone = new \XeroAPI\XeroPHP\Models\Accounting\Phone();
+      $phone->setPhoneType(\XeroAPI\XeroPHP\Models\Accounting\Phone::PHONE_TYPE__DEFAULT);
+      $phone->setPhoneNumber(mb_substr((string) $mappedContact['Phones']['Phone']['PhoneNumber'], 0, 50));
+      $xeroContact->setPhones([$phone]);
+    }
+
+    if (!empty($mappedContact['Addresses']['Address'][0])) {
+      $mappedAddress = $mappedContact['Addresses']['Address'][0];
+      $address = new \XeroAPI\XeroPHP\Models\Accounting\Address();
+      $address->setAddressType(\XeroAPI\XeroPHP\Models\Accounting\Address::ADDRESS_TYPE_POBOX);
+      $address->setAddressLine1(mb_substr((string) ($mappedAddress['AddressLine1'] ?? ''), 0, 500));
+      $address->setAddressLine2(mb_substr((string) ($mappedAddress['AddressLine2'] ?? ''), 0, 500));
+      $address->setAddressLine3(mb_substr((string) ($mappedAddress['AddressLine3'] ?? ''), 0, 500));
+      $address->setAddressLine4(mb_substr((string) ($mappedAddress['AddressLine4'] ?? ''), 0, 500));
+      $address->setCity(mb_substr((string) ($mappedAddress['City'] ?? ''), 0, 255));
+      $address->setPostalCode(mb_substr((string) ($mappedAddress['PostalCode'] ?? ''), 0, 50));
+      $address->setCountry(mb_substr((string) ($mappedAddress['Country'] ?? ''), 0, 50));
+      $address->setRegion(mb_substr((string) ($mappedAddress['Region'] ?? ''), 0, 255));
+      $xeroContact->setAddresses([$address]);
+    }
+    return $xeroContact;
+  }
+
+  /**
+   * Look for an existing Xero contact before creating a new one.
+   *
+   * Match order: ContactNumber (= CiviCRM contact ID, set by this extension),
+   * then exact email address. Deliberately never fuzzy-matches on name.
+   *
+   * @return string|null
+   *   The Xero ContactID to link to, or NULL when Xero has no match.
+   *
+   * @throws \CRM_Core_Exception
+   *   When the match is ambiguous - manual matching is required rather than
+   *   guessing (the error lands in error_data for the worklist).
+   */
+  private function findExistingXeroContact(array $contact): ?string {
+    $byNumber = $this->getXeroContactsWhere('ContactNumber=="' . (int) $contact['id'] . '"');
+    if (count($byNumber) === 1) {
+      return $byNumber[0]->getContactId();
+    }
+    if (count($byNumber) > 1) {
+      throw new CRM_Core_Exception('multiple Xero contacts carry ContactNumber ' . (int) $contact['id'] . ' - manual match required before this contact can be pushed.');
+    }
+
+    $email = (string) ($contact['email'] ?? '');
+    if ($email !== '' && CRM_Utils_Rule::email($email)) {
+      // Strip characters that could break out of the Xero where-clause
+      // string literal; a valid email cannot contain them anyway.
+      $escapedEmail = str_replace(['\\', '"'], '', $email);
+      $byEmail = $this->getXeroContactsWhere('EmailAddress=="' . $escapedEmail . '"');
+      if (count($byEmail) === 1) {
+        return $byEmail[0]->getContactId();
+      }
+      if (count($byEmail) > 1) {
+        throw new CRM_Core_Exception('multiple Xero contacts share the email of CiviCRM contact ' . (int) $contact['id'] . ' - manual match required before this contact can be pushed.');
+      }
+      // Contact HAS a usable email: email is the authoritative key and the
+      // search is complete. Phone matching is only for email-less contacts.
+      return NULL;
+    }
+
+    // No usable email: fall back to phone matching.
+    return $this->findExistingXeroContactByPhone($contact);
+  }
+
+  /**
+   * Phone-based duplicate guard for contacts with no usable email.
+   *
+   * Policy (approved 2026-07-03): individuals only; mobile numbers first
+   * (Main-location/primary preferred), then landline-pattern numbers but
+   * ONLY when no other CiviCRM contact holds the same number (landlines are
+   * shared by households); a single Xero hit auto-links only when the
+   * surname also corroborates. Ambiguous hits, hits already linked to a
+   * different contact, and surname mismatches all throw to the error
+   * worklist rather than guessing.
+   *
+   * Xero's API cannot search by phone, so matching runs against the local
+   * snapshots in civicrm_account_contact.accounts_data (populated by
+   * contact pull - a full pull is a rollout prerequisite).
+   *
+   * @return string|null
+   *   Xero ContactID to link, or NULL to proceed with a create.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function findExistingXeroContactByPhone(array $contact): ?string {
+    if (($contact['contact_type'] ?? '') !== 'Individual') {
+      return NULL;
+    }
+    $candidates = $this->getMatchablePhoneCandidates((int) $contact['id']);
+    if ($candidates === []) {
+      return NULL;
+    }
+    $index = $this->getXeroPhoneIndex((int) $this->connector_id);
+    foreach ($candidates as $candidate) {
+      if (!$candidate['isMobile'] && !$this->isPhoneUniqueInCiviCRM($candidate['key'])) {
+        // Landline shared by more than one CiviCRM contact: not a safe key.
+        continue;
+      }
+      $hits = array_values($index[$candidate['key']] ?? []);
+      if ($hits === []) {
+        continue;
+      }
+      if (count($hits) > 1) {
+        throw new CRM_Core_Exception('multiple Xero contacts share the phone number ending ' . substr($candidate['key'], -4) . ' held by CiviCRM contact ' . (int) $contact['id'] . ' - manual match required before this contact can be pushed.');
+      }
+      $hit = $hits[0];
+      if (!empty($hit['linked_contact_id']) && (int) $hit['linked_contact_id'] !== (int) $contact['id']) {
+        throw new CRM_Core_Exception('phone match for CiviCRM contact ' . (int) $contact['id'] . ' is Xero contact ' . $hit['uuid'] . ', which is already linked to CiviCRM contact ' . (int) $hit['linked_contact_id'] . ' - manual match required.');
+      }
+      $civiLastName = mb_strtolower(trim((string) ($contact['last_name'] ?? '')));
+      $xeroLastName = mb_strtolower(trim($hit['last_name']));
+      if ($civiLastName === '' || $xeroLastName === '' || $civiLastName !== $xeroLastName) {
+        throw new CRM_Core_Exception('CiviCRM contact ' . (int) $contact['id'] . ' phone-matches Xero contact ' . $hit['uuid'] . ' (' . $hit['name'] . ') but the surname does not corroborate - manual match required before this contact can be pushed.');
+      }
+      \Civi::log(E::SHORT_NAME)->info('Contact Push phone-matched CiviCRM contact ' . (int) $contact['id'] . ' to existing Xero contact ' . $hit['uuid'] . ' (surname corroborated)');
+      return $hit['uuid'];
+    }
+    return NULL;
+  }
+
+  /**
+   * Canonicalise an Australian phone number to its 9 significant digits.
+   *
+   * Handles both input masks ('99 9999 9999' landline, '9999 999 999'
+   * mobile), +61/61 country prefixes, and Xero's split
+   * country/area/number storage. NULL when not a plausible AU number.
+   */
+  protected function canonicalizeAustralianPhone(string $raw): ?string {
+    $digits = preg_replace('/\D/', '', $raw);
+    if ($digits === '' || $digits === NULL) {
+      return NULL;
+    }
+    if (strlen($digits) === 11 && str_starts_with($digits, '61')) {
+      $digits = '0' . substr($digits, 2);
+    }
+    if (strlen($digits) === 10 && $digits[0] === '0') {
+      return substr($digits, 1);
+    }
+    if (strlen($digits) === 9 && in_array($digits[0], ['2', '3', '4', '7', '8'], TRUE)) {
+      return $digits;
+    }
+    return NULL;
+  }
+
+  /**
+   * Ordered, canonicalised phone candidates for a contact.
+   *
+   * Mobile-pattern numbers first (Main location, then primary, preferred),
+   * then landline-pattern numbers in the same preference order. Pattern
+   * (leading 4 = mobile) decides the bucket, not the stored phone type -
+   * the shared-line risk follows the number, not the label.
+   */
+  protected function getMatchablePhoneCandidates(int $contactID): array {
+    $phones = Phone::get(FALSE)
+      ->addSelect('phone', 'is_primary', 'location_type_id:name')
+      ->addWhere('contact_id', '=', $contactID)
+      ->execute();
+    $mobiles = $landlines = [];
+    foreach ($phones as $phone) {
+      $key = $this->canonicalizeAustralianPhone((string) ($phone['phone'] ?? ''));
+      if ($key === NULL) {
+        continue;
+      }
+      $rank = ((($phone['location_type_id:name'] ?? '') === 'Main') ? 0 : 2)
+        + (empty($phone['is_primary']) ? 1 : 0);
+      if ($key[0] === '4') {
+        $mobiles[$key] = min($mobiles[$key] ?? 9, $rank);
+      }
+      else {
+        $landlines[$key] = min($landlines[$key] ?? 9, $rank);
+      }
+    }
+    asort($mobiles);
+    asort($landlines);
+    $candidates = [];
+    foreach (array_keys($mobiles) as $key) {
+      $candidates[] = ['key' => $key, 'isMobile' => TRUE];
+    }
+    foreach (array_keys($landlines) as $key) {
+      $candidates[] = ['key' => $key, 'isMobile' => FALSE];
+    }
+    return $candidates;
+  }
+
+  /**
+   * Is this canonical number held by exactly one (non-deleted) contact?
+   *
+   * $key is digits-only by construction (canonicalizeAustralianPhone) and
+   * bound as a parameter regardless - defence in depth.
+   */
+  protected function isPhoneUniqueInCiviCRM(string $key): bool {
+    $count = (int) CRM_Core_DAO::singleValueQuery(
+      "SELECT COUNT(DISTINCT p.contact_id)
+         FROM civicrm_phone p
+         INNER JOIN civicrm_contact c ON c.id = p.contact_id AND c.is_deleted = 0
+        WHERE REGEXP_REPLACE(p.phone, '[^0-9]', '') LIKE %1",
+      [1 => ['%' . $key, 'String']]
+    );
+    return $count === 1;
+  }
+
+  /**
+   * Canonical-phone => Xero-contact index built from local snapshots.
+   *
+   * Built once per request (static cache) from accounts_data JSON, which
+   * carries phones either as 'Phones' (push snapshots) or 'phones' (pull
+   * snapshots); entries use the SDK's CamelCase field names in both cases.
+   */
+  protected function getXeroPhoneIndex(int $connectorID): array {
+    if (isset(\Civi::$statics['civixero_phone_index'][$connectorID])) {
+      return \Civi::$statics['civixero_phone_index'][$connectorID];
+    }
+    $index = [];
+    $offset = 0;
+    do {
+      $rows = AccountContact::get(FALSE)
+        ->addSelect('contact_id', 'accounts_contact_id', 'accounts_data')
+        ->addWhere('plugin', '=', $this->_plugin)
+        ->addWhere('connector_id', '=', $connectorID)
+        ->addWhere('accounts_contact_id', 'IS NOT NULL')
+        ->setLimit(500)
+        ->setOffset($offset)
+        ->execute();
+      foreach ($rows as $row) {
+        $data = json_decode((string) ($row['accounts_data'] ?? ''), TRUE);
+        if (!is_array($data)) {
+          continue;
+        }
+        $phones = $data['Phones'] ?? $data['phones'] ?? [];
+        foreach ((array) $phones as $phoneData) {
+          if (!is_array($phoneData)) {
+            continue;
+          }
+          $raw = trim((string) ($phoneData['PhoneCountryCode'] ?? '') . (string) ($phoneData['PhoneAreaCode'] ?? '') . (string) ($phoneData['PhoneNumber'] ?? ''));
+          $key = $raw === '' ? NULL : $this->canonicalizeAustralianPhone($raw);
+          if ($key === NULL) {
+            continue;
+          }
+          $index[$key][(string) $row['accounts_contact_id']] = [
+            'uuid' => $row['accounts_contact_id'],
+            'linked_contact_id' => $row['contact_id'],
+            'last_name' => (string) ($data['LastName'] ?? $data['last_name'] ?? ''),
+            'name' => (string) ($data['Name'] ?? $data['name'] ?? ''),
+          ];
+        }
+      }
+      $offset += 500;
+    } while (count($rows) === 500);
+    \Civi::$statics['civixero_phone_index'][$connectorID] = $index;
+    return $index;
+  }
+
+  /**
+   * Fetch (non-archived) Xero contacts matching a where clause.
+   *
+   * @return \XeroAPI\XeroPHP\Models\Accounting\Contact[]
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function getXeroContactsWhere(string $where): array {
+    try {
+      $response = $this->getAccountingApiInstance()->getContacts($this->getTenantID(), NULL, $where);
+      return $response->getContacts() ?? [];
+    }
+    catch (\InvalidArgumentException $e) {
+      // SDK quirk: thrown when the result set is empty.
+      return [];
+    }
+    catch (\XeroAPI\XeroPHP\ApiException $e) {
+      $this->handleApiException($e, 'getContacts');
+    }
   }
 
   /**
