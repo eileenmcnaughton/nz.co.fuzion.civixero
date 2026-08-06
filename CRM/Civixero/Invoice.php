@@ -329,7 +329,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $count++;
         }
         catch (CRM_Core_Exception $e) {
-          $errorMessage = E::ts('Failed to push contributionID: %1 (AccountsContactID: %2)', [1 => $accountInvoice['contribution_id'], 2 => $accountInvoice['accounts_contact_id']])
+          $errorMessage = E::ts('Failed to push contributionID: %1', [1 => $accountInvoice['contribution_id']])
             . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
             . E::ts('%1 Push failed', [1 => $this->xero_entity]);
 
@@ -760,6 +760,17 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     catch (XeroThrottleException $e) {
       throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
     }
+    catch (\XeroAPI\XeroPHP\ApiException $e) {
+      if ($e->getCode() === 429) {
+        $retryAfterSeconds = (int) ($e->getResponseHeaders()['Retry-After'][0] ?? 0);
+        throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $retryAfterSeconds ? (time() + $retryAfterSeconds) : NULL);
+      }
+      throw new CRM_Core_Exception(
+        'Synchronization error ' . $e->getMessage(),
+        'xero_' . $e->getCode(),
+        ['response' => $e->getResponseBody()]
+      );
+    }
     catch (XeroException $e) {
       if (method_exists($e, 'getXML') && $e->getXML()) {
         return ArrayToXML::toArray($e->getXML());
@@ -1083,7 +1094,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @throws \XeroAPI\XeroPHP\ApiException
    * @throws \CRM_Core_Exception
    */
-  private function pushViaApi(array $mapped): array {
+  protected function pushViaApi(array $mapped): array {
     $invoice = new Invoice();
     $invoice->setType($mapped['Type'] ?? 'ACCREC');
     if (!empty($mapped['InvoiceID'])) {

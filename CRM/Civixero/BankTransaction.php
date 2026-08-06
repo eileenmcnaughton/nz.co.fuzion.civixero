@@ -139,7 +139,7 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
    * @throws \XeroAPI\XeroPHP\ApiException
    * @throws \CRM_Core_Exception
    */
-  private function pushViaApi(array $mapped): array {
+  protected function pushViaApi(array $mapped): array {
     $bankTransaction = new BankTransaction();
     $bankTransaction->setType($mapped['Type'] ?? 'RECEIVE');
     if (!empty($mapped['BankTransactionID'])) {

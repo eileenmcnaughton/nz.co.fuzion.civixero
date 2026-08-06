@@ -200,6 +200,12 @@ class CRM_Civixero_Base {
       CRM_Civixero_Base::setApiRateLimitExceeded();
       throw new CRM_Civixero_Exception_XeroThrottle($problem);
     }
+    if (!empty($response['ValidationErrors']) && is_array($response['ValidationErrors'])) {
+      // pushViaApi() (xeroapi/xero-php-oauth2 SDK path) returns validation
+      // failures as a top-level ValidationErrors key, rather than the legacy
+      // package's nested Elements.DataContractBase.ValidationErrors shape.
+      return $response['ValidationErrors'];
+    }
     if (!empty($response['ErrorNumber'])) {
       $errors[] = $response['Message'];
     }
