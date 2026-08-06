@@ -7,6 +7,8 @@ use Civi\Api4\AccountContact;
 use Civi\Api4\Contribution;
 use XeroAPI\XeroPHP\AccountingObjectSerializer;
 use XeroAPI\XeroPHP\Models\Accounting\Invoice;
+use XeroAPI\XeroPHP\Models\Accounting\Invoices;
+use XeroAPI\XeroPHP\Models\Accounting\LineItemTracking;
 
 /**
  * Class CRM_Civixero_Invoice.
@@ -751,9 +753,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     if ($accountsInvoice === FALSE) {
       return FALSE;
     }
+    $mapped = $this->normalizeMappedInvoice($accountsInvoice);
     try {
-      /** @noinspection PhpUndefinedMethodInspection */
-      return $this->getSingleton($connector_id)->Invoices($accountsInvoice);
+      return $this->pushViaApi($mapped);
     }
     catch (XeroThrottleException $e) {
       throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
@@ -959,6 +961,190 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       ->addValue('is_error_resolved', FALSE)
       ->addWhere('id', '=', $accountInvoiceID)
       ->execute();
+  }
+
+  /**
+   * Normalise the three historical shapes produced by the mapping methods:
+   * [$invoice] from mapToAccounts(), ['Invoice' => $invoice] from
+   * mapCancelled(), or a bare associative invoice array (hook-altered).
+   */
+  private function normalizeMappedInvoice(array $accountsInvoice): array {
+    if (isset($accountsInvoice['Invoice']) && is_array($accountsInvoice['Invoice'])) {
+      return $accountsInvoice['Invoice'];
+    }
+    if (isset($accountsInvoice[0]) && is_array($accountsInvoice[0])) {
+      return $accountsInvoice[0];
+    }
+    return $accountsInvoice;
+  }
+
+  /**
+   * Build SDK LineItem models from the mapped LineItems array.
+   *
+   * Handles both a list of line-item arrays and the single associative
+   * line-item shape used by mapCancelled(). Preserves hook-added
+   * TrackingCategory, TaxType and ItemCode values.
+   *
+   * @return \XeroAPI\XeroPHP\Models\Accounting\LineItem[]
+   */
+  protected function buildSdkLineItems(array $mapped): array {
+    $rows = $mapped['LineItems']['LineItem'] ?? [];
+    if ($rows !== [] && !isset($rows[0])) {
+      // Single associative line item (mapCancelled shape).
+      $rows = [$rows];
+    }
+    $lineItems = [];
+    foreach ($rows as $row) {
+      if (!is_array($row)) {
+        continue;
+      }
+      $lineItem = new \XeroAPI\XeroPHP\Models\Accounting\LineItem();
+      if (isset($row['Description'])) {
+        $lineItem->setDescription(mb_substr((string) $row['Description'], 0, 4000));
+      }
+      if (isset($row['Quantity'])) {
+        $lineItem->setQuantity((float) $row['Quantity']);
+      }
+      if (isset($row['UnitAmount'])) {
+        $lineItem->setUnitAmount((float) $row['UnitAmount']);
+      }
+      if (!empty($row['AccountCode'])) {
+        $lineItem->setAccountCode((string) $row['AccountCode']);
+      }
+      if (!empty($row['TaxType'])) {
+        $lineItem->setTaxType((string) $row['TaxType']);
+      }
+      if (isset($row['TaxAmount']) && $row['TaxAmount'] !== '') {
+        $lineItem->setTaxAmount((float) $row['TaxAmount']);
+      }
+      if (!empty($row['ItemCode'])) {
+        $lineItem->setItemCode((string) $row['ItemCode']);
+      }
+      if (!empty($row['TrackingCategory']) && is_array($row['TrackingCategory'])) {
+        $trackingModels = [];
+        foreach ($row['TrackingCategory'] as $tracking) {
+          if (empty($tracking['Name'])) {
+            continue;
+          }
+          $trackingModel = new LineItemTracking();
+          $trackingModel->setName((string) $tracking['Name']);
+          $trackingModel->setOption((string) ($tracking['Option'] ?? ''));
+          $trackingModels[] = $trackingModel;
+        }
+        if ($trackingModels !== []) {
+          $lineItem->setTracking($trackingModels);
+        }
+      }
+      $lineItems[] = $lineItem;
+    }
+    return $lineItems;
+  }
+
+  /**
+   * Build the embedded contact reference for an invoice/bank transaction.
+   */
+  protected function buildSdkContactRef(array $mapped): ?\XeroAPI\XeroPHP\Models\Accounting\Contact {
+    if (empty($mapped['Contact']) || !is_array($mapped['Contact'])) {
+      return NULL;
+    }
+    $contactRef = new \XeroAPI\XeroPHP\Models\Accounting\Contact();
+    if (!empty($mapped['Contact']['ContactID'])) {
+      $this->assertValidXeroGuid((string) $mapped['Contact']['ContactID'], 'Xero contact reference (ContactID)');
+      $contactRef->setContactId($mapped['Contact']['ContactID']);
+    }
+    if (!empty($mapped['Contact']['ContactNumber'])) {
+      $contactRef->setContactNumber((string) $mapped['Contact']['ContactNumber']);
+    }
+    return $contactRef;
+  }
+
+  /**
+   * Extract per-object validation error messages from an SDK model.
+   *
+   * @param \XeroAPI\XeroPHP\Models\Accounting\Invoice|\XeroAPI\XeroPHP\Models\Accounting\BankTransaction $model
+   *
+   * @return string[]
+   */
+  protected function extractValidationErrors($model): array {
+    $messages = [];
+    foreach ($model->getValidationErrors() ?? [] as $validationError) {
+      $messages[] = $validationError->getMessage();
+    }
+    return $messages;
+  }
+
+  /**
+   * Push one invoice via AccountingApi::updateOrCreateInvoices.
+   *
+   * @return array
+   *   Legacy-shaped result consumed by savePushResponse():
+   *   ['Invoices' => ['Invoice' => snapshot]] or ['ValidationErrors' => [...]].
+   *
+   * @throws \XeroAPI\XeroPHP\ApiException
+   * @throws \CRM_Core_Exception
+   */
+  private function pushViaApi(array $mapped): array {
+    $invoice = new Invoice();
+    $invoice->setType($mapped['Type'] ?? 'ACCREC');
+    if (!empty($mapped['InvoiceID'])) {
+      $this->assertValidXeroGuid((string) $mapped['InvoiceID'], 'Xero invoice reference (InvoiceID)');
+      $invoice->setInvoiceId($mapped['InvoiceID']);
+    }
+    $contactRef = $this->buildSdkContactRef($mapped);
+    if ($contactRef !== NULL) {
+      $invoice->setContact($contactRef);
+    }
+    if (!empty($mapped['Date'])) {
+      $invoice->setDate($mapped['Date']);
+    }
+    if (!empty($mapped['DueDate'])) {
+      $invoice->setDueDate($mapped['DueDate']);
+    }
+    if (!empty($mapped['Status'])) {
+      $invoice->setStatus($mapped['Status']);
+    }
+    if (!empty($mapped['InvoiceNumber'])) {
+      $invoice->setInvoiceNumber(mb_substr((string) $mapped['InvoiceNumber'], 0, 255));
+    }
+    if (!empty($mapped['CurrencyCode'])) {
+      $invoice->setCurrencyCode($mapped['CurrencyCode']);
+    }
+    if (isset($mapped['Reference'])) {
+      $invoice->setReference(mb_substr((string) $mapped['Reference'], 0, 255));
+    }
+    if (!empty($mapped['LineAmountTypes'])) {
+      $invoice->setLineAmountTypes($mapped['LineAmountTypes']);
+    }
+    $invoice->setLineItems($this->buildSdkLineItems($mapped));
+
+    $collection = new Invoices();
+    $collection->setInvoices([$invoice]);
+
+    // summarize_errors = FALSE: per-invoice validation errors come back on
+    // the invoice object instead of a blanket HTTP 400.
+    $response = $this->getAccountingApiInstance()->updateOrCreateInvoices(
+      $this->getTenantID(),
+      $collection,
+      FALSE,
+      NULL,
+      $this->generateIdempotencyKey('invoice-' . ($mapped['InvoiceNumber'] ?? '0'), $mapped)
+    );
+
+    $returned = $response->getInvoices()[0] ?? NULL;
+    if ($returned === NULL) {
+      throw new CRM_Core_Exception('CWS CiviXero Plus: Xero returned no invoice from updateOrCreateInvoices');
+    }
+    $validationErrors = $this->extractValidationErrors($returned);
+    if ($validationErrors !== []) {
+      return ['ValidationErrors' => $validationErrors];
+    }
+
+    $snapshot = json_decode((string) $returned, TRUE) ?: [];
+    $updated = $returned->getUpdatedDateUtcAsDate();
+    $snapshot['InvoiceID'] = $returned->getInvoiceId();
+    $snapshot['UpdatedDateUTC'] = $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s');
+    $snapshot['Status'] = $returned->getStatus();
+    return ['Invoices' => ['Invoice' => $snapshot]];
   }
 
 }
