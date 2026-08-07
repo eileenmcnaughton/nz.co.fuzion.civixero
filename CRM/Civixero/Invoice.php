@@ -318,8 +318,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           // We need to set an error so that they are not selected for push next time otherwise we'll keep trying to push the same ones
           AccountInvoice::update(FALSE)
             ->addWhere('id', '=', $accountInvoice['id'])
-            ->addValue('error_data', json_encode(['error' => $e->getMessage()]))
             ->addValue('accounts_needs_update', FALSE)
+            ->addValue('is_error_resolved', FALSE)
+            ->addValue('error_data', json_encode(['error' => $e->getMessage()]))
             ->execute();
           continue;
         }
@@ -370,11 +371,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @param ?string $xeroInvoiceUUID
    *   The Xero invoice uuid.
    *
-   * @return array|bool
-   *   Contact Object/ array as expected by accounts package
+   * @return array
+   *   Invoice array as expected by accounts package
    * @throws \CRM_Core_Exception
    */
-  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID) {
+  protected function mapToAccounts(array $invoiceData, ?string $xeroInvoiceUUID): array {
     // Get the tax mode from the CiviCRM setting. This should be 'exclusive' if
     // tax is enabled (but for historical reasons we force that later on).
     $line_amount_types = Civi::settings()->get('xero_tax_mode');
@@ -608,6 +609,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
 
     $xeroInvoiceUUID = $record['accounts_invoice_id'] ?? NULL;
     $contributionID = $record['contribution_id'];
+    if (empty($contributionID)) {
+      throw new CRM_Core_Exception('Can not push AccountInvoice with no Contribution ID');
+    }
     $civiCRMInvoice = civicrm_api3('AccountInvoice', 'getderived', [
       'id' => $contributionID,
     ])['values'][$contributionID] ?? [];
@@ -630,7 +634,15 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       return NULL;
     }
 
-    return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    if (!$xeroInvoiceUUID) {
+      // If the invoice does not exist in Xero we'll push it using the default invoice status.
+      return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+    }
+
+    // We can't push an invoice that has already been created because:
+    //   - we don't know how to update an existing Xero invoice so Xero will reject it
+    //   - we use the CiviXero default invoice status which is authorized/submitted etc. and NOT Completed.
+    throw new CRM_Core_Exception('AccountInvoice already exists in Xero');
   }
 
   /**
