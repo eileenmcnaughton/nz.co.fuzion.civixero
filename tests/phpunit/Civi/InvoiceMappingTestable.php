@@ -20,4 +20,8 @@ class InvoiceMappingTestable extends \CRM_Civixero_Invoice {
     return $this->mapCancelled($contributionID, $xeroInvoiceUUID);
   }
 
+  public function callIsContributionEligibleForPush(array $accountInvoice): bool {
+    return $this->isContributionEligibleForPush($accountInvoice);
+  }
+
 }

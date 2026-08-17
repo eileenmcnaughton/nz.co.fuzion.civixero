@@ -360,6 +360,16 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     try {
       foreach ($accountInvoices as $accountInvoice) {
         try {
+          if (!$this->isContributionEligibleForPush($accountInvoice)) {
+            // The accountsync queue-time settings no longer allow this
+            // contribution accountsync will re-queue it if a later edit makes
+            // it eligible again.
+            AccountInvoice::update(FALSE)
+              ->addWhere('id', '=', $accountInvoice['id'])
+              ->addValue('accounts_needs_update', FALSE)
+              ->execute();
+            continue;
+          }
           $mappedAccountInvoice = $this->getMappedAccountInvoice($accountInvoice);
           if ($mappedAccountInvoice === NULL) {
             // Contact not yet synced to Xero — leave accounts_needs_update set and try again next run.
@@ -421,6 +431,93 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
     return $count;
 
+  }
+
+  /**
+   * Re-check the accountsync queue-time settings at push time.
+   *
+   * @param array $accountInvoice
+   *   The AccountInvoice record queued for push.
+   *
+   * @return bool
+   *   TRUE if the push should proceed.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function isContributionEligibleForPush(array $accountInvoice): bool {
+    $contributionID = $accountInvoice['contribution_id'] ?? NULL;
+    if (!$contributionID) {
+      // Nothing to check against - let the existing flow handle it.
+      return TRUE;
+    }
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_status_id', 'receive_date')
+      ->addWhere('id', '=', $contributionID)
+      ->execute()
+      ->first();
+    if (empty($contribution)) {
+      // Deleted contribution - the existing flow records this as an error.
+      return TRUE;
+    }
+
+    // 1. Push Contribution Status.
+    $enabledStatuses = (array) \Civi::settings()->get('account_sync_push_contribution_status');
+    if (!empty($enabledStatuses) && !in_array($contribution['contribution_status_id'], $enabledStatuses)) {
+      \Civi::log('civixero')->info('Invoice push: skipping contribution {contributionID} - status {statusID} is not an enabled push status.', [
+        'contributionID' => $contributionID,
+        'statusID' => $contribution['contribution_status_id'],
+      ]);
+      return FALSE;
+    }
+
+    // 2. Day zero for contributions.
+    $dayZero = \Civi::settings()->get('account_sync_contribution_day_zero');
+    if (!empty($dayZero) && !empty($contribution['receive_date'])) {
+      try {
+        if (new DateTime($contribution['receive_date']) < new DateTime($dayZero)) {
+          \Civi::log('civixero')->info('Invoice push: skipping contribution {contributionID} - received {receiveDate}, before day zero {dayZero}.', [
+            'contributionID' => $contributionID,
+            'receiveDate' => $contribution['receive_date'],
+            'dayZero' => $dayZero,
+          ]);
+          return FALSE;
+        }
+      }
+      catch (Exception $e) {
+        // Don't block the push on an unparseable date - but do surface it,
+        // since a silently ignored day zero is exactly the bug this check
+        // exists to prevent.
+        \Civi::log('civixero')->warning('Invoice push: could not compare receive_date {receiveDate} with day zero {dayZero}: {message}', [
+          'receiveDate' => $contribution['receive_date'],
+          'dayZero' => $dayZero,
+          'message' => $e->getMessage(),
+        ]);
+      }
+    }
+
+    // 3. Skip invoice creation by payment processor.
+    $skipProcessorIDs = array_filter((array) \Civi::settings()->get('account_sync_skip_inv_by_pymt_processor'));
+    if (!empty($skipProcessorIDs)) {
+      $processorTrxn = \Civi\Api4\EntityFinancialTrxn::get(FALSE)
+        ->addSelect('financial_trxn_id.payment_processor_id')
+        ->addWhere('entity_table', '=', 'civicrm_contribution')
+        ->addWhere('entity_id', '=', $contributionID)
+        ->addWhere('financial_trxn_id.payment_processor_id', 'IS NOT NULL')
+        ->addOrderBy('financial_trxn_id', 'DESC')
+        ->setLimit(1)
+        ->execute()
+        ->first();
+      $paymentProcessorID = $processorTrxn['financial_trxn_id.payment_processor_id'] ?? NULL;
+      if ($paymentProcessorID && in_array($paymentProcessorID, $skipProcessorIDs)) {
+        \Civi::log('civixero')->info('Invoice push: skipping contribution {contributionID} - paid via payment processor {processorID} which is configured to be skipped.', [
+          'contributionID' => $contributionID,
+          'processorID' => $paymentProcessorID,
+        ]);
+        return FALSE;
+      }
+    }
+
+    return TRUE;
   }
 
   /**
