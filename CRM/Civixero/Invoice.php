@@ -231,7 +231,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         elseif ($matchResult === FALSE) {
           unset($accountInvoiceParams['contribution_id']);
         }
-        // NULL: no candidate (or setting disabled) - keep any prefix-derived ID.
+        // NULL: no candidate (or setting disabled). For an existing
+        // AccountInvoice row this leaves any prefix-derived ID alone; for a
+        // brand new row it's moot, as the create branch below unsets it
+        // anyway unless $matchedByInvoiceNumber is TRUE.
       }
       try {
         if (empty($accountInvoice)) {
