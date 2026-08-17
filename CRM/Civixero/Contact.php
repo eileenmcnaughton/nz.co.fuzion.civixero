@@ -66,6 +66,11 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     } catch (\InvalidArgumentException $e) {
       // This means there are no contacts returned for the requested page. That's ok!
       return [];
+    }
+    catch (\XeroAPI\XeroPHP\ApiException $e) {
+      $this->throwIfRateLimited($e);
+      \Civi::log(E::SHORT_NAME)->error('Exception when calling AccountingApi->getContacts: ' . $e->getMessage());
+      throw $e;
     } catch (\Exception $e) {
       \Civi::log(E::SHORT_NAME)->error('Exception when calling AccountingApi->getContacts: ' . $e->getMessage());
       throw $e;
@@ -78,36 +83,25 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *
    * We call the civicrm_accountPullPreSave hook so other modules can alter if required
    *
+   * Errors on one page (a duplicate match, a save failure, a transient API
+   * error) do not stop later pages from being attempted - only an
+   * authentication failure or Xero rate-limiting stops the run early, since
+   * every subsequent page would fail identically. If any page had errors,
+   * an aggregate CRM_Core_Exception is thrown once all pages have been
+   * attempted, so the job shows as failed even though it made partial
+   * progress.
+   *
    * @param array $params
    *
    * @throws CRM_Core_Exception
    */
   public function pullUsingApi4(array $params): void {
-    $page = 1;
     $pageSize = 100;
-
-    try {
-      while (TRUE) {
-        $contactPull = \Civi\Api4\Xero::contactPull(FALSE)
-          ->setIfModifiedSinceDateTime($params['start_date'])
-          ->setConnectorID($params['connector_id'] ?? 0)
-          ->setPage($page)
-          ->setPageSize($pageSize);
-        if (!empty($params['xero_contact_id'])) {
-          $contactPull->setSearchTerm($params['xero_contact_id']);
-        }
-        $contacts = $contactPull->execute()->getArrayCopy();
-        if (empty($contacts)) {
-          break;
-        }
-        $this->processPull($contacts, $params['connector_id'] ?? 0);
-        unset($contacts);
-        $page++;
-      }
-    }
-    catch (\Throwable $e) {
-      \Civi::log(E::SHORT_NAME)->error('CiviXero: Error when running Contact Pull: ' . $e->getMessage());
-    }
+    $this->runResilientPagingPull(
+      fn(int $page) => $this->pullFromXero([], FALSE, FALSE, $params['xero_contact_id'] ?? '', $page, $pageSize, $params['start_date']),
+      fn(array $contacts) => $this->processPull($contacts, $params['connector_id'] ?? 0),
+      'Contact'
+    );
   }
 
   protected function processPull($contacts, int $connectorID) {

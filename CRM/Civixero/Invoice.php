@@ -113,8 +113,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       // This means there are no invoices returned for the requested page. That's ok!
       return [];
     }
+    catch (\XeroAPI\XeroPHP\ApiException $e) {
+      $this->throwIfRateLimited($e);
+      \Civi::log(E::SHORT_NAME)->error('Exception when calling AccountingApi->getInvoices: ' . $e->getMessage());
+      throw $e;
+    }
     catch (\Exception $e) {
-      \Civi::log('civixero')->error('Exception when calling AccountingApi->getInvoices: ' . $e->getMessage());
+      \Civi::log(E::SHORT_NAME)->error('Exception when calling AccountingApi->getInvoices: ' . $e->getMessage());
       throw $e;
     }
     return $invoices ?? [];
@@ -125,48 +130,40 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * We call the civicrm_accountPullPreSave hook so other modules can alter if required
    *
+   * Errors on one page (a save failure, a transient API error) do not stop
+   * later pages from being attempted - only an authentication failure or
+   * Xero rate-limiting stops the run early, since every subsequent page
+   * would fail identically. If any page had errors, an aggregate
+   * CRM_Core_Exception is thrown once all pages have been attempted, so the
+   * job shows as failed even though it made partial progress.
+   *
    * @param array $params
    *
    * @throws CRM_Core_Exception
    */
   public function pullUsingApi4(array $params): void {
-    $page = 1;
     $pageSize = 100;
+    // Ignore start/modified date if we specified IDs.
+    // Note: this deliberately checks 'xero_invoice_number', not
+    // 'invoice_number' (the actual param name) - a pre-existing quirk in the
+    // original condition, preserved as-is rather than fixed here.
+    $ignoreDate = !empty($params['xero_contact_id']) || !empty($params['xero_invoice_id']) || !empty($params['xero_invoice_number']);
 
-    try {
-      while (TRUE) {
-        $invoicePull = \Civi\Api4\Xero::invoicePull(FALSE)
-          ->setConnectorID($params['connector_id'] ?? 0)
-          ->setPage($page)
-          ->setPageSize($pageSize);
-        if (!empty($params['xero_contact_id'])) {
-          $invoicePull->setXeroContactIDs($params['xero_contact_id']);
-        }
-        if (!empty($params['xero_invoice_id'])) {
-          $invoicePull->setXeroInvoiceIDs($params['xero_invoice_id']);
-        }
-        if (!empty($params['invoice_number'])) {
-          $invoicePull->setXeroInvoiceNumbers($params['invoice_number']);
-        }
-        if (empty($params['xero_contact_id']) && empty($params['xero_invoice_id']) && empty($params['xero_invoice_number'])) {
-          // Ignore start/modified date if we specified IDs
-          $invoicePull->setIfModifiedSinceDateTime($params['start_date']);
-        }
-        $invoices = $invoicePull->execute()->getArrayCopy();
-        if (empty($invoices)) {
-          break;
-        }
-        $this->processPull($invoices, $params['connector_id'] ?? 0, $params['create_contributions_in_civicrm'] ?? FALSE);
-        unset($invoices);
-        $page++;
-      }
-    }
-    catch (\Throwable $e) {
-      \Civi::log('civixero')->error('CiviXero: Error when running Invoice Pull: ' . $e->getMessage());
-      if ($e->getCode() === 403) {
-        throw new CRM_Core_Exception('Authentication with Xero failed');
-      }
-    }
+    $this->runResilientPagingPull(
+      fn(int $page) => $this->pullFromXero(
+        FALSE,
+        FALSE,
+        '',
+        $page,
+        $pageSize,
+        $ignoreDate ? '-1 week' : $params['start_date'],
+        $params['xero_invoice_id'] ?? '',
+        $params['invoice_number'] ?? '',
+        $params['xero_contact_id'] ?? ''
+      ),
+      fn(array $invoices) => $this->processPull($invoices, $params['connector_id'] ?? 0, $params['create_contributions_in_civicrm'] ?? FALSE),
+      'Invoice'
+    );
   }
 
   /**
@@ -953,10 +950,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
     }
     catch (\XeroAPI\XeroPHP\ApiException $e) {
-      if ($e->getCode() === 429) {
-        $retryAfterSeconds = (int) ($e->getResponseHeaders()['Retry-After'][0] ?? 0);
-        throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $retryAfterSeconds ? (time() + $retryAfterSeconds) : NULL);
-      }
+      $this->throwIfRateLimited($e);
       throw new CRM_Core_Exception(
         'Synchronization error ' . $e->getMessage(),
         'xero_' . $e->getCode(),

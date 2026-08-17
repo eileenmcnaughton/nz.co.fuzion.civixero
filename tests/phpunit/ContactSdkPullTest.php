@@ -90,4 +90,34 @@ class ContactSdkPullTest extends TestCase implements HeadlessInterface, HookInte
     $this->pull($contact);
   }
 
+  public function testPullFromXeroThrowsThrottleExceptionOnRateLimitResponse(): void {
+    $this->createMockHandler([]);
+    $this->getMockHandler()->append(new \GuzzleHttp\Psr7\Response(429, ['Retry-After' => ['120']], json_encode(['Message' => 'Too many requests'])));
+    $contact = $this->getContactWithMockClient();
+
+    $before = time();
+    try {
+      $this->pull($contact);
+      $this->fail('Expected CRM_Civixero_Exception_XeroThrottle to be thrown');
+    }
+    catch (CRM_Civixero_Exception_XeroThrottle $e) {
+      $this->assertGreaterThanOrEqual($before + 120, $e->getRetryAfter());
+      $this->assertLessThanOrEqual($before + 121, $e->getRetryAfter());
+    }
+  }
+
+  public function testPullFromXeroPropagatesApiExceptionWithCodeOnAuthFailure(): void {
+    $this->createMockHandler([]);
+    $this->getMockHandler()->append(new \GuzzleHttp\Psr7\Response(403, [], json_encode(['Message' => 'Forbidden'])));
+    $contact = $this->getContactWithMockClient();
+
+    try {
+      $this->pull($contact);
+      $this->fail('Expected ApiException to be thrown');
+    }
+    catch (\XeroAPI\XeroPHP\ApiException $e) {
+      $this->assertEquals(403, $e->getCode());
+    }
+  }
+
 }

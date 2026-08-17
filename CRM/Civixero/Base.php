@@ -2,6 +2,7 @@
 
 use Civi\API\Event\PrepareEvent;
 use Civi\Xero\ConnectorInterface;
+use CRM_Civixero_ExtensionUtil as E;
 use League\OAuth2\Client\Token\AccessToken;
 use XeroAPI\XeroPHP\Api\AccountingApi;
 
@@ -316,6 +317,88 @@ class CRM_Civixero_Base {
   public static function resetApiRateLimitExceeded(): void {
     Civi::settings()->set('xero_oauth_rate_exceeded', NULL);
     Civi::settings()->set('xero_retry_after', NULL);
+  }
+
+  /**
+   * If the given ApiException represents Xero rate-limiting (HTTP 429),
+   * throw the shared throttle exception (using the Retry-After header to
+   * compute when it's safe to retry). Returns normally for any other
+   * status code, leaving the caller to decide how to handle it.
+   *
+   * @throws \CRM_Civixero_Exception_XeroThrottle
+   */
+  protected function throwIfRateLimited(\XeroAPI\XeroPHP\ApiException $e): void {
+    if ($e->getCode() === 429) {
+      $retryAfterSeconds = (int) ($e->getResponseHeaders()['Retry-After'][0] ?? 0);
+      throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $retryAfterSeconds ? (time() + $retryAfterSeconds) : NULL);
+    }
+  }
+
+  /**
+   * Run a paged pull loop against Xero, handling rate-limiting, auth
+   * failures, and per-page errors uniformly.
+   *
+   * - Xero rate-limiting: engages the shared circuit breaker and stops
+   *   paging (further pages would be rejected anyway).
+   * - Auth failure (401/403): stops paging and rethrows immediately, since
+   *   every later page would fail identically.
+   * - Anything else (including the caller's own per-record aggregate
+   *   exception): logged and recorded, but paging continues to the next
+   *   page - a bad page should not strand the rest of the run.
+   *
+   * An aggregate CRM_Core_Exception is thrown once paging ends if any
+   * page had errors, so the caller (and civicrm_job_log) sees a failed
+   * run even though it made partial progress.
+   *
+   * @param callable $fetchPage
+   *   function(int $page): array - returns the records for that page, or
+   *   an empty array to signal there are no more pages.
+   * @param callable $processPage
+   *   function(array $records): void - processes one page's records; may
+   *   throw (e.g. an aggregate per-record exception).
+   * @param string $entityLabel
+   *   Used only in log messages / the aggregate exception, e.g. 'Contact'.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function runResilientPagingPull(callable $fetchPage, callable $processPage, string $entityLabel): void {
+    $page = 1;
+    $pageErrors = [];
+
+    while (TRUE) {
+      try {
+        $records = $fetchPage($page);
+        if (empty($records)) {
+          break;
+        }
+        $processPage($records);
+        $page++;
+      }
+      catch (CRM_Civixero_Exception_XeroThrottle $e) {
+        \Civi::log(E::SHORT_NAME)->warning("CiviXero: $entityLabel Pull stopped early - rate limited by Xero: " . $e->getMessage());
+        self::setApiRateLimitExceeded($e->getRetryAfter());
+        $pageErrors[] = "Page $page: rate limited by Xero";
+        break;
+      }
+      catch (\XeroAPI\XeroPHP\ApiException $e) {
+        if (in_array($e->getCode(), [401, 403], TRUE)) {
+          \Civi::log(E::SHORT_NAME)->error("CiviXero: $entityLabel Pull aborted - authentication failed: " . $e->getMessage());
+          throw new CRM_Core_Exception('Authentication with Xero failed: ' . $e->getMessage());
+        }
+        \Civi::log(E::SHORT_NAME)->error("CiviXero: Error pulling $entityLabel page $page: " . $e->getMessage());
+        $pageErrors[] = "Page $page: " . $e->getMessage();
+        $page++;
+      }
+      catch (\Exception $e) {
+        \Civi::log(E::SHORT_NAME)->error("CiviXero: Error pulling $entityLabel page $page: " . $e->getMessage());
+        $pageErrors[] = "Page $page: " . $e->getMessage();
+        $page++;
+      }
+    }
+
+    if ($pageErrors) {
+      throw new CRM_Core_Exception(E::ts('%1 Pull completed with errors', [1 => $entityLabel]) . ': ' . print_r($pageErrors, TRUE), 'incomplete', $pageErrors);
+    }
   }
 
   /**
