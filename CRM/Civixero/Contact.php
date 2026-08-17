@@ -276,11 +276,18 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
         $xeroContactUUID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
         $accountsContact = $this->mapToAccounts($contact, $xeroContactUUID);
-        $result = $this->pushToXero($accountsContact, $params['connector_id']);
-        $responseErrors = $result === FALSE ? [] : $this->validateResponse($result);
-        if ($result === FALSE) {
-          unset($record['accounts_modified_date']);
+        if ($accountsContact === FALSE) {
+          // Hook vetoed the push - not a real error, so mark it resolved.
+          AccountContact::update(FALSE)
+            ->addWhere('id', '=', $record['id'])
+            ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
+            ->addValue('is_error_resolved', TRUE)
+            ->addValue('accounts_needs_update', FALSE)
+            ->execute();
+          continue;
         }
+        $result = $this->pushToXero($accountsContact, $params['connector_id']);
+        $responseErrors = $this->validateResponse($result);
         if ($responseErrors) {
           $record['error_data'] = json_encode($responseErrors);
           throw new CRM_Core_Exception('Error in response from Xero');
@@ -367,24 +374,16 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   /**
    * Push a single mapped contact to Xero.
    *
-   * The only method the Xero-SDK migration touches - push()'s surrounding
-   * orchestration (error handling, throttle abort, DB updates) does not
-   * care which client this delegates to underneath.
-   *
-   * @param array|bool $accountsContact
-   *   Mapped contact array as produced by mapToAccounts(), or FALSE if a
-   *   hook vetoed the push.
+   * @param array $accountsContact
+   *   Mapped contact array as produced by mapToAccounts().
    * @param int $connector_id
    *
-   * @return array|bool
-   *   FALSE if $accountsContact was FALSE, otherwise the raw Xero response.
+   * @return array
+   *   The raw Xero response.
    *
    * @throws \CRM_Core_Exception
    */
-  protected function pushToXero($accountsContact, $connector_id) {
-    if ($accountsContact === FALSE) {
-      return FALSE;
-    }
+  protected function pushToXero(array $accountsContact, $connector_id) {
     try {
       return $this->pushViaApi($accountsContact);
     }

@@ -340,44 +340,23 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertNotEmpty(Civi::settings()->get('xero_oauth_rate_exceeded'));
   }
 
-  /**
-   * mapToAccounts() returning FALSE (hook veto via accountPushAlterMapped)
-   * pins down a genuine PRE-EXISTING bug, confirmed here rather than fixed:
-   * pushToXero() correctly short-circuits to FALSE without consulting the
-   * queue, but push() itself never checks for that FALSE before using it as
-   * an array (unlike Invoice::push(), which checks $mappedAccountInvoice for
-   * FALSE/NULL before calling pushToXero() at all). The dedupe-lookup on
-   * $result['Contacts']['Contact']['ContactID'] then reads array offsets off
-   * a boolean, which PHPUnit's error handler escalates into a thrown
-   * ErrorException - so the record ends up recorded as a push FAILURE
-   * (error_data set, is_error_resolved cleared) instead of being skipped
-   * cleanly. Out of scope to fix here (the SDK migration only touches
-   * pushToXero()), but worth flagging as a small, separate bugfix.
-   */
   public function testPushSkipsContactWhenMapToAccountsHookVetoes(): void {
     $fixture = $this->createQueuedAccountContact();
     $this->vetoPush = TRUE;
     $contact = new ContactPushTestable([]);
-    // pushToXero() itself still gets called with $accountsContact === FALSE
-    // and correctly short-circuits to FALSE without consulting the queue -
-    // nothing needs to be queued for it.
 
-    try {
-      $contact->push(['connector_id' => 0], 10);
-      $this->fail('Expected push() to throw - see docblock above for why this is a pre-existing bug, not the intended behaviour');
-    }
-    catch (CRM_Core_Exception $e) {
-      $this->assertStringContainsString('Not all contacts were saved', $e->getMessage());
-    }
+    $result = $contact->push(['connector_id' => 0], 10);
 
-    $this->assertCount(1, $contact->pushToXeroCalls);
-    $this->assertFalse($contact->pushToXeroCalls[0]);
+    $this->assertTrue($result);
+    $this->assertCount(0, $contact->pushToXeroCalls);
     $saved = \Civi\Api4\AccountContact::get(FALSE)
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()
       ->single();
-    $this->assertNotEmpty($saved['error_data']);
-    $this->assertStringContainsString('Trying to access array offset on false', $saved['error_data']);
+    $this->assertStringContainsString('Ignored via accountPushAlterMapped hook', $saved['error_data']);
+    // The hook explicitly chose to exclude this contact - not a real error.
+    $this->assertEquals(1, $saved['is_error_resolved']);
+    $this->assertEquals(0, $saved['accounts_needs_update']);
   }
 
 }

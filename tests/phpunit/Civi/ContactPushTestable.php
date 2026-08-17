@@ -23,14 +23,8 @@ class ContactPushTestable extends \CRM_Civixero_Contact {
    */
   public array $pushToXeroCalls = [];
 
-  protected function pushToXero($accountsContact, $connector_id) {
+  protected function pushToXero(array $accountsContact, $connector_id) {
     $this->pushToXeroCalls[] = $accountsContact;
-    // Preserve the real pushToXero()'s short-circuit: push() itself never
-    // checks $accountsContact for FALSE before calling pushToXero(), so
-    // this behaviour has to live here too, not just in the real method.
-    if ($accountsContact === FALSE) {
-      return FALSE;
-    }
     if ($this->pushToXeroQueue === []) {
       throw new \LogicException('ContactPushTestable::pushToXero() called with nothing queued');
     }
