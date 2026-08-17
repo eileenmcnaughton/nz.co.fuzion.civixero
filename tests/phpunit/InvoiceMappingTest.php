@@ -36,6 +36,8 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
     // in from whatever this site's Contribute settings happen to be.
     Civi::settings()->set('invoice_due_date', 0);
     Civi::settings()->set('invoice_due_date_period', 'select');
+    // Pin to the default so tests that enable it can't leak into others.
+    Civi::settings()->set('xero_use_contribution_invoice_number', FALSE);
     parent::setUp();
   }
 
@@ -131,6 +133,30 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
 
     $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
     $this->assertEquals('Inclusive', $result[0]['LineAmountTypes']);
+  }
+
+  public function testMapToAccountsUsesContributionInvoiceNumberWhenSettingEnabled(): void {
+    Civi::settings()->set('xero_use_contribution_invoice_number', TRUE);
+    $invoiceData = $this->getBasicInvoiceData();
+    $invoiceData['invoice_number'] = 'INV-2024-0042';
+
+    $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
+    $this->assertEquals('INV-2024-0042', $result[0]['InvoiceNumber']);
+  }
+
+  public function testMapToAccountsIgnoresContributionInvoiceNumberWhenSettingDisabled(): void {
+    Civi::settings()->set('xero_use_contribution_invoice_number', FALSE);
+    $invoiceData = $this->getBasicInvoiceData();
+    $invoiceData['invoice_number'] = 'INV-2024-0042';
+
+    $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
+    $this->assertEquals('CIVI123', $result[0]['InvoiceNumber']);
+  }
+
+  public function testMapToAccountsFallsBackToPrefixWhenNoContributionInvoiceNumber(): void {
+    Civi::settings()->set('xero_use_contribution_invoice_number', TRUE);
+    $result = $this->getInvoice()->callMapToAccounts($this->getBasicInvoiceData(), NULL);
+    $this->assertEquals('CIVI123', $result[0]['InvoiceNumber']);
   }
 
   public function testMapCancelledWithoutUuid(): void {

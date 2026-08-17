@@ -112,6 +112,18 @@ return [
     ],
     'settings_pages' => ['xero' => ['weight' => 2]],
   ],
+  'xero_use_contribution_invoice_number' => [
+    'name' => 'xero_use_contribution_invoice_number',
+    'type' => 'Boolean',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'default' => 0,
+    'title' => E::ts('Use CiviCRM invoice number when pushing to Xero'),
+    'description' => E::ts('When enabled, if the contribution has an invoice number it will be used as the Xero invoice number. If the contribution has no invoice number (or this setting is disabled) the invoice number is generated as (prefix + contribution ID).'),
+    'help_text' => '',
+    'html_type' => 'checkbox',
+    'settings_pages' => ['xero' => ['weight' => 2]],
+  ],
   'xero_default_invoice_status' => [
     'name' => 'xero_default_invoice_status',
     'type' => 'String',
