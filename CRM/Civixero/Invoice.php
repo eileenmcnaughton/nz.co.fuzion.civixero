@@ -49,9 +49,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @var string
    */
-  protected $default_account_code;
+  protected string $default_account_code;
 
-
+  /**
+   * @throws \XeroAPI\XeroPHP\ApiException
+   * @throws \CRM_Civixero_Exception_XeroThrottle
+   */
   public function pullFromXero(
     bool $includeArchived,
     bool $summaryOnly,
@@ -352,7 +355,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return int
    * @throws \CRM_Core_Exception
    */
-  public function push($params, $limit = 10) {
+  public function push(array $params, int $limit = 10): int {
     $accountInvoices = $this->getAccountInvoicesToPush($params, $limit);
     if (empty($accountInvoices)) {
       return 0;
@@ -627,6 +630,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *    The Xero invoice uuid.
    *
    * @return array
+   * @throws \CRM_Core_Exception
    */
   protected function mapCancelled(int $contributionID, ?string $xeroInvoiceUUID): array {
     return [
@@ -660,6 +664,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   Pass NULL to have it looked up when required.
    *
    * @return string
+   * @throws \CRM_Core_Exception
    */
   protected function getInvoiceNumber(int $contributionID, ?string $contributionInvoiceNumber = NULL): string {
     if ($this->getSetting('xero_use_contribution_invoice_number')) {
@@ -702,8 +707,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   - FALSE: a candidate was found but refused as unsafe (duplicate
    *     invoice_number, linked to a different Xero invoice, or total
    *     mismatch) - the caller must NOT fall back to weaker matching.
+   * @throws \CRM_Core_Exception
    */
-  protected function getContributionIDFromInvoiceNumberMatch(array $xeroInvoice, int $connectorID) {
+  protected function getContributionIDFromInvoiceNumberMatch(array $xeroInvoice, int $connectorID): false|int|null {
     $xeroInvoiceNumber = $xeroInvoice['invoice_number'] ?? NULL;
     // Explicit check rather than empty(): the string '0' is a valid
     // (if unlikely) invoice number and empty('0') is TRUE.
@@ -801,7 +807,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function validatePrerequisites($invoice): void {
+  protected function validatePrerequisites(array $invoice): void {
     if (empty($invoice['LineItems'])) {
       return;
     }
@@ -829,7 +835,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function validateTrackingCategory($lineItem): void {
+  protected function validateTrackingCategory(array $lineItem): void {
     if (empty($lineItem['TrackingCategory'])) {
       return;
     }
@@ -936,11 +942,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   /**
    * Get default account code to fall back to.
    *
-   * @return array|int
+   * @return string
    */
-  protected function getDefaultAccountCode() {
-    if (empty($this->default_account_code)) {
-      $this->default_account_code = Civi::settings()->get('xero_default_revenue_account');
+  protected function getDefaultAccountCode(): string {
+    if (!isset($this->default_account_code)) {
+      $this->default_account_code = (string) Civi::settings()->get('xero_default_revenue_account');
     }
     return $this->default_account_code;
   }
