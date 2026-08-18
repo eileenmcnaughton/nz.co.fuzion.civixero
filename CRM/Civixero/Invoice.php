@@ -662,7 +662,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return string
    */
   protected function getInvoiceNumber(int $contributionID, ?string $contributionInvoiceNumber = NULL): string {
-    if ($this->settings->get('xero_use_contribution_invoice_number')) {
+    if ($this->getSetting('xero_use_contribution_invoice_number')) {
       if ($contributionInvoiceNumber === NULL) {
         try {
           $contributionInvoiceNumber = (string) (Contribution::get(FALSE)
@@ -682,7 +682,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         return (string) $contributionInvoiceNumber;
       }
     }
-    $prefix = $this->settings->get('xero_invoice_number_prefix') ?: '';
+    $prefix = $this->getSetting('xero_invoice_number_prefix') ?: '';
 
     return $prefix . $contributionID;
   }
