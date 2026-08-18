@@ -346,6 +346,10 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           . E::ts('Record: ') . print_r($record,TRUE) . '; '
           . E::ts('Contact Push failed');
 
+        // Deliberately do NOT overwrite accounts_data here - it holds the
+        // last-known Xero snapshot for this record, and $contact is the
+        // CiviCRM-side data, not Xero's - writing it over accounts_data on
+        // every push failure destroys that snapshot for no benefit.
         AccountContact::update(FALSE)
           ->addWhere('id', '=', $record['id'])
           ->addValue('is_error_resolved', FALSE)
@@ -353,7 +357,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             'error' => $e->getMessage(),
             'error_data' => $record['error_data']
           ]))
-          ->addValue('accounts_data', json_encode($contact))
           ->execute();
         $errors[] = $errorMessage;
       }
