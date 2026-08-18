@@ -504,6 +504,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     // 3. Skip invoice creation by payment processor.
+    // The queue-time check (accountsync_civicrm_post()) looks at the specific
+    // payment/trxn that triggered the hook. There's no such triggering event
+    // available at push time, so this re-check approximates it using the
+    // contribution's most recent financial trxn. For a contribution paid via
+    // more than one processor, this can disagree with what the queue-time
+    // check saw.
     $skipProcessorIDs = array_filter((array) \Civi::settings()->get('account_sync_skip_inv_by_pymt_processor'));
     if (!empty($skipProcessorIDs)) {
       $processorTrxn = \Civi\Api4\EntityFinancialTrxn::get(FALSE)
