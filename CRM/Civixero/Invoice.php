@@ -49,9 +49,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @var string
    */
-  protected $default_account_code;
+  protected string $default_account_code;
 
-
+  /**
+   * @throws \XeroAPI\XeroPHP\ApiException
+   * @throws \CRM_Civixero_Exception_XeroThrottle
+   */
   public function pullFromXero(
     bool $includeArchived,
     bool $summaryOnly,
@@ -231,7 +234,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         elseif ($matchResult === FALSE) {
           unset($accountInvoiceParams['contribution_id']);
         }
-        // NULL: no candidate (or setting disabled) - keep any prefix-derived ID.
+        // NULL: no candidate (or setting disabled). For an existing
+        // AccountInvoice row this leaves any prefix-derived ID alone; for a
+        // brand new row it's moot, as the create branch below unsets it
+        // anyway unless $matchedByInvoiceNumber is TRUE.
       }
       try {
         if (empty($accountInvoice)) {
@@ -349,7 +355,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    * @return int
    * @throws \CRM_Core_Exception
    */
-  public function push($params, $limit = 10) {
+  public function push(array $params, int $limit = 10): int {
     $accountInvoices = $this->getAccountInvoicesToPush($params, $limit);
     if (empty($accountInvoices)) {
       return 0;
@@ -461,8 +467,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     // 1. Push Contribution Status.
+    // No !empty($enabledStatuses) guard here: the queue-time check
+    // (accountsync_civicrm_post()) treats an empty setting as "nothing is
+    // eligible" (!in_array($status, []) is always TRUE), and this re-check
+    // needs to agree with that or a cleared setting would silently stop
+    // blocking new pushes after already-queued rows are re-validated here.
     $enabledStatuses = (array) \Civi::settings()->get('account_sync_push_contribution_status');
-    if (!empty($enabledStatuses) && !in_array($contribution['contribution_status_id'], $enabledStatuses)) {
+    if (!in_array($contribution['contribution_status_id'], $enabledStatuses)) {
       \Civi::log('civixero')->info('Invoice push: skipping contribution {contributionID} - status {statusID} is not an enabled push status.', [
         'contributionID' => $contributionID,
         'statusID' => $contribution['contribution_status_id'],
@@ -496,6 +507,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     // 3. Skip invoice creation by payment processor.
+    // The queue-time check (accountsync_civicrm_post()) looks at the specific
+    // payment/trxn that triggered the hook. There's no such triggering event
+    // available at push time, so this re-check approximates it using the
+    // contribution's most recent financial trxn. For a contribution paid via
+    // more than one processor, this can disagree with what the queue-time
+    // check saw.
     $skipProcessorIDs = array_filter((array) \Civi::settings()->get('account_sync_skip_inv_by_pymt_processor'));
     if (!empty($skipProcessorIDs)) {
       $processorTrxn = \Civi\Api4\EntityFinancialTrxn::get(FALSE)
@@ -613,6 +630,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *    The Xero invoice uuid.
    *
    * @return array
+   * @throws \CRM_Core_Exception
    */
   protected function mapCancelled(int $contributionID, ?string $xeroInvoiceUUID): array {
     return [
@@ -646,9 +664,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   Pass NULL to have it looked up when required.
    *
    * @return string
+   * @throws \CRM_Core_Exception
    */
   protected function getInvoiceNumber(int $contributionID, ?string $contributionInvoiceNumber = NULL): string {
-    if ($this->settings->get('xero_use_contribution_invoice_number')) {
+    if ($this->getSetting('xero_use_contribution_invoice_number')) {
       if ($contributionInvoiceNumber === NULL) {
         try {
           $contributionInvoiceNumber = (string) (Contribution::get(FALSE)
@@ -668,7 +687,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
         return (string) $contributionInvoiceNumber;
       }
     }
-    $prefix = $this->settings->get('xero_invoice_number_prefix') ?: '';
+    $prefix = $this->getSetting('xero_invoice_number_prefix') ?: '';
 
     return $prefix . $contributionID;
   }
@@ -688,8 +707,9 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *   - FALSE: a candidate was found but refused as unsafe (duplicate
    *     invoice_number, linked to a different Xero invoice, or total
    *     mismatch) - the caller must NOT fall back to weaker matching.
+   * @throws \CRM_Core_Exception
    */
-  protected function getContributionIDFromInvoiceNumberMatch(array $xeroInvoice, int $connectorID) {
+  protected function getContributionIDFromInvoiceNumberMatch(array $xeroInvoice, int $connectorID): false|int|null {
     $xeroInvoiceNumber = $xeroInvoice['invoice_number'] ?? NULL;
     // Explicit check rather than empty(): the string '0' is a valid
     // (if unlikely) invoice number and empty('0') is TRUE.
@@ -787,7 +807,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function validatePrerequisites($invoice): void {
+  protected function validatePrerequisites(array $invoice): void {
     if (empty($invoice['LineItems'])) {
       return;
     }
@@ -815,7 +835,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function validateTrackingCategory($lineItem): void {
+  protected function validateTrackingCategory(array $lineItem): void {
     if (empty($lineItem['TrackingCategory'])) {
       return;
     }
@@ -922,11 +942,11 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   /**
    * Get default account code to fall back to.
    *
-   * @return array|int
+   * @return string
    */
-  protected function getDefaultAccountCode() {
-    if (empty($this->default_account_code)) {
-      $this->default_account_code = Civi::settings()->get('xero_default_revenue_account');
+  protected function getDefaultAccountCode(): string {
+    if (!isset($this->default_account_code)) {
+      $this->default_account_code = (string) Civi::settings()->get('xero_default_revenue_account');
     }
     return $this->default_account_code;
   }

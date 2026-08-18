@@ -62,7 +62,17 @@ class InvoicePushEligibilityTest extends TestCase implements HeadlessInterface, 
     return (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $status);
   }
 
-  public function testEligibleWhenNoSettingsConfigured(): void {
+  public function testIneligibleWhenPushStatusSettingIsEmpty(): void {
+    // An empty account_sync_push_contribution_status must be treated the
+    // same way here as accountsync_civicrm_post() treats it at queue time:
+    // as "nothing is eligible", not "no restriction".
+    $contributionID = $this->createContribution('Completed');
+
+    $this->assertFalse($this->getInvoice()->callIsContributionEligibleForPush(['contribution_id' => $contributionID]));
+  }
+
+  public function testEligibleWhenOtherSettingsEmptyButStatusEnabled(): void {
+    Civi::settings()->set('account_sync_push_contribution_status', [$this->getStatusID('Completed')]);
     $contributionID = $this->createContribution('Completed');
 
     $this->assertTrue($this->getInvoice()->callIsContributionEligibleForPush(['contribution_id' => $contributionID]));
