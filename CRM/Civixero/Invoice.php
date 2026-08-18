@@ -464,8 +464,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     // 1. Push Contribution Status.
+    // No !empty($enabledStatuses) guard here: the queue-time check
+    // (accountsync_civicrm_post()) treats an empty setting as "nothing is
+    // eligible" (!in_array($status, []) is always TRUE), and this re-check
+    // needs to agree with that or a cleared setting would silently stop
+    // blocking new pushes after already-queued rows are re-validated here.
     $enabledStatuses = (array) \Civi::settings()->get('account_sync_push_contribution_status');
-    if (!empty($enabledStatuses) && !in_array($contribution['contribution_status_id'], $enabledStatuses)) {
+    if (!in_array($contribution['contribution_status_id'], $enabledStatuses)) {
       \Civi::log('civixero')->info('Invoice push: skipping contribution {contributionID} - status {statusID} is not an enabled push status.', [
         'contributionID' => $contributionID,
         'statusID' => $contribution['contribution_status_id'],
