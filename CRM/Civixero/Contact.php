@@ -145,6 +145,12 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       if ($accountContacts->count() === 1) {
         // We have exactly one match. Update existing
         $accountContactParams['id'] = $accountContacts->first()['id'];
+        if (!empty($accountContacts->first()['do_not_sync'])) {
+          // do_not_sync marks a row a human has explicitly unmatched (or a
+          // deleted-contact placeholder) - refresh the Xero-side data but
+          // never (re)derive the CiviCRM link for it.
+          unset($accountContactParams['contact_id']);
+        }
       }
       elseif ($accountContacts->count() > 1) {
         // We found more than one matching record
@@ -192,19 +198,33 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             'accounts_contact_id',
             'accounts_needs_update',
           ];
+          // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
+          // So check if anything actually changed before updating.
+          $somethingChanged = FALSE;
           foreach ($modifiedFieldKeys as $key) {
-            // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
-            // So check if anything actually changed before updating.
             if ($accountContactParams[$key] !== $accountContacts->first()[$key]) {
-              // Something changed, update AccountContact in DB
-              $newAccountContact = AccountContact::update(FALSE)
-                ->setValues($accountContactParams)
-                ->addWhere('id', '=', $accountContacts->first()['id'])
-                ->execute()
-                ->first();
-              $ids[] = $newAccountContact['id'];
+              $somethingChanged = TRUE;
               break;
             }
+          }
+          // A contact_id re-match (e.g. after a do_not_sync lock was
+          // cleared) is a change in its own right, even if none of the
+          // Xero-side fields above differ from last time. Only compares
+          // when contact_id is actually present in the new params - it's
+          // deliberately absent when do_not_sync is suppressing it or the
+          // CiviCRM contact was deleted, and that absence must not itself
+          // be read as "changed to no contact".
+          if (!$somethingChanged && isset($accountContactParams['contact_id'])
+            && (int) $accountContactParams['contact_id'] !== (int) ($accountContacts->first()['contact_id'] ?? 0)) {
+            $somethingChanged = TRUE;
+          }
+          if ($somethingChanged) {
+            $newAccountContact = AccountContact::update(FALSE)
+              ->setValues($accountContactParams)
+              ->addWhere('id', '=', $accountContacts->first()['id'])
+              ->execute()
+              ->first();
+            $ids[] = $newAccountContact['id'];
           }
         }
       }
