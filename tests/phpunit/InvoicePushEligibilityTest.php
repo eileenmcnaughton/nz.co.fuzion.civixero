@@ -29,8 +29,13 @@ class InvoicePushEligibilityTest extends TestCase implements HeadlessInterface, 
 
   public function setUp(): void {
     Civi::$statics['civixero_connector'] = new MockConnector();
-    // Neutralise all three settings so each test enables only what it needs.
-    Civi::settings()->set('account_sync_push_contribution_status', []);
+    // Enable the statuses used across these tests by default, so each test
+    // only needs to touch the setting(s) it's actually exercising. Tests
+    // that care about the push-status check itself override this.
+    Civi::settings()->set('account_sync_push_contribution_status', [
+      $this->getStatusID('Pending'),
+      $this->getStatusID('Completed'),
+    ]);
     Civi::settings()->set('account_sync_contribution_day_zero', '');
     Civi::settings()->set('account_sync_skip_inv_by_pymt_processor', []);
     parent::setUp();
@@ -66,6 +71,7 @@ class InvoicePushEligibilityTest extends TestCase implements HeadlessInterface, 
     // An empty account_sync_push_contribution_status must be treated the
     // same way here as accountsync_civicrm_post() treats it at queue time:
     // as "nothing is eligible", not "no restriction".
+    Civi::settings()->set('account_sync_push_contribution_status', []);
     $contributionID = $this->createContribution('Completed');
 
     $this->assertFalse($this->getInvoice()->callIsContributionEligibleForPush(['contribution_id' => $contributionID]));
@@ -143,15 +149,11 @@ class InvoicePushEligibilityTest extends TestCase implements HeadlessInterface, 
   }
 
   public function testEligibleWhenContributionMissing(): void {
-    Civi::settings()->set('account_sync_push_contribution_status', [$this->getStatusID('Pending')]);
-
     // A deleted contribution is left to the existing error handling downstream.
     $this->assertTrue($this->getInvoice()->callIsContributionEligibleForPush(['contribution_id' => 9999999]));
   }
 
   public function testEligibleWhenNoContributionID(): void {
-    Civi::settings()->set('account_sync_push_contribution_status', [$this->getStatusID('Pending')]);
-
     $this->assertTrue($this->getInvoice()->callIsContributionEligibleForPush([]));
   }
 
