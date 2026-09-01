@@ -276,6 +276,22 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
           continue;
         }
 
+        // If the last data we pulled from Xero shows this contact as
+        // archived there, don't bother pushing to it again. Xero accepts
+        // updates to an archived contact without erroring, so nothing
+        // below would ever record an error to stop the retries - without
+        // this check the contact would be re-pushed every time it's
+        // re-flagged for update, forever.
+        $lastKnownXeroData = !empty($record['accounts_data']) ? json_decode($record['accounts_data'], TRUE) : NULL;
+        if (strtoupper($lastKnownXeroData['contact_status'] ?? '') === 'ARCHIVED') {
+          AccountContact::update(FALSE)
+            ->addWhere('id', '=', $record['id'])
+            ->addValue('do_not_sync', TRUE)
+            ->addValue('accounts_needs_update', FALSE)
+            ->execute();
+          continue;
+        }
+
         // See if we have an email for the preferred location type?
         $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
         $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
@@ -348,11 +364,20 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         $record['accounts_display_name'] = $result['Contacts']['Contact']['Name'];
         // This will update the last sync date.
         unset($record['last_sync_date']);
+        // Xero accepts an update to a contact that has been archived there
+        // without erroring - it just doesn't unarchive it. If that's what
+        // just happened, stop trying to push to this contact again:
+        // further updates would be equally pointless, and (per the site
+        // owner) are not wanted for archived contacts.
+        $isArchivedInXero = strtoupper($result['Contacts']['Contact']['ContactStatus'] ?? '') === 'ARCHIVED';
         AccountContact::update(FALSE)
           ->setValues($record)
           ->addValue('accounts_needs_update', FALSE)
+          ->addValue('do_not_sync', $isArchivedInXero)
           ->execute();
-        $this->addContactToXeroGroup($record['accounts_contact_id']);
+        if (!$isArchivedInXero) {
+          $this->addContactToXeroGroup($record['accounts_contact_id']);
+        }
       }
       catch (CRM_Civixero_Exception_XeroThrottle $e) {
         $errors[] = E::ts('Contact Push aborted due to throttling by Xero');
