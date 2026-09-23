@@ -150,7 +150,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     ];
   }
 
-  private function getCannedXeroContactResult(string $xeroContactID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'): array {
+  private function getCannedXeroContactResult(string $xeroContactID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', string $contactStatus = 'ACTIVE'): array {
     return [
       'result' => [
         'Contacts' => [
@@ -158,6 +158,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
             'ContactID' => $xeroContactID,
             'UpdatedDateUTC' => '2024-03-15 10:00:00',
             'Name' => 'Test Contact',
+            'ContactStatus' => $contactStatus,
           ],
         ],
       ],
@@ -211,6 +212,63 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       ->execute()
       ->single();
     $this->assertEquals(1, $saved['do_not_sync']);
+  }
+
+  /**
+   * If the last data pulled from Xero for this AccountContact already shows
+   * it as archived there, push() must skip it entirely (no pushToXero call)
+   * and permanently stop queuing it - Xero accepts updates to an archived
+   * contact without erroring, so nothing on the response-handling path
+   * would ever record an error to make getContactsRequiringPushUpdate()'s
+   * error-based exclusion kick in; without this upfront check the contact
+   * would be pushed again every time it's re-flagged for update.
+   */
+  public function testPushSkipsContactAlreadyKnownArchivedInXero(): void {
+    $fixture = $this->createQueuedAccountContact();
+    \Civi\Api4\AccountContact::update(FALSE)
+      ->addWhere('id', '=', $fixture['account_contact_id'])
+      ->addValue('accounts_data', json_encode(['contact_status' => 'ARCHIVED']))
+      ->execute();
+    $contact = new ContactPushTestable([]);
+
+    $result = $contact->push(['connector_id' => 0], 10);
+
+    $this->assertTrue($result);
+    $this->assertCount(0, $contact->pushToXeroCalls);
+    $saved = \Civi\Api4\AccountContact::get(FALSE)
+      ->addWhere('id', '=', $fixture['account_contact_id'])
+      ->execute()
+      ->single();
+    $this->assertEquals(1, $saved['do_not_sync']);
+    $this->assertEquals(0, $saved['accounts_needs_update']);
+  }
+
+  /**
+   * If Xero's response to a push shows the contact as archived there - even
+   * though nothing in our own records previously indicated that - push()
+   * must record do_not_sync so it is never queued again. Xero accepts the
+   * update without erroring (it just doesn't unarchive the contact), so
+   * this is the only point at which we can learn the contact is archived
+   * and stop future attempts.
+   */
+  public function testPushSetsDoNotSyncWhenXeroReturnsArchivedStatus(): void {
+    $fixture = $this->createQueuedAccountContact();
+    $contact = new ContactPushTestable([]);
+    $contact->pushToXeroQueue[] = $this->getCannedXeroContactResult('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 'ARCHIVED');
+
+    $result = $contact->push(['connector_id' => 0], 10);
+
+    $this->assertTrue($result);
+    // Unlike the "already known archived" case, this contact's archived
+    // status was only just discovered - the push attempt itself does
+    // happen once.
+    $this->assertCount(1, $contact->pushToXeroCalls);
+    $saved = \Civi\Api4\AccountContact::get(FALSE)
+      ->addWhere('id', '=', $fixture['account_contact_id'])
+      ->execute()
+      ->single();
+    $this->assertEquals(1, $saved['do_not_sync']);
+    $this->assertEquals(0, $saved['accounts_needs_update']);
   }
 
   public function testPushThrowsWhenXeroContactAlreadyLinkedToDifferentLiveContact(): void {
