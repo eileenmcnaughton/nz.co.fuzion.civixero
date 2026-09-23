@@ -976,6 +976,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           $record['accounts_needs_update'] = 0;
         }
         $record['error_data'] = json_encode($responseErrors);
+        // Xero reports validation errors as a result rather than an exception.
+        // Without this, a record whose earlier error was resolved re-selects on
+        // every run and costs an API call each time. Resolving it retries it.
+        $record['is_error_resolved'] = 0;
       }
       else {
         $record['error_data'] = 'null';

@@ -167,6 +167,28 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
     $this->assertEquals(json_encode($errors), $saved['error_data']);
   }
 
+  /**
+   * A record whose previous error was marked resolved must not be retried on
+   * every run if Xero rejects it again.
+   */
+  public function testSavePushResponseValidationErrorUnresolvesPreviouslyResolvedError(): void {
+    $record = $this->createBaseAccountInvoiceRecord();
+    $this->callAPISuccess('AccountInvoice', 'create', [
+      'id' => $record['id'],
+      'error_data' => json_encode(['An earlier error']),
+      'is_error_resolved' => 1,
+    ]);
+    $record = $this->getAccountInvoice($record['id']);
+    $result = ['ValidationErrors' => ['An existing contact could not be found using the specified contact details.']];
+
+    $this->getInvoice()->callSavePushResponse($result, $record);
+
+    $saved = $this->getAccountInvoice($record['id']);
+    $this->assertEquals(0, $saved['is_error_resolved']);
+    $this->assertEquals(1, $saved['accounts_needs_update']);
+    $this->assertEquals([], $this->getInvoice()->callGetAccountInvoicesToPush(['connector_id' => 0], 25));
+  }
+
   public function testSavePushResponseNotUpdateCandidateClearsNeedsUpdateFlag(): void {
     $record = $this->createBaseAccountInvoiceRecord();
     $result = [
