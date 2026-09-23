@@ -321,4 +321,72 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertEquals(0, $saved['accounts_needs_update']);
   }
 
+  /**
+   * Make the fixture's contact one that is not yet in Xero.
+   */
+  private function unsyncFixtureContact(int $contributionID, array $accountContactValues): void {
+    $contactID = $this->callAPISuccessGetValue('Contribution', ['id' => $contributionID, 'return' => 'contact_id']);
+    \Civi\Api4\AccountContact::update(FALSE)
+      ->addWhere('contact_id', '=', $contactID)
+      ->setValues(['accounts_contact_id' => NULL] + $accountContactValues)
+      ->execute();
+  }
+
+  public function testPushDefersWhenContactIsQueuedButNotYetInXero(): void {
+    $fixture = $this->createQueuedAccountInvoice();
+    $this->unsyncFixtureContact($fixture['contribution_id'], ['accounts_needs_update' => TRUE]);
+    $invoice = new InvoicePushTestable([]);
+
+    $this->assertEquals(0, $invoice->push(['connector_id' => 0], 10));
+
+    $this->assertCount(0, $invoice->pushToXeroCalls);
+    $saved = $this->callAPISuccessGetSingle('AccountInvoice', ['id' => $fixture['account_invoice_id']]);
+    $this->assertArrayNotHasKey('error_data', $saved);
+    $this->assertEquals(1, $saved['accounts_needs_update']);
+  }
+
+  /**
+   * A contact whose push has failed will never reach Xero, so its invoice
+   * must record an error rather than defer forever.
+   */
+  public function testPushRecordsErrorWhenContactPushHasFailed(): void {
+    $fixture = $this->createQueuedAccountInvoice();
+    $this->unsyncFixtureContact($fixture['contribution_id'], [
+      'accounts_needs_update' => TRUE,
+      'error_data' => json_encode(['error' => 'Error in response from Xero']),
+      'is_error_resolved' => FALSE,
+    ]);
+    $invoice = new InvoicePushTestable([]);
+
+    try {
+      $invoice->push(['connector_id' => 0], 10);
+      $this->fail('Expected push() to throw because the contact can not be synced');
+    }
+    catch (CRM_Core_Exception $e) {
+      $this->assertStringContainsString('contact push failed: Error in response from Xero', $e->getMessage());
+    }
+
+    $this->assertCount(0, $invoice->pushToXeroCalls);
+    $saved = $this->callAPISuccessGetSingle('AccountInvoice', ['id' => $fixture['account_invoice_id']]);
+    $this->assertStringContainsString('Contact can not be synced to Xero', $saved['error_data']);
+    $this->assertEquals(0, $saved['is_error_resolved']);
+    // Still queued, so resolving the error retries the push.
+    $this->assertEquals(1, $saved['accounts_needs_update']);
+  }
+
+  public function testPushRecordsErrorWhenContactIsMarkedDoNotSync(): void {
+    $fixture = $this->createQueuedAccountInvoice();
+    $this->unsyncFixtureContact($fixture['contribution_id'], ['do_not_sync' => TRUE]);
+    $invoice = new InvoicePushTestable([]);
+
+    try {
+      $invoice->push(['connector_id' => 0], 10);
+      $this->fail('Expected push() to throw because the contact can not be synced');
+    }
+    catch (CRM_Core_Exception $e) {
+      $this->assertStringContainsString('contact is marked do not sync', $e->getMessage());
+    }
+    $this->assertCount(0, $invoice->pushToXeroCalls);
+  }
+
 }
