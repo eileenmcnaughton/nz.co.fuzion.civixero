@@ -157,6 +157,71 @@ class ContactPullTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertNotEquals('2020-01-01 00:00:00', $this->getLastSyncDate($existing['id']));
   }
 
+  /**
+   * A push queued by a CiviCRM-side change (eg. a new address) must survive
+   * a pull that refreshes the Xero-side data for the same contact.
+   */
+  public function testProcessPullKeepsPendingPushWhenATrackedFieldChanges(): void {
+    $contactID = $this->individualCreate();
+    $xeroContactID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    $existing = $this->callAPISuccess('AccountContact', 'create', [
+      'contact_id' => $contactID,
+      'plugin' => 'xero',
+      'connector_id' => 0,
+      'accounts_contact_id' => $xeroContactID,
+      'accounts_display_name' => 'Jane Doe',
+      'accounts_modified_date' => '2024-03-15 10:00:00',
+      'accounts_needs_update' => 1,
+    ]);
+
+    $contact = new ContactPullTestable([]);
+    $contact->callProcessPull([
+      $this->getPulledXeroContact([
+        'contact_id' => $xeroContactID,
+        'name' => 'Jane Doe',
+        'updated_date_utc' => '2024-03-16 09:00:00',
+      ]),
+    ], 0);
+
+    $saved = \Civi\Api4\AccountContact::get(FALSE)
+      ->addWhere('id', '=', $existing['id'])
+      ->execute()
+      ->single();
+    $this->assertEquals('2024-03-16 09:00:00', $saved['accounts_modified_date']);
+    $this->assertTrue($saved['accounts_needs_update']);
+  }
+
+  public function testProcessPullKeepsPendingPushWhenNothingChanged(): void {
+    $contactID = $this->individualCreate();
+    $xeroContactID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    $existing = $this->callAPISuccess('AccountContact', 'create', [
+      'contact_id' => $contactID,
+      'plugin' => 'xero',
+      'connector_id' => 0,
+      'accounts_contact_id' => $xeroContactID,
+      'accounts_display_name' => 'Jane Doe',
+      'accounts_modified_date' => '2024-03-15 10:00:00',
+      'accounts_needs_update' => 1,
+    ]);
+    $this->backdateLastSyncDate($existing['id'], '2020-01-01 00:00:00');
+
+    $contact = new ContactPullTestable([]);
+    $contact->callProcessPull([
+      $this->getPulledXeroContact([
+        'contact_id' => $xeroContactID,
+        'name' => 'Jane Doe',
+        'updated_date_utc' => '2024-03-15 10:00:00',
+      ]),
+    ], 0);
+
+    $saved = \Civi\Api4\AccountContact::get(FALSE)
+      ->addWhere('id', '=', $existing['id'])
+      ->execute()
+      ->single();
+    $this->assertTrue($saved['accounts_needs_update']);
+    $this->assertEquals('2020-01-01 00:00:00', $this->getLastSyncDate($existing['id']));
+  }
+
   public function testProcessPullMapsValidContactNumberToContactId(): void {
     $contactID = $this->individualCreate();
 

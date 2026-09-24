@@ -116,7 +116,6 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         'accounts_modified_date' => date('Y-m-d H:i:s', strtotime($xeroContact['updated_date_utc'])),
         'accounts_contact_id' => $xeroContact['contact_id'],
         'accounts_data' => json_encode($xeroContact),
-        'accounts_needs_update' => FALSE,
       ];
 
       // Xero sets contact_number = contact_id (accounts_contact_id) if not set by CiviCRM.
@@ -185,7 +184,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
         if ($accountContacts->count() === 0) {
           // Create new AccountContact record
           $newAccountContact = AccountContact::create(FALSE)
-            ->setValues($accountContactParams)
+            ->setValues($accountContactParams + ['accounts_needs_update' => FALSE])
             ->execute()
             ->first();
           $ids[] = $newAccountContact['id'];
@@ -196,8 +195,10 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
             'accounts_display_name',
             'accounts_modified_date',
             'accounts_contact_id',
-            'accounts_needs_update',
           ];
+          // accounts_needs_update is deliberately left alone: a pull only
+          // refreshes the Xero-side data, so it must not cancel a push
+          // queued by a CiviCRM-side change (eg. a new address).
           // Every time we do an "update" last_sync_date is updated which triggers an entry in log_civicrm_account_contact.
           // So check if anything actually changed before updating.
           $somethingChanged = FALSE;
