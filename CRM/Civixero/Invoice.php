@@ -31,6 +31,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
 
   private const ERROR_CODE_HOOK_SKIPPED = 'hook_skipped';
 
+  /**
+   * The invoice's contact is not in Xero and the contact push will not put it
+   * there, so deferring would wait forever. Unlike the codes above this is a
+   * real error, but the invoice stays queued so resolving the error retries it.
+   */
+  private const ERROR_CODE_CONTACT_NOT_SYNCABLE = 'contact_not_syncable';
+
   private const RESOLVED_ERROR_CODES = [
     self::ERROR_CODE_ALREADY_COMPLETED_IN_XERO,
     self::ERROR_CODE_CANCELLED,
@@ -396,7 +403,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
               'error_data' => $accountInvoice['error_data'],
             ]))
             ->addValue('is_error_resolved', $isErrorResolved)
-            ->addValue('accounts_needs_update', FALSE)
+            ->addValue('accounts_needs_update', $e->getErrorCode() === self::ERROR_CODE_CONTACT_NOT_SYNCABLE)
             ->addValue('accounts_data', json_encode($accountInvoice))
             ->execute();
           if (!$isErrorResolved) {
@@ -930,6 +937,10 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     // blocks automatic retries after the contact push job runs.
     // @see https://github.com/eileenmcnaughton/nz.co.fuzion.civixero/issues/177
     if (empty($xeroInvoiceUUID) && empty($civiCRMInvoice['accounts_contact_id'])) {
+      $blockedReason = $this->getContactPushBlockedReason((int) $civiCRMInvoice['contact_id'], (int) $record['connector_id']);
+      if ($blockedReason) {
+        throw new CRM_Core_Exception('Contact can not be synced to Xero: ' . $blockedReason, self::ERROR_CODE_CONTACT_NOT_SYNCABLE);
+      }
       \Civi::log('civixero')->info('CiviXero: deferring invoice push for contribution {id} until contact is synced to Xero', [
         'id' => $contributionID,
       ]);
@@ -937,6 +948,41 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     }
 
     return $this->mapToAccounts($civiCRMInvoice, $xeroInvoiceUUID);
+  }
+
+  /**
+   * Why the contact push job will not create this contact in Xero, if it won't.
+   *
+   * Mirrors the selection in CRM_Civixero_Contact::getContactsRequiringPushUpdate().
+   *
+   * @param int $contactID
+   * @param int $connectorID
+   *
+   * @return string|null
+   *   NULL if the contact is queued and will be pushed.
+   */
+  protected function getContactPushBlockedReason(int $contactID, int $connectorID): ?string {
+    $accountContact = AccountContact::get(FALSE)
+      ->addSelect('do_not_sync', 'accounts_needs_update', 'error_data', 'is_error_resolved')
+      ->addWhere('contact_id', '=', $contactID)
+      ->addWhere('plugin', '=', $this->_plugin)
+      ->addWhere('connector_id', '=', $connectorID)
+      ->execute()
+      ->first();
+    if (!$accountContact) {
+      return 'contact is not queued for sync';
+    }
+    if ($accountContact['do_not_sync']) {
+      return 'contact is marked do not sync';
+    }
+    if (!empty($accountContact['error_data']) && !$accountContact['is_error_resolved']) {
+      $error = json_decode($accountContact['error_data'], TRUE);
+      return 'contact push failed: ' . (is_array($error) ? ($error['error'] ?? $accountContact['error_data']) : $accountContact['error_data']);
+    }
+    if (!$accountContact['accounts_needs_update']) {
+      return 'contact is not queued for sync';
+    }
+    return NULL;
   }
 
   /**
