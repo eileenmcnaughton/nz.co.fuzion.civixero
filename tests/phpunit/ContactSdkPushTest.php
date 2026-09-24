@@ -78,6 +78,35 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     $this->assertEquals('2024-03-15 10:00:00', $result['Contacts']['Contact']['UpdatedDateUTC']);
   }
 
+  public function testPushSendsTheMappedContact(): void {
+    $contactID = \Civi\Api4\Contact::create(FALSE)
+      ->setValues(['contact_type' => 'Organization', 'organization_name' => 'Example Organization'])
+      ->execute()
+      ->first()['id'];
+    \Civi\Api4\AccountContact::save(FALSE)
+      ->setMatch(['contact_id', 'plugin', 'connector_id'])
+      ->addRecord([
+        'contact_id' => $contactID,
+        'plugin' => 'xero',
+        'connector_id' => 0,
+        'accounts_needs_update' => TRUE,
+      ])
+      ->execute();
+    $this->createMockHandler([
+      json_encode([
+        'Contacts' => [
+          ['ContactID' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 'Name' => 'Example Organization', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+        ],
+      ]),
+    ]);
+
+    $this->getContactWithMockClient()->push(['connector_id' => 0]);
+
+    $sent = json_decode($this->getRequestBodies()[0], TRUE)['Contacts'][0];
+    $this->assertSame('Example Organization', $sent['Name']);
+    $this->assertSame((string) $contactID, $sent['ContactNumber']);
+  }
+
   public function testPushToXeroSendsIdempotencyKeyUnderXeroLimit(): void {
     $this->createMockHandler([
       json_encode([
