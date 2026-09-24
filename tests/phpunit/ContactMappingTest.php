@@ -71,23 +71,22 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $mapped = $contact->callMapToAccounts($this->getBaseContact(), NULL);
 
     $this->assertIsArray($mapped);
-    $this->assertCount(1, $mapped);
-    $this->assertEquals('Jane Doe', $mapped[0]['Name']);
-    $this->assertEquals('Jane', $mapped[0]['FirstName']);
-    $this->assertEquals('Doe', $mapped[0]['LastName']);
-    $this->assertEquals(123, $mapped[0]['ContactNumber']);
-    $this->assertArrayNotHasKey('ContactID', $mapped[0]);
-    $this->assertEquals('', $mapped[0]['EmailAddress']);
+    $this->assertEquals('Jane Doe', $mapped['Name']);
+    $this->assertEquals('Jane', $mapped['FirstName']);
+    $this->assertEquals('Doe', $mapped['LastName']);
+    $this->assertEquals(123, $mapped['ContactNumber']);
+    $this->assertArrayNotHasKey('ContactID', $mapped);
+    $this->assertEquals('', $mapped['EmailAddress']);
   }
 
   public function testSetsContactIdOnlyWhenXeroUuidPassed(): void {
     $contact = new ContactMappingTestable([]);
 
     $withoutUuid = $contact->callMapToAccounts($this->getBaseContact(), NULL);
-    $this->assertArrayNotHasKey('ContactID', $withoutUuid[0]);
+    $this->assertArrayNotHasKey('ContactID', $withoutUuid);
 
     $withUuid = $contact->callMapToAccounts($this->getBaseContact(), 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $withUuid[0]['ContactID']);
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $withUuid['ContactID']);
   }
 
   public function testTruncatesLongDisplayNamePreservingIdSuffix(): void {
@@ -96,7 +95,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
 
     $mapped = $contact->callMapToAccounts($this->getBaseContact(['display_name' => $longName]), NULL);
 
-    $name = $mapped[0]['Name'];
+    $name = $mapped['Name'];
     $this->assertLessThanOrEqual(255, strlen($name));
     // The ' - <id>' suffix must survive truncation - only the display-name
     // portion is cut down.
@@ -106,7 +105,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
   public function testValidEmailIsPassedThrough(): void {
     $contact = new ContactMappingTestable([]);
     $mapped = $contact->callMapToAccounts($this->getBaseContact(['email' => 'jane@example.com']), NULL);
-    $this->assertEquals('jane@example.com', $mapped[0]['EmailAddress']);
+    $this->assertEquals('jane@example.com', $mapped['EmailAddress']);
   }
 
   public function testInvalidEmailIsDroppedNotVetoed(): void {
@@ -114,25 +113,25 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $mapped = $contact->callMapToAccounts($this->getBaseContact(['email' => 'not-an-email']), NULL);
     // Invalid email doesn't stop the push - it's logged and pushed without one.
     $this->assertNotFalse($mapped);
-    $this->assertEquals('', $mapped[0]['EmailAddress']);
+    $this->assertEquals('', $mapped['EmailAddress']);
   }
 
   public function testPhoneOnlyIncludedWhenSet(): void {
     $contact = new ContactMappingTestable([]);
 
     $withoutPhone = $contact->callMapToAccounts($this->getBaseContact(), NULL);
-    $this->assertArrayNotHasKey('Phones', $withoutPhone[0]);
+    $this->assertArrayNotHasKey('Phones', $withoutPhone);
 
     $withPhone = $contact->callMapToAccounts($this->getBaseContact(['phone' => '0123456789']), NULL);
-    $this->assertEquals('0123456789', $withPhone[0]['Phones']['Phone']['PhoneNumber']);
-    $this->assertEquals('DEFAULT', $withPhone[0]['Phones']['Phone']['PhoneType']);
+    $this->assertEquals('0123456789', $withPhone['Phones']['Phone']['PhoneNumber']);
+    $this->assertEquals('DEFAULT', $withPhone['Phones']['Phone']['PhoneType']);
   }
 
   public function testAddressOnlyIncludedWhenAnAddressFieldIsSet(): void {
     $contact = new ContactMappingTestable([]);
 
     $withoutAddress = $contact->callMapToAccounts($this->getBaseContact(), NULL);
-    $this->assertArrayNotHasKey('Addresses', $withoutAddress[0]);
+    $this->assertArrayNotHasKey('Addresses', $withoutAddress);
 
     $withAddress = $contact->callMapToAccounts($this->getBaseContact([
       'street_address' => '123 Main St',
@@ -141,7 +140,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
       'country' => 'New Zealand',
       'state_province_name' => 'Wellington',
     ]), NULL);
-    $address = $withAddress[0]['Addresses']['Address'][0];
+    $address = $withAddress['Addresses']['Address'][0];
     $this->assertEquals('123 Main St', $address['AddressLine1']);
     $this->assertEquals('Wellington', $address['City']);
     $this->assertEquals('6011', $address['PostalCode']);
@@ -161,7 +160,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $this->mutateViaHook = TRUE;
     $contact = new ContactMappingTestable([]);
     $mapped = $contact->callMapToAccounts($this->getBaseContact(), NULL);
-    $this->assertEquals('added by hook', $mapped[0]['Custom']);
+    $this->assertEquals('added by hook', $mapped['Custom']);
   }
 
 }
