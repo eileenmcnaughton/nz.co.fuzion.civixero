@@ -831,12 +831,10 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
     $proceed = TRUE;
     CRM_Accountsync_Hook::accountPushAlterMapped('contact', $contact, $proceed, $new_contact);
-    $new_contact = [
-      $new_contact,
-    ];
     if (!$proceed) {
       return FALSE;
     }
+    // Flat array - pushViaApi() reads $mapped['Name'] directly, so don't wrap it in a batch.
     return $new_contact;
   }
 
