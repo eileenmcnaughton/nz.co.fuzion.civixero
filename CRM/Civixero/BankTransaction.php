@@ -3,6 +3,7 @@
 use XeroAPI\XeroPHP\Models\Accounting\Account;
 use XeroAPI\XeroPHP\Models\Accounting\BankTransaction;
 use XeroAPI\XeroPHP\Models\Accounting\BankTransactions;
+use XeroAPI\XeroPHP\Models\Accounting\ModelInterface;
 
 /**
  * Class CRM_Civixero_BankTransaction.
@@ -129,17 +130,13 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
 
 
   /**
-   * Push one bank transaction via AccountingApi::updateOrCreateBankTransactions.
+   * Convert a mapped bank transaction (from mapToAccounts()) to an SDK model.
    *
-   * @return array
-   *   Legacy-shaped result consumed by savePushResponse():
-   *   ['BankTransactions' => ['BankTransaction' => snapshot]] or
-   *   ['ValidationErrors' => [...]].
+   * @return \XeroAPI\XeroPHP\Models\Accounting\BankTransaction
    *
-   * @throws \XeroAPI\XeroPHP\ApiException
    * @throws \CRM_Core_Exception
    */
-  protected function pushViaApi(array $mapped): array {
+  protected function mappedArrayToXeroModel(array $mapped): ModelInterface {
     $bankTransaction = new BankTransaction();
     $bankTransaction->setType($mapped['Type'] ?? 'RECEIVE');
     if (!empty($mapped['BankTransactionID'])) {
@@ -171,33 +168,51 @@ class CRM_Civixero_BankTransaction extends CRM_Civixero_Invoice {
       $bankTransaction->setBankAccount($bankAccount);
     }
     $bankTransaction->setLineItems($this->buildSdkLineItems($mapped));
+    return $bankTransaction;
+  }
 
+  /**
+   * Send bank transactions via AccountingApi::updateOrCreateBankTransactions.
+   *
+   * @param \XeroAPI\XeroPHP\Models\Accounting\BankTransaction[] $bankTransactions
+   *
+   * @return array[]
+   *   One legacy-shaped result per bank transaction, in the order sent:
+   *   ['BankTransactions' => ['BankTransaction' => snapshot]] or
+   *   ['ValidationErrors' => [...]].
+   *
+   * @throws \XeroAPI\XeroPHP\ApiException
+   * @throws \CRM_Core_Exception
+   */
+  protected function pushViaApi(array $bankTransactions): array {
     $collection = new BankTransactions();
-    $collection->setBankTransactions([$bankTransaction]);
+    $collection->setBankTransactions($bankTransactions);
 
     $response = $this->getAccountingApiInstance()->updateOrCreateBankTransactions(
       $this->getTenantID(),
       $collection,
       FALSE,
       NULL,
-      $this->generateIdempotencyKey('banktransaction-' . ($mapped['Reference'] ?? '0'), $mapped)
+      $this->generateIdempotencyKey('banktransactions', array_map(fn(BankTransaction $bankTransaction) => $bankTransaction->getReference(), $bankTransactions))
     );
 
-    $returned = $response->getBankTransactions()[0] ?? NULL;
-    if ($returned === NULL) {
-      throw new CRM_Core_Exception('Xero returned no bank transaction from updateOrCreateBankTransactions');
+    $returnedBankTransactions = $response->getBankTransactions() ?? [];
+    $this->assertReturnedInSentOrder($bankTransactions, $returnedBankTransactions, 'getReference');
+    $results = [];
+    foreach ($returnedBankTransactions as $returned) {
+      $validationErrors = $this->extractValidationErrors($returned);
+      if ($validationErrors !== []) {
+        $results[] = ['ValidationErrors' => $validationErrors];
+        continue;
+      }
+      $snapshot = json_decode((string) $returned, TRUE) ?: [];
+      $updated = $returned->getUpdatedDateUtcAsDate();
+      $snapshot['BankTransactionID'] = $returned->getBankTransactionId();
+      $snapshot['UpdatedDateUTC'] = $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s');
+      $snapshot['Status'] = $returned->getStatus();
+      $results[] = ['BankTransactions' => ['BankTransaction' => $snapshot]];
     }
-    $validationErrors = $this->extractValidationErrors($returned);
-    if ($validationErrors !== []) {
-      return ['ValidationErrors' => $validationErrors];
-    }
-
-    $snapshot = json_decode((string) $returned, TRUE) ?: [];
-    $updated = $returned->getUpdatedDateUtcAsDate();
-    $snapshot['BankTransactionID'] = $returned->getBankTransactionId();
-    $snapshot['UpdatedDateUTC'] = $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s');
-    $snapshot['Status'] = $returned->getStatus();
-    return ['BankTransactions' => ['BankTransaction' => $snapshot]];
+    return $results;
   }
 
 }

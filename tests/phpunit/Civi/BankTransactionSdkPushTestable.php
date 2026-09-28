@@ -18,8 +18,19 @@ class BankTransactionSdkPushTestable extends \CRM_Civixero_BankTransaction {
     return new AccountingApi($this->mockClient, $config);
   }
 
-  public function callPushToXero($accountsInvoice, $connector_id) {
-    return $this->pushToXero($accountsInvoice, $connector_id);
+  public function callPushBatchToXero(array $mappedRecords): array {
+    return $this->pushBatchToXero($mappedRecords);
+  }
+
+  /**
+   * Push one record, throwing the exception it failed with.
+   */
+  public function callPushToXero($accountsInvoice) {
+    $result = $this->pushBatchToXero([$accountsInvoice])[0];
+    if ($result instanceof \Exception) {
+      throw $result;
+    }
+    return $result;
   }
 
 }
