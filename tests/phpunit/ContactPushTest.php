@@ -13,12 +13,11 @@ use PHPUnit\Framework\TestCase;
 /**
  * End-to-end characterization tests for CRM_Civixero_Contact::push().
  *
- * push() orchestrates: fetch queued AccountContacts -> map -> pushToXero() ->
- * inline response-handling/dedupe. pushToXero() is the only piece the
- * Xero-SDK migration touches, so these tests use ContactPushTestable to feed
- * it canned responses/exceptions - proving push()'s surrounding
- * orchestration (error handling, throttle abort, dedupe, DB updates) is
- * independent of which client pushToXero() delegates to underneath.
+ * push() orchestrates: fetch queued AccountContacts -> map ->
+ * pushBatchToXero() -> inline response-handling/dedupe. These tests use
+ * ContactPushTestable to feed pushBatchToXero() canned responses/exceptions,
+ * so push()'s orchestration (error handling, throttle abort, dedupe, DB
+ * updates) is tested without the Xero SDK.
  *
  * @group headless
  */
@@ -168,12 +167,12 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
   public function testPushSuccessUpdatesAccountContact(): void {
     $fixture = $this->createQueuedAccountContact();
     $contact = new ContactPushTestable([]);
-    $contact->pushToXeroQueue[] = $this->getCannedXeroContactResult();
+    $contact->xeroResponses[] = $this->getCannedXeroContactResult();
 
     $result = $contact->push(['connector_id' => 0], 10);
 
     $this->assertTrue($result);
-    $this->assertCount(1, $contact->pushToXeroCalls);
+    $this->assertCount(1, $contact->sentContacts);
     // Read via API4 - API3's AccountContact.get runs accounts_data through
     // CRM_Accountsync_Hook::mapAccountsData(), which unconditionally reads
     // $accountsData['Addresses']/['Phones'] and warns on our minimal canned
@@ -188,11 +187,11 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertEquals(0, $saved['accounts_needs_update']);
   }
 
-  public function testPushWithNoQueuedContactsReturnsTrueWithoutCallingPushToXero(): void {
+  public function testPushWithNoQueuedContactsReturnsTrueWithoutCallingXero(): void {
     $contact = new ContactPushTestable([]);
     $result = $contact->push(['connector_id' => 0], 10);
     $this->assertTrue($result);
-    $this->assertCount(0, $contact->pushToXeroCalls);
+    $this->assertCount(0, $contact->sentContacts);
   }
 
   public function testPushSetsDoNotSyncWhenContactIsDeleted(): void {
@@ -206,7 +205,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $result = $contact->push(['connector_id' => 0], 10);
 
     $this->assertTrue($result);
-    $this->assertCount(0, $contact->pushToXeroCalls);
+    $this->assertCount(0, $contact->sentContacts);
     $saved = \Civi\Api4\AccountContact::get(FALSE)
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()
@@ -216,7 +215,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
 
   /**
    * If the last data pulled from Xero for this AccountContact already shows
-   * it as archived there, push() must skip it entirely (no pushToXero call)
+   * it as archived there, push() must skip it entirely (nothing sent to Xero)
    * and permanently stop queuing it - Xero accepts updates to an archived
    * contact without erroring, so nothing on the response-handling path
    * would ever record an error to make getContactsRequiringPushUpdate()'s
@@ -234,7 +233,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $result = $contact->push(['connector_id' => 0], 10);
 
     $this->assertTrue($result);
-    $this->assertCount(0, $contact->pushToXeroCalls);
+    $this->assertCount(0, $contact->sentContacts);
     $saved = \Civi\Api4\AccountContact::get(FALSE)
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()
@@ -254,7 +253,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
   public function testPushSetsDoNotSyncWhenXeroReturnsArchivedStatus(): void {
     $fixture = $this->createQueuedAccountContact();
     $contact = new ContactPushTestable([]);
-    $contact->pushToXeroQueue[] = $this->getCannedXeroContactResult('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 'ARCHIVED');
+    $contact->xeroResponses[] = $this->getCannedXeroContactResult('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 'ARCHIVED');
 
     $result = $contact->push(['connector_id' => 0], 10);
 
@@ -262,7 +261,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     // Unlike the "already known archived" case, this contact's archived
     // status was only just discovered - the push attempt itself does
     // happen once.
-    $this->assertCount(1, $contact->pushToXeroCalls);
+    $this->assertCount(1, $contact->sentContacts);
     $saved = \Civi\Api4\AccountContact::get(FALSE)
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()
@@ -287,7 +286,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       'accounts_needs_update' => 0,
     ]);
     $contact = new ContactPushTestable([]);
-    $contact->pushToXeroQueue[] = $this->getCannedXeroContactResult($xeroContactID);
+    $contact->xeroResponses[] = $this->getCannedXeroContactResult($xeroContactID);
 
     try {
       $contact->push(['connector_id' => 0], 10);
@@ -325,7 +324,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       'accounts_needs_update' => 0,
     ]);
     $contact = new ContactPushTestable([]);
-    $contact->pushToXeroQueue[] = $this->getCannedXeroContactResult($xeroContactID);
+    $contact->xeroResponses[] = $this->getCannedXeroContactResult($xeroContactID);
 
     $result = $contact->push(['connector_id' => 0], 10);
 
@@ -343,7 +342,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertEquals($xeroContactID, $repaired['accounts_contact_id']);
   }
 
-  public function testPushRecordsErrorAndContinuesWhenPushToXeroThrowsCoreException(): void {
+  public function testPushRecordsErrorAndContinuesWhenXeroRejectsAContact(): void {
     $fixtureA = $this->createQueuedAccountContact();
     $fixtureB = $this->createQueuedAccountContact();
     $contact = new ContactPushTestable([]);
@@ -351,8 +350,8 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     // so insertion order among two fresh (error_data IS NULL) rows isn't
     // guaranteed - queue the same failure/success pair regardless of which
     // fixture is processed first, and assert on totals instead of identity.
-    $contact->pushToXeroQueue[] = ['throw' => new CRM_Core_Exception('Xero rejected the contact')];
-    $contact->pushToXeroQueue[] = $this->getCannedXeroContactResult();
+    $contact->xeroResponses[] = ['throw' => new CRM_Core_Exception('Xero rejected the contact')];
+    $contact->xeroResponses[] = $this->getCannedXeroContactResult();
 
     try {
       $contact->push(['connector_id' => 0], 10);
@@ -363,7 +362,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     }
 
     // Both records were attempted (the failure didn't abort the loop).
-    $this->assertCount(2, $contact->pushToXeroCalls);
+    $this->assertCount(2, $contact->sentContacts);
     $accountContacts = (array) \Civi\Api4\AccountContact::get(FALSE)
       ->addWhere('id', 'IN', [$fixtureA['account_contact_id'], $fixtureB['account_contact_id']])
       ->execute();
@@ -378,11 +377,11 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertEquals(1, $failed['accounts_needs_update']);
   }
 
-  public function testPushAbortsRemainingRecordsAndSetsRateLimitOnThrottle(): void {
-    $this->createQueuedAccountContact();
-    $this->createQueuedAccountContact();
+  public function testPushAbortsAndSetsRateLimitOnThrottle(): void {
+    $fixtureA = $this->createQueuedAccountContact();
+    $fixtureB = $this->createQueuedAccountContact();
     $contact = new ContactPushTestable([]);
-    $contact->pushToXeroQueue[] = ['throw' => new CRM_Civixero_Exception_XeroThrottle('Rate limited', 429, NULL, time() + 3600)];
+    $contact->xeroResponses[] = ['throw' => new CRM_Civixero_Exception_XeroThrottle('Rate limited', 429, NULL, time() + 3600)];
 
     try {
       $contact->push(['connector_id' => 0], 10);
@@ -392,10 +391,90 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       $this->assertStringContainsString('Contact Push aborted due to throttling by Xero', $e->getMessage());
     }
 
-    // The throttle exception aborts the whole loop - the second record is
-    // never attempted.
-    $this->assertCount(1, $contact->pushToXeroCalls);
+    $this->assertCount(1, $contact->sentBatches);
     $this->assertNotEmpty(Civi::settings()->get('xero_oauth_rate_exceeded'));
+    // Xero wrote nothing, so both contacts stay queued with no error.
+    $accountContacts = \Civi\Api4\AccountContact::get(FALSE)
+      ->addWhere('id', 'IN', [$fixtureA['account_contact_id'], $fixtureB['account_contact_id']])
+      ->execute();
+    foreach ($accountContacts as $accountContact) {
+      $this->assertEquals(1, $accountContact['accounts_needs_update']);
+      $this->assertEmpty($accountContact['error_data']);
+    }
+  }
+
+  public function testPushSendsQueuedContactsInOneRequest(): void {
+    $fixtureA = $this->createQueuedAccountContact();
+    $fixtureB = $this->createQueuedAccountContact();
+    $contact = new ContactPushTestable([]);
+    $contact->xeroResponses[] = $this->getCannedXeroContactResult('aaaaaaaa-bbbb-cccc-dddd-000000000001');
+    $contact->xeroResponses[] = $this->getCannedXeroContactResult('aaaaaaaa-bbbb-cccc-dddd-000000000002');
+
+    $contact->push(['connector_id' => 0], 10);
+
+    $this->assertCount(1, $contact->sentBatches);
+    $this->assertCount(2, $contact->sentBatches[0]);
+    // Each AccountContact gets the Xero contact returned in its position.
+    $linked = \Civi\Api4\AccountContact::get(FALSE)
+      ->addWhere('id', 'IN', [$fixtureA['account_contact_id'], $fixtureB['account_contact_id']])
+      ->execute()
+      ->column('accounts_contact_id', 'contact_id');
+    $sentContactNumbers = array_column($contact->sentBatches[0], 'ContactNumber');
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-000000000001', $linked[$sentContactNumbers[0]]);
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-000000000002', $linked[$sentContactNumbers[1]]);
+  }
+
+  public function testPushRetriesEachContactOnItsOwnWhenXeroRejectsTheRequest(): void {
+    $fixtureA = $this->createQueuedAccountContact();
+    $fixtureB = $this->createQueuedAccountContact();
+    $contact = new ContactPushTestable([]);
+    $contact->xeroResponses[] = ['throwBatch' => new CRM_Core_Exception('Synchronization error [400] Bad request', 'xero_400')];
+    $contact->xeroResponses[] = ['throwBatch' => new CRM_Core_Exception('Synchronization error [400] Bad request', 'xero_400')];
+    $contact->xeroResponses[] = $this->getCannedXeroContactResult();
+
+    try {
+      $contact->push(['connector_id' => 0], 10);
+      $this->fail('Expected push() to throw because one record failed');
+    }
+    catch (CRM_Core_Exception $e) {
+      $this->assertStringContainsString('Not all contacts were saved', $e->getMessage());
+    }
+
+    $this->assertSame([2, 1, 1], array_map('count', $contact->sentBatches));
+    $accountContacts = \Civi\Api4\AccountContact::get(FALSE)
+      ->addWhere('id', 'IN', [$fixtureA['account_contact_id'], $fixtureB['account_contact_id']])
+      ->execute()
+      ->indexBy('contact_id');
+    $failed = $accountContacts[$contact->sentBatches[1][0]['ContactNumber']];
+    $pushed = $accountContacts[$contact->sentBatches[2][0]['ContactNumber']];
+    $this->assertStringContainsString('Bad request', $failed['error_data']);
+    $this->assertEquals(1, $failed['accounts_needs_update']);
+    $this->assertEquals(0, $pushed['accounts_needs_update']);
+    $this->assertEmpty($pushed['error_data']);
+  }
+
+  public function testPushRecordsOtherRequestFailuresOnEveryContactInIt(): void {
+    $fixtureA = $this->createQueuedAccountContact();
+    $fixtureB = $this->createQueuedAccountContact();
+    $contact = new ContactPushTestable([]);
+    $contact->xeroResponses[] = ['throwBatch' => new CRM_Core_Exception('Synchronization error [401] Unauthorized', 'xero_401')];
+
+    try {
+      $contact->push(['connector_id' => 0], 10);
+      $this->fail('Expected push() to throw because the request failed');
+    }
+    catch (CRM_Core_Exception $e) {
+      $this->assertStringContainsString('Not all contacts were saved', $e->getMessage());
+    }
+
+    // Not retried one at a time: every contact would fail the same way.
+    $this->assertCount(1, $contact->sentBatches);
+    $accountContacts = \Civi\Api4\AccountContact::get(FALSE)
+      ->addWhere('id', 'IN', [$fixtureA['account_contact_id'], $fixtureB['account_contact_id']])
+      ->execute();
+    foreach ($accountContacts as $accountContact) {
+      $this->assertStringContainsString('Unauthorized', $accountContact['error_data']);
+    }
   }
 
   public function testPushSkipsContactWhenMapToAccountsHookVetoes(): void {
@@ -406,7 +485,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $result = $contact->push(['connector_id' => 0], 10);
 
     $this->assertTrue($result);
-    $this->assertCount(0, $contact->pushToXeroCalls);
+    $this->assertCount(0, $contact->sentContacts);
     $saved = \Civi\Api4\AccountContact::get(FALSE)
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()

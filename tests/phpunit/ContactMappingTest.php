@@ -71,7 +71,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $mapped = $contact->callMapToAccounts($this->getBaseContact(), NULL);
 
     $this->assertIsArray($mapped);
-    // Flat array (not wrapped in a batch) - pushViaApi() reads $mapped['Name'] directly.
+    // Flat array (not wrapped in a list) - pushBatchToXero() takes one mapped contact per entry.
     $this->assertArrayNotHasKey(0, $mapped);
     $this->assertEquals('Jane Doe', $mapped['Name']);
     $this->assertEquals('Jane', $mapped['FirstName']);

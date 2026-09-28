@@ -21,8 +21,19 @@ class ContactSdkPushTestable extends \CRM_Civixero_Contact {
     return new AccountingApi($this->mockClient, $config);
   }
 
-  public function callPushToXero($accountsContact, $connector_id) {
-    return $this->pushToXero($accountsContact, $connector_id);
+  public function callPushBatchToXero(array $mappedContacts): array {
+    return $this->pushBatchToXero($mappedContacts);
+  }
+
+  /**
+   * Push one contact, throwing the exception it failed with.
+   */
+  public function callPushToXero(array $mappedContact) {
+    $result = $this->pushBatchToXero([$mappedContact])[0];
+    if ($result instanceof \Exception) {
+      throw $result;
+    }
+    return $result;
   }
 
 }

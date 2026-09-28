@@ -68,7 +68,7 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     ]);
     $contact = $this->getContactWithMockClient();
 
-    $result = $contact->callPushToXero($this->getMappedContact(), 0);
+    $result = $contact->callPushToXero($this->getMappedContact());
 
     $this->assertEquals(
       'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
@@ -117,14 +117,14 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     ]);
     $contact = $this->getContactWithMockClient();
 
-    $contact->callPushToXero($this->getMappedContact(), 0);
+    $contact->callPushToXero($this->getMappedContact());
 
     $headers = $this->getRequestHeaders();
     $this->assertCount(1, $headers);
     $this->assertArrayHasKey('Idempotency-Key', $headers[0]);
     $key = $headers[0]['Idempotency-Key'][0];
     $this->assertLessThanOrEqual(128, strlen($key));
-    $this->assertStringStartsWith('civixero-contact-123-', $key);
+    $this->assertStringStartsWith('civixero-contacts-', $key);
   }
 
   public function testPushToXeroRejectsMalformedStoredContactIdBeforeCallingXero(): void {
@@ -137,7 +137,7 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
 
     $this->expectException(CRM_Core_Exception::class);
     $this->expectExceptionMessageMatches('/not a valid Xero ID/');
-    $contact->callPushToXero($mapped, 0);
+    $contact->callPushToXero($mapped);
   }
 
   /**
@@ -162,18 +162,15 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     ]);
     $contact = $this->getContactWithMockClient();
 
-    $result = $contact->callPushToXero($this->getMappedContact(), 0);
+    $result = $contact->callPushToXero($this->getMappedContact());
 
     $this->assertEquals(['ValidationErrors' => ['Email address must be valid']], $result);
   }
 
   /**
-   * pushToXero()'s catch blocks catch \XeroAPI\XeroPHP\ApiException (the SDK's
-   * HTTP-error exception, e.g. for a 429 rate-limit response) and translate
-   * a 429 into CRM_Civixero_Exception_XeroThrottle, mirroring
-   * Invoice::pushToXero() - so push()'s throttle-abort-and-backoff handling
-   * (see ContactPushTest::testPushAbortsRemainingRecordsAndSetsRateLimitOnThrottle)
-   * keeps working once pushToXero() delegates to the SDK.
+   * pushBatchToXero() translates the SDK's 429 ApiException into
+   * CRM_Civixero_Exception_XeroThrottle, which push() uses to abort and back
+   * off (see ContactPushTest::testPushAbortsAndSetsRateLimitOnThrottle).
    */
   public function testPushToXeroTranslatesSdk429ResponseToThrottleException(): void {
     $this->createMockHandler([]);
@@ -182,7 +179,7 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     $contact = $this->getContactWithMockClient();
 
     try {
-      $contact->callPushToXero($this->getMappedContact(), 0);
+      $contact->callPushToXero($this->getMappedContact());
       $this->fail('Expected a CRM_Civixero_Exception_XeroThrottle to be thrown');
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
@@ -197,7 +194,112 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
 
     $this->expectException(CRM_Core_Exception::class);
     $this->expectExceptionMessageMatches('/Synchronization error/');
-    $contact->callPushToXero($this->getMappedContact(), 0);
+    $contact->callPushToXero($this->getMappedContact());
+  }
+
+  public function testPushBatchSendsContactsInOneRequestAndReturnsResultsInOrder(): void {
+    $this->createMockHandler([
+      json_encode([
+        'Contacts' => [
+          ['ContactID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000001', 'Name' => 'Jane Doe - 123', 'ContactNumber' => '123', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+          ['Name' => 'John Doe - 124', 'ContactNumber' => '124', 'ValidationErrors' => [['Message' => 'Email address must be valid']]],
+        ],
+      ]),
+    ]);
+    $contact = $this->getContactWithMockClient();
+
+    $results = $contact->callPushBatchToXero([
+      $this->getMappedContact(),
+      $this->getMappedContact(['Name' => 'John Doe - 124', 'ContactNumber' => 124]),
+    ]);
+
+    $this->assertCount(1, $this->getRequestBodies());
+    $sent = json_decode($this->getRequestBodies()[0], TRUE)['Contacts'];
+    $this->assertSame(['123', '124'], array_column($sent, 'ContactNumber'));
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-000000000001', $results[0]['Contacts']['Contact']['ContactID']);
+    $this->assertEquals(['ValidationErrors' => ['Email address must be valid']], $results[1]);
+  }
+
+  public function testPushBatchFailsOnlyTheMalformedContact(): void {
+    $this->createMockHandler([
+      json_encode([
+        'Contacts' => [
+          ['ContactID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'Name' => 'John Doe - 124', 'ContactNumber' => '124', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+        ],
+      ]),
+    ]);
+    $contact = $this->getContactWithMockClient();
+
+    $results = $contact->callPushBatchToXero([
+      $this->getMappedContact(['ContactID' => 'not-a-guid']),
+      $this->getMappedContact(['Name' => 'John Doe - 124', 'ContactNumber' => 124]),
+    ]);
+
+    $this->assertInstanceOf(CRM_Core_Exception::class, $results[0]);
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-000000000002', $results[1]['Contacts']['Contact']['ContactID']);
+    $sent = json_decode($this->getRequestBodies()[0], TRUE)['Contacts'];
+    $this->assertSame(['124'], array_column($sent, 'ContactNumber'));
+  }
+
+  public function testPushBatchRejectsResponseInADifferentOrder(): void {
+    $this->createMockHandler([
+      json_encode([
+        'Contacts' => [
+          ['ContactID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'Name' => 'John Doe - 124', 'ContactNumber' => '124', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+          ['ContactID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000001', 'Name' => 'Jane Doe - 123', 'ContactNumber' => '123', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+        ],
+      ]),
+    ]);
+    $contact = $this->getContactWithMockClient();
+
+    $this->expectException(CRM_Core_Exception::class);
+    $this->expectExceptionMessageMatches('/in the position of 123 sent/');
+    $contact->callPushBatchToXero([
+      $this->getMappedContact(),
+      $this->getMappedContact(['Name' => 'John Doe - 124', 'ContactNumber' => 124]),
+    ]);
+  }
+
+  public function testPushAddsTheBatchToTheXeroContactGroupInOneRequest(): void {
+    $contactIDs = [];
+    foreach (['Example Organization', 'Example Organization Two'] as $name) {
+      $contactIDs[] = $contactID = \Civi\Api4\Contact::create(FALSE)
+        ->setValues(['contact_type' => 'Organization', 'organization_name' => $name])
+        ->execute()
+        ->first()['id'];
+      \Civi\Api4\AccountContact::save(FALSE)
+        ->setMatch(['contact_id', 'plugin', 'connector_id'])
+        ->addRecord(['contact_id' => $contactID, 'plugin' => 'xero', 'connector_id' => 0, 'accounts_needs_update' => TRUE])
+        ->execute();
+    }
+    Civi::settings()->set('xero_contact_group', 'Members');
+    $cachedGroupId = new \ReflectionProperty(\CRM_Civixero_Contact::class, 'cachedContactGroupId');
+    $cachedGroupId->setAccessible(TRUE);
+    $cachedGroupId->setValue(NULL, NULL);
+    $this->createMockHandler([
+      json_encode([
+        'Contacts' => [
+          ['ContactID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000001', 'Name' => 'Example Organization', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+          ['ContactID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'Name' => 'Example Organization Two', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+        ],
+      ]),
+      json_encode(['ContactGroups' => [['ContactGroupID' => 'bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee', 'Name' => 'Members']]]),
+      json_encode(['Contacts' => []]),
+    ]);
+
+    try {
+      $this->getContactWithMockClient()->push(['connector_id' => 0]);
+    }
+    finally {
+      $cachedGroupId->setValue(NULL, NULL);
+    }
+
+    $bodies = $this->getRequestBodies();
+    $this->assertCount(3, $bodies);
+    $this->assertSame(
+      ['aaaaaaaa-bbbb-cccc-dddd-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-000000000002'],
+      array_column(json_decode($bodies[2], TRUE)['Contacts'], 'ContactID')
+    );
   }
 
 }
