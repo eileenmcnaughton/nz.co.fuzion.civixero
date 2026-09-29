@@ -13,8 +13,6 @@ use XeroAPI\XeroPHP\Api\AccountingApi;
  */
 class CRM_Civixero_Base {
 
-  private static array $singleton = [];
-
   /**
    * @var \League\OAuth2\Client\Token\AccessToken
    */
@@ -62,14 +60,12 @@ class CRM_Civixero_Base {
    * @throws \CRM_Core_Exception
    */
   public function __construct($parameters = []) {
-    $force = FALSE;
     $this->connector_id = $parameters['connector_id'] ?? 0;
     $this->settings = new CRM_Civixero_Settings($this->connector_id);
     $xeroConnect = $this->getXeroConnector($parameters);
     $this->_xero_access_token = $xeroConnect->getToken();
     $this->settings->saveToken($this->_xero_access_token);
     $this->_xero_tenant_id = $xeroConnect->getTenantID();
-    $this->singleton($this->_xero_access_token->getToken(), $this->_xero_tenant_id, $this->connector_id, $force);
   }
 
   public function getAccountingApiInstance(): AccountingApi {
@@ -123,39 +119,6 @@ class CRM_Civixero_Base {
    */
   protected function setAccountsContact($contact_id): void {
     $this->accounts_contact = $contact_id;
-  }
-
-  /**
-   * Singleton function.
-   *
-   * @param string $token
-   * @param string $tenant_id
-   * @param int $connector_id
-   * @param bool $force
-   *
-   * @return \CRM_Extension_System
-   */
-  protected function singleton($token, $tenant_id, $connector_id, $force = FALSE) {
-    if (!isset(self::$singleton[$connector_id]) || $force) {
-      require_once 'packages/Xero/Xero.php';
-      self::$singleton[$connector_id] = new Xero($token, $tenant_id);
-    }
-
-    return self::$singleton[$connector_id];
-  }
-
-  /**
-   * Get instance of Xero object for connecting with Xero.
-   *
-   * @param int $connector_id
-   *   The connector ID that is being synced. Unless nz.co.fuzion.connectors is
-   *   in play this will be 0.
-   *
-   * @return Xero
-   */
-  protected function getSingleton($connector_id) {
-    $this->connector_id = $connector_id;
-    return self::$singleton[$connector_id];
   }
 
   /**
