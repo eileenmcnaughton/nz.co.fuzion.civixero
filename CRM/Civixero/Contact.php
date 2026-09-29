@@ -769,8 +769,8 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    *          Contact Array as returned from API
    * @param string|null $xeroContactUUID
    *
-   * @return array|bool
-   *   Contact Object/ array as expected by accounts package
+   * @return array|false
+   *   The contact as pushToXero() expects it, or FALSE if a hook vetoed the push.
    */
   protected function mapToAccounts(array $contact, ?string $xeroContactUUID) {
     // Xero limits Name/FirstName/LastName/EmailAddress to 255 characters.
