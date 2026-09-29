@@ -83,7 +83,7 @@ class InvoiceSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     ]);
     $invoice = $this->getInvoiceWithMockClient();
 
-    $result = $invoice->callPushToXero($this->getMappedInvoice(), 0);
+    $result = $invoice->callPushToXero($this->getMappedInvoice());
 
     $this->assertEquals(
       'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
@@ -103,14 +103,14 @@ class InvoiceSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     ]);
     $invoice = $this->getInvoiceWithMockClient();
 
-    $invoice->callPushToXero($this->getMappedInvoice(), 0);
+    $invoice->callPushToXero($this->getMappedInvoice());
 
     $headers = $this->getRequestHeaders();
     $this->assertCount(1, $headers);
     $this->assertArrayHasKey('Idempotency-Key', $headers[0]);
     $key = $headers[0]['Idempotency-Key'][0];
     $this->assertLessThanOrEqual(128, strlen($key));
-    $this->assertStringStartsWith('civixero-invoice-CIVI123-', $key);
+    $this->assertStringStartsWith('civixero-invoices-', $key);
   }
 
   public function testPushToXeroRejectsMalformedStoredInvoiceIdBeforeCallingXero(): void {
@@ -123,7 +123,7 @@ class InvoiceSdkPushTest extends TestCase implements HeadlessInterface, HookInte
 
     $this->expectException(CRM_Core_Exception::class);
     $this->expectExceptionMessageMatches('/not a valid Xero ID/');
-    $invoice->callPushToXero($mapped, 0);
+    $invoice->callPushToXero($mapped);
   }
 
   /**
@@ -148,15 +148,15 @@ class InvoiceSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     ]);
     $invoice = $this->getInvoiceWithMockClient();
 
-    $result = $invoice->callPushToXero($this->getMappedInvoice(), 0);
+    $result = $invoice->callPushToXero($this->getMappedInvoice());
 
     $this->assertEquals(['ValidationErrors' => ['Account code must be specified']], $result);
   }
 
   /**
-   * pushToXero() translates the SDK's 429 ApiException into
+   * pushBatchToXero() translates the SDK's 429 ApiException into
    * CRM_Civixero_Exception_XeroThrottle, which push() uses to abort and back
-   * off (see InvoicePushTest::testPushAbortsRemainingRecordsAndSetsRateLimitOnThrottle).
+   * off (see InvoicePushTest::testPushAbortsAndSetsRateLimitOnThrottle).
    */
   public function testPushToXeroTranslatesNewSdk429ResponseToThrottleException(): void {
     $this->createMockHandler([]);
@@ -165,7 +165,7 @@ class InvoiceSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     $invoice = $this->getInvoiceWithMockClient();
 
     try {
-      $invoice->callPushToXero($this->getMappedInvoice(), 0);
+      $invoice->callPushToXero($this->getMappedInvoice());
       $this->fail('Expected a CRM_Civixero_Exception_XeroThrottle to be thrown');
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
@@ -180,7 +180,72 @@ class InvoiceSdkPushTest extends TestCase implements HeadlessInterface, HookInte
 
     $this->expectException(CRM_Core_Exception::class);
     $this->expectExceptionMessageMatches('/Synchronization error/');
-    $invoice->callPushToXero($this->getMappedInvoice(), 0);
+    $invoice->callPushToXero($this->getMappedInvoice());
+  }
+
+  public function testPushBatchSendsInvoicesInOneRequestAndReturnsResultsInOrder(): void {
+    $this->createMockHandler([
+      json_encode([
+        'Invoices' => [
+          ['InvoiceID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000001', 'Type' => 'ACCREC', 'Status' => 'AUTHORISED', 'UpdatedDateUTC' => '2024-03-15T10:00:00', 'InvoiceNumber' => 'CIVI123'],
+          ['Type' => 'ACCREC', 'InvoiceNumber' => 'CIVI124', 'ValidationErrors' => [['Message' => 'Account code is not a valid code']]],
+        ],
+      ]),
+    ]);
+    $invoice = $this->getInvoiceWithMockClient();
+
+    $results = $invoice->callPushBatchToXero([
+      $this->getMappedInvoice(),
+      $this->getMappedInvoice(['InvoiceNumber' => 'CIVI124']),
+    ]);
+
+    $this->assertCount(1, $this->getRequestBodies());
+    $sent = json_decode($this->getRequestBodies()[0], TRUE)['Invoices'];
+    $this->assertSame(['CIVI123', 'CIVI124'], array_column($sent, 'InvoiceNumber'));
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-000000000001', $results[0]['Invoices']['Invoice']['InvoiceID']);
+    $this->assertEquals(['ValidationErrors' => ['Account code is not a valid code']], $results[1]);
+  }
+
+  public function testPushBatchFailsOnlyTheMalformedInvoice(): void {
+    $this->createMockHandler([
+      json_encode([
+        'Invoices' => [
+          ['InvoiceID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'Type' => 'ACCREC', 'Status' => 'AUTHORISED', 'UpdatedDateUTC' => '2024-03-15T10:00:00', 'InvoiceNumber' => 'CIVI124'],
+        ],
+      ]),
+    ]);
+    $invoice = $this->getInvoiceWithMockClient();
+
+    $results = $invoice->callPushBatchToXero([
+      $this->getMappedInvoice(['InvoiceID' => 'not-a-guid']),
+      FALSE,
+      $this->getMappedInvoice(['InvoiceNumber' => 'CIVI124']),
+    ]);
+
+    $this->assertInstanceOf(CRM_Core_Exception::class, $results[0]);
+    $this->assertFalse($results[1]);
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-000000000002', $results[2]['Invoices']['Invoice']['InvoiceID']);
+    $sent = json_decode($this->getRequestBodies()[0], TRUE)['Invoices'];
+    $this->assertSame(['CIVI124'], array_column($sent, 'InvoiceNumber'));
+  }
+
+  public function testPushBatchRejectsResponseInADifferentOrder(): void {
+    $this->createMockHandler([
+      json_encode([
+        'Invoices' => [
+          ['InvoiceID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'Type' => 'ACCREC', 'Status' => 'AUTHORISED', 'UpdatedDateUTC' => '2024-03-15T10:00:00', 'InvoiceNumber' => 'CIVI124'],
+          ['InvoiceID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000001', 'Type' => 'ACCREC', 'Status' => 'AUTHORISED', 'UpdatedDateUTC' => '2024-03-15T10:00:00', 'InvoiceNumber' => 'CIVI123'],
+        ],
+      ]),
+    ]);
+    $invoice = $this->getInvoiceWithMockClient();
+
+    $this->expectException(CRM_Core_Exception::class);
+    $this->expectExceptionMessageMatches('/returned CIVI124 in the position of CIVI123/');
+    $invoice->callPushBatchToXero([
+      $this->getMappedInvoice(),
+      $this->getMappedInvoice(['InvoiceNumber' => 'CIVI124']),
+    ]);
   }
 
 }

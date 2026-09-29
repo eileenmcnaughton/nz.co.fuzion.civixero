@@ -12,6 +12,11 @@ use XeroAPI\XeroPHP\AccountingObjectSerializer;
 class CRM_Civixero_Contact extends CRM_Civixero_Base {
 
   /**
+   * Maximum number of contacts sent to Xero in one request.
+   */
+  private const PUSH_BATCH_SIZE = 50;
+
+  /**
    * Cached Xero contact group ID for the configured group name.
    * FALSE means we already looked it up and it wasn't found.
    *
@@ -262,150 +267,169 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     }
     $errors = [];
 
-    foreach ($records as $record) {
-      try {
-        // Get the contact data.
-        $contact = Contact::get(FALSE)
-          ->addWhere('id', '=', $record['contact_id'])
-          ->execute()
-          ->first();
-        if ($contact['is_deleted']) {
-          AccountContact::update(FALSE)
-            ->addWhere('id', '=', $record['id'])
-            ->addValue('do_not_sync', TRUE)
-            ->execute();
-          continue;
-        }
-
-        // If the last data we pulled from Xero shows this contact as
-        // archived there, don't bother pushing to it again. Xero accepts
-        // updates to an archived contact without erroring, so nothing
-        // below would ever record an error to stop the retries - without
-        // this check the contact would be re-pushed every time it's
-        // re-flagged for update, forever.
-        $lastKnownXeroData = !empty($record['accounts_data']) ? json_decode($record['accounts_data'], TRUE) : NULL;
-        if (strtoupper($lastKnownXeroData['contact_status'] ?? '') === 'ARCHIVED') {
-          AccountContact::update(FALSE)
-            ->addWhere('id', '=', $record['id'])
-            ->addValue('do_not_sync', TRUE)
-            ->addValue('accounts_needs_update', FALSE)
-            ->execute();
-          continue;
-        }
-
-        // See if we have an email for the preferred location type?
-        $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
-        $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
-        $contact['phone'] = $this->getPreferredPhone($locationTypeToSync, $record['contact_id']);
-        // Address is different to the other location fields because it has multiple fields.
-        // We might return NULL from getPreferredAddress which means "do not sync to Xero".
-        // That way we preserve any partial address that we might have in Xero and it will be synced next time it's pulled to Civi.
-        $contactAddress = $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
-        if ($contactAddress) {
-          $contact = array_merge($contact, $contactAddress);
-        }
-
-        $xeroContactUUID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
-        $accountsContact = $this->mapToAccounts($contact, $xeroContactUUID);
-        if ($accountsContact === FALSE) {
-          // Hook vetoed the push - not a real error, so mark it resolved.
-          AccountContact::update(FALSE)
-            ->addWhere('id', '=', $record['id'])
-            ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
-            ->addValue('is_error_resolved', TRUE)
-            ->addValue('accounts_needs_update', FALSE)
-            ->execute();
-          continue;
-        }
-        $result = $this->pushToXero($accountsContact, $params['connector_id']);
-        $responseErrors = $this->validateResponse($result);
-        if ($responseErrors) {
-          $record['error_data'] = json_encode($responseErrors);
-          throw new CRM_Core_Exception('Error in response from Xero');
-        }
-
-        /* When Xero returns an ID that matches an existing account_contact, update it instead. */
-        $matchingAccountContact = AccountContact::get(FALSE)
-          ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
-          ->addWhere('plugin', '=', $this->_plugin)
-          ->addWhere('connector_id', '=', $params['connector_id'])
-          ->execute()->first() ?? [];
-
-        if (count($matchingAccountContact)) {
-          $contactIsDeleted = FALSE;
-          if (!empty($matchingAccountContact['contact_id'])) {
-            $contactIsDeleted = Contact::get(FALSE)
-              ->addWhere('id', '=', $matchingAccountContact['contact_id'])
-              ->addWhere('is_deleted', '=', TRUE)
-              ->execute()
-              ->first()['is_deleted'] ?? FALSE;
-          }
-          if (empty($matchingAccountContact['contact_id']) || $contactIsDeleted) {
-            \Civi::log(E::SHORT_NAME)->error(E::ts('Error updating existing contact for %1', [1 => $record['contact_id']]));
-            AccountContact::delete(FALSE)
+    $toPush = [];
+    try {
+      foreach ($records as $record) {
+        try {
+          // Get the contact data.
+          $contact = Contact::get(FALSE)
+            ->addWhere('id', '=', $record['contact_id'])
+            ->execute()
+            ->first();
+          if ($contact['is_deleted']) {
+            AccountContact::update(FALSE)
               ->addWhere('id', '=', $record['id'])
+              ->addValue('do_not_sync', TRUE)
               ->execute();
-            $record['do_not_sync'] = 0;
-            $record['id'] = $matchingAccountContact['id'];
+            continue;
           }
-          elseif ($matchingAccountContact['contact_id'] != $record['contact_id']) {
-            throw new CRM_Core_Exception(ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2. ', [
-              1 => $record['contact_id'],
-              2 => $matchingAccountContact['contact_id'],
-            ]), 'xero_dup_contact');
+
+          // If the last data we pulled from Xero shows this contact as
+          // archived there, don't bother pushing to it again. Xero accepts
+          // updates to an archived contact without erroring, so nothing
+          // below would ever record an error to stop the retries - without
+          // this check the contact would be re-pushed every time it's
+          // re-flagged for update, forever.
+          $lastKnownXeroData = !empty($record['accounts_data']) ? json_decode($record['accounts_data'], TRUE) : NULL;
+          if (strtoupper($lastKnownXeroData['contact_status'] ?? '') === 'ARCHIVED') {
+            AccountContact::update(FALSE)
+              ->addWhere('id', '=', $record['id'])
+              ->addValue('do_not_sync', TRUE)
+              ->addValue('accounts_needs_update', FALSE)
+              ->execute();
+            continue;
           }
+
+          // See if we have an email for the preferred location type?
+          $locationTypeToSync = (int) Civi::settings()->get('xero_sync_location_type');
+          $contact['email'] = $this->getPreferredEmail($locationTypeToSync, $record['contact_id']);
+          $contact['phone'] = $this->getPreferredPhone($locationTypeToSync, $record['contact_id']);
+          // Address is different to the other location fields because it has multiple fields.
+          // We might return NULL from getPreferredAddress which means "do not sync to Xero".
+          // That way we preserve any partial address that we might have in Xero and it will be synced next time it's pulled to Civi.
+          $contactAddress = $this->getPreferredAddress($locationTypeToSync, $record['contact_id']);
+          if ($contactAddress) {
+            $contact = array_merge($contact, $contactAddress);
+          }
+
+          $xeroContactUUID = !empty($record['accounts_contact_id']) ? $record['accounts_contact_id'] : NULL;
+          $accountsContact = $this->mapToAccounts($contact, $xeroContactUUID);
+          if ($accountsContact === FALSE) {
+            // Hook vetoed the push - not a real error, so mark it resolved.
+            AccountContact::update(FALSE)
+              ->addWhere('id', '=', $record['id'])
+              ->addValue('error_data', json_encode(['error' => 'Ignored via accountPushAlterMapped hook']))
+              ->addValue('is_error_resolved', TRUE)
+              ->addValue('accounts_needs_update', FALSE)
+              ->execute();
+            continue;
+          }
+          $toPush[] = ['record' => $record, 'mapped' => $accountsContact];
+        }
+        catch (CRM_Civixero_Exception_XeroThrottle $e) {
+          throw $e;
+        }
+        catch (\Exception $e) {
+          $errors[] = $this->recordPushFailure($record, $e);
+        }
+      }
+
+      // Every request counts against Xero's daily API call limit, so send
+      // the contacts together rather than one request each.
+      $batches = array_chunk($toPush, self::PUSH_BATCH_SIZE);
+      while ($batch = array_shift($batches)) {
+        try {
+          $results = $this->pushBatchToXero(array_column($batch, 'mapped'));
+        }
+        catch (CRM_Core_Exception $e) {
+          if (count($batch) > 1 && $e->getErrorCode() === 'xero_400') {
+            // Xero rejected the whole request. Push each contact on its own
+            // so only the one it objects to fails.
+            array_unshift($batches, ...array_chunk($batch, 1));
+            continue;
+          }
+          $results = array_fill(0, count($batch), $e);
         }
 
-        $record['error_data'] = NULL;
-        if (empty($record['accounts_contact_id'])) {
-          $record['accounts_contact_id'] = $result['Contacts']['Contact']['ContactID'];
-        }
-        $record['accounts_modified_date'] = $result['Contacts']['Contact']['UpdatedDateUTC'];
-        $record['accounts_data'] = json_encode($result['Contacts']['Contact']);
-        $record['accounts_display_name'] = $result['Contacts']['Contact']['Name'];
-        // This will update the last sync date.
-        unset($record['last_sync_date']);
-        // Xero accepts an update to a contact that has been archived there
-        // without erroring - it just doesn't unarchive it. If that's what
-        // just happened, stop trying to push to this contact again:
-        // further updates would be equally pointless, and (per the site
-        // owner) are not wanted for archived contacts.
-        $isArchivedInXero = strtoupper($result['Contacts']['Contact']['ContactStatus'] ?? '') === 'ARCHIVED';
-        AccountContact::update(FALSE)
-          ->setValues($record)
-          ->addValue('accounts_needs_update', FALSE)
-          ->addValue('do_not_sync', $isArchivedInXero)
-          ->execute();
-        if (!$isArchivedInXero) {
-          $this->addContactToXeroGroup($record['accounts_contact_id']);
-        }
-      }
-      catch (CRM_Civixero_Exception_XeroThrottle $e) {
-        $errors[] = E::ts('Contact Push aborted due to throttling by Xero');
-        CRM_Civixero_Base::setApiRateLimitExceeded($e->getRetryAfter());
-        break;
-      }
-      catch (\Exception $e) {
-        // Note: Using \Exception here as we may get various exception types from the Xero API/SDK
-        $errorMessage = E::ts('Failed to push contactID: %1') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
-          . E::ts('Error: ') . $e->getMessage() . '; '
-          . E::ts('Record: ') . print_r($record,TRUE) . '; '
-          . E::ts('Contact Push failed');
+        $pushedXeroContactIDs = [];
+        foreach ($batch as $index => ['record' => $record]) {
+          try {
+            $result = $results[$index];
+            if ($result instanceof \Exception) {
+              throw $result;
+            }
+            $responseErrors = $this->validateResponse($result);
+            if ($responseErrors) {
+              $record['error_data'] = json_encode($responseErrors);
+              throw new CRM_Core_Exception('Error in response from Xero');
+            }
 
-        // Deliberately do NOT overwrite accounts_data here - it holds the
-        // last-known Xero snapshot for this record, and $contact is the
-        // CiviCRM-side data, not Xero's - writing it over accounts_data on
-        // every push failure destroys that snapshot for no benefit.
-        AccountContact::update(FALSE)
-          ->addWhere('id', '=', $record['id'])
-          ->addValue('is_error_resolved', FALSE)
-          ->addValue('error_data', json_encode([
-            'error' => $e->getMessage(),
-            'error_data' => $record['error_data']
-          ]))
-          ->execute();
-        $errors[] = $errorMessage;
+            /* When Xero returns an ID that matches an existing account_contact, update it instead. */
+            $matchingAccountContact = AccountContact::get(FALSE)
+              ->addWhere('accounts_contact_id', '=', $result['Contacts']['Contact']['ContactID'])
+              ->addWhere('plugin', '=', $this->_plugin)
+              ->addWhere('connector_id', '=', $params['connector_id'])
+              ->execute()->first() ?? [];
+
+            if (count($matchingAccountContact)) {
+              $contactIsDeleted = FALSE;
+              if (!empty($matchingAccountContact['contact_id'])) {
+                $contactIsDeleted = Contact::get(FALSE)
+                  ->addWhere('id', '=', $matchingAccountContact['contact_id'])
+                  ->addWhere('is_deleted', '=', TRUE)
+                  ->execute()
+                  ->first()['is_deleted'] ?? FALSE;
+              }
+              if (empty($matchingAccountContact['contact_id']) || $contactIsDeleted) {
+                \Civi::log(E::SHORT_NAME)->error(E::ts('Error updating existing contact for %1', [1 => $record['contact_id']]));
+                AccountContact::delete(FALSE)
+                  ->addWhere('id', '=', $record['id'])
+                  ->execute();
+                $record['do_not_sync'] = 0;
+                $record['id'] = $matchingAccountContact['id'];
+              }
+              elseif ($matchingAccountContact['contact_id'] != $record['contact_id']) {
+                throw new CRM_Core_Exception(ts('Attempt to sync Contact %1 to Xero entry for existing Contact %2. ', [
+                  1 => $record['contact_id'],
+                  2 => $matchingAccountContact['contact_id'],
+                ]), 'xero_dup_contact');
+              }
+            }
+
+            $record['error_data'] = NULL;
+            if (empty($record['accounts_contact_id'])) {
+              $record['accounts_contact_id'] = $result['Contacts']['Contact']['ContactID'];
+            }
+            $record['accounts_modified_date'] = $result['Contacts']['Contact']['UpdatedDateUTC'];
+            $record['accounts_data'] = json_encode($result['Contacts']['Contact']);
+            $record['accounts_display_name'] = $result['Contacts']['Contact']['Name'];
+            // This will update the last sync date.
+            unset($record['last_sync_date']);
+            // Xero accepts an update to a contact that has been archived there
+            // without erroring - it just doesn't unarchive it. If that's what
+            // just happened, stop trying to push to this contact again:
+            // further updates would be equally pointless, and (per the site
+            // owner) are not wanted for archived contacts.
+            $isArchivedInXero = strtoupper($result['Contacts']['Contact']['ContactStatus'] ?? '') === 'ARCHIVED';
+            AccountContact::update(FALSE)
+              ->setValues($record)
+              ->addValue('accounts_needs_update', FALSE)
+              ->addValue('do_not_sync', $isArchivedInXero)
+              ->execute();
+            if (!$isArchivedInXero) {
+              $pushedXeroContactIDs[] = $record['accounts_contact_id'];
+            }
+          }
+          catch (\Exception $e) {
+            $errors[] = $this->recordPushFailure($record, $e);
+          }
+        }
+        $this->addContactsToXeroGroup($pushedXeroContactIDs);
       }
+    }
+    catch (CRM_Civixero_Exception_XeroThrottle $e) {
+      $errors[] = E::ts('Contact Push aborted due to throttling by Xero');
+      CRM_Civixero_Base::setApiRateLimitExceeded($e->getRetryAfter());
     }
     if ($errors) {
       // since we expect this to wind up in the job log we'll print the errors
@@ -415,77 +439,122 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   }
 
   /**
-   * Push a single mapped contact to Xero.
+   * Record a failed push on the AccountContact.
    *
-   * @param array $accountsContact
-   *   Mapped contact array as produced by mapToAccounts().
-   * @param int $connector_id
+   * @param array $record
+   * @param \Exception $e
    *
-   * @return array
-   *   The raw Xero response.
-   *
-   * @throws \CRM_Core_Exception
+   * @return string
+   *   The message for the job log.
    */
-  protected function pushToXero(array $accountsContact, $connector_id) {
-    try {
-      return $this->pushViaApi($accountsContact);
-    }
-    catch (\XeroAPI\XeroPHP\ApiException $e) {
-      $this->throwIfRateLimited($e);
-      throw new CRM_Core_Exception(
-        'Synchronization error ' . $e->getMessage(),
-        'xero_' . $e->getCode(),
-        ['response' => $e->getResponseBody()]
-      );
-    }
+  private function recordPushFailure(array $record, \Exception $e): string {
+    $errorMessage = E::ts('Failed to push contactID: %1') . $record['contact_id'] . ' (' . $record['accounts_contact_id'] . ' )'
+      . E::ts('Error: ') . $e->getMessage() . '; '
+      . E::ts('Record: ') . print_r($record, TRUE) . '; '
+      . E::ts('Contact Push failed');
+
+    // Deliberately do NOT overwrite accounts_data here - it holds the
+    // last-known Xero snapshot for this record.
+    AccountContact::update(FALSE)
+      ->addWhere('id', '=', $record['id'])
+      ->addValue('is_error_resolved', FALSE)
+      ->addValue('error_data', json_encode([
+        'error' => $e->getMessage(),
+        'error_data' => $record['error_data'],
+      ]))
+      ->execute();
+    return $errorMessage;
   }
 
   /**
-   * Push a single mapped contact to Xero via the official SDK.
+   * Push mapped contacts to Xero in one request.
    *
-   * Mirrors Invoice::pushViaApi()/BankTransaction::pushViaApi()'s
-   * shape-preserving adapter: returns the exact legacy-shaped array
-   * (['Contacts']['Contact'][...]] or ['ValidationErrors' => [...]]) that
-   * push() already reads, so none of push()'s downstream field-extraction
-   * or dedupe logic needs to change.
-   *
-   * @param array $mapped
-   *   CamelCase-keyed contact array as produced by mapToAccounts().
+   * @param array[] $mappedContacts
+   *   Contacts as produced by mapToAccounts().
    *
    * @return array
+   *   One entry per contact, with the same keys: the legacy-shaped result
+   *   (['Contacts']['Contact'] or ['ValidationErrors']), or the
+   *   CRM_Core_Exception that contact failed with.
    *
+   * @throws \CRM_Civixero_Exception_XeroThrottle
+   * @throws \CRM_Core_Exception
+   *   If Xero rejects the whole request.
+   */
+  protected function pushBatchToXero(array $mappedContacts): array {
+    $results = $xeroContacts = [];
+    foreach ($mappedContacts as $key => $mapped) {
+      try {
+        $xeroContacts[$key] = $this->mappedArrayToXeroContact($mapped);
+      }
+      catch (CRM_Core_Exception $e) {
+        // Fail a malformed contact on its own rather than the whole request.
+        $results[$key] = $e;
+      }
+    }
+    if ($xeroContacts) {
+      try {
+        $returned = $this->pushViaApi(array_values($xeroContacts));
+      }
+      catch (\XeroAPI\XeroPHP\ApiException $e) {
+        $this->throwIfRateLimited($e);
+        throw new CRM_Core_Exception(
+          'Synchronization error ' . $e->getMessage(),
+          'xero_' . $e->getCode(),
+          ['response' => $e->getResponseBody()]
+        );
+      }
+      foreach (array_keys($xeroContacts) as $position => $key) {
+        $results[$key] = $returned[$position];
+      }
+    }
+    return array_replace($mappedContacts, $results);
+  }
+
+  /**
+   * Send contacts to Xero via the official SDK.
+   *
+   * Returns the legacy-shaped arrays (['Contacts']['Contact'][...]] or
+   * ['ValidationErrors' => [...]]) that push() reads.
+   *
+   * @param \XeroAPI\XeroPHP\Models\Accounting\Contact[] $xeroContacts
+   *
+   * @return array[]
+   *   One result per contact, in the order sent.
+   *
+   * @throws \XeroAPI\XeroPHP\ApiException
    * @throws \CRM_Core_Exception
    */
-  protected function pushViaApi(array $mapped): array {
-    $xeroContact = $this->mappedArrayToXeroContact($mapped);
-
+  protected function pushViaApi(array $xeroContacts): array {
     $contacts = new \XeroAPI\XeroPHP\Models\Accounting\Contacts();
-    $contacts->setContacts([$xeroContact]);
+    $contacts->setContacts($xeroContacts);
 
     // summarize_errors = FALSE: per-contact validation errors come back on
-    // the contact object instead of a blanket HTTP 400.
+    // each contact instead of a blanket HTTP 400 for the whole request.
     $response = $this->getAccountingApiInstance()->updateOrCreateContacts(
       $this->getTenantID(),
       $contacts,
       FALSE,
-      $this->generateIdempotencyKey('contact-' . ($mapped['ContactNumber'] ?? '0'), $mapped)
+      $this->generateIdempotencyKey('contacts', array_map(fn($xeroContact) => $xeroContact->getContactNumber(), $xeroContacts))
     );
 
-    $returned = $response->getContacts()[0] ?? NULL;
-    if ($returned === NULL) {
-      throw new CRM_Core_Exception('Xero returned no contact from updateOrCreateContacts');
+    $returnedContacts = $response->getContacts() ?? [];
+    $this->assertReturnedInSentOrder($xeroContacts, $returnedContacts, 'getContactNumber');
+    $results = [];
+    foreach ($returnedContacts as $returned) {
+      $validationErrors = $this->extractValidationErrors($returned);
+      if ($validationErrors !== []) {
+        $results[] = ['ValidationErrors' => $validationErrors];
+        continue;
+      }
+      $snapshot = json_decode((string) $returned, TRUE) ?: [];
+      $updated = $returned->getUpdatedDateUtcAsDate();
+      $snapshot['ContactID'] = $returned->getContactId();
+      $snapshot['UpdatedDateUTC'] = $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s');
+      $snapshot['Name'] = $returned->getName();
+      $results[] = ['Contacts' => ['Contact' => $snapshot]];
     }
-    $validationErrors = $this->extractValidationErrors($returned);
-    if ($validationErrors !== []) {
-      return ['ValidationErrors' => $validationErrors];
-    }
-
-    $snapshot = json_decode((string) $returned, TRUE) ?: [];
-    $updated = $returned->getUpdatedDateUtcAsDate();
-    $snapshot['ContactID'] = $returned->getContactId();
-    $snapshot['UpdatedDateUTC'] = $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s');
-    $snapshot['Name'] = $returned->getName();
-    return ['Contacts' => ['Contact' => $snapshot]];
+    return $results;
   }
 
   /**
@@ -549,17 +618,17 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   }
 
   /**
-   * Add a contact to the configured Xero Contact Group after a successful push.
+   * Add contacts to the configured Xero Contact Group after a successful push.
    *
    * Does nothing if no group name is configured in settings.
    * Logs a warning if the group cannot be found; does not throw so as not to
    * disrupt the contact push itself.
    *
-   * @param string $xeroContactId
+   * @param string[] $xeroContactIds
    */
-  private function addContactToXeroGroup(string $xeroContactId): void {
+  private function addContactsToXeroGroup(array $xeroContactIds): void {
     $groupName = Civi::settings()->get('xero_contact_group');
-    if (empty($groupName)) {
+    if (empty($groupName) || !$xeroContactIds) {
       return;
     }
     $groupId = $this->getXeroContactGroupId($groupName);
@@ -567,19 +636,20 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       return;
     }
     try {
-      $contact = new \XeroAPI\XeroPHP\Models\Accounting\Contact();
-      $contact->setContactId($xeroContactId);
       $contacts = new \XeroAPI\XeroPHP\Models\Accounting\Contacts();
-      $contacts->setContacts([$contact]);
+      $contacts->setContacts(array_map(
+        fn(string $xeroContactId) => (new \XeroAPI\XeroPHP\Models\Accounting\Contact())->setContactId($xeroContactId),
+        $xeroContactIds
+      ));
       $this->getAccountingApiInstance()->createContactGroupContacts(
         $this->getTenantID(),
         $groupId,
         $contacts
       );
-      \Civi::log(E::SHORT_NAME)->info(sprintf('CiviXero: Successfully added contact %s to Xero group "%s"', $xeroContactId, $groupName));
+      \Civi::log(E::SHORT_NAME)->info(sprintf('CiviXero: Successfully added contacts %s to Xero group "%s"', implode(', ', $xeroContactIds), $groupName));
     }
     catch (\Exception $e) {
-      \Civi::log(E::SHORT_NAME)->warning(sprintf('CiviXero: Failed to add contact %s to Xero group "%s": %s', $xeroContactId, $groupName, $e->getMessage()));
+      \Civi::log(E::SHORT_NAME)->warning(sprintf('CiviXero: Failed to add contacts %s to Xero group "%s": %s', implode(', ', $xeroContactIds), $groupName, $e->getMessage()));
     }
   }
 
@@ -770,7 +840,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
    * @param string|null $xeroContactUUID
    *
    * @return array|false
-   *   The contact as pushToXero() expects it, or FALSE if a hook vetoed the push.
+   *   The contact as pushBatchToXero() expects it, or FALSE if a hook vetoed the push.
    */
   protected function mapToAccounts(array $contact, ?string $xeroContactUUID) {
     // Xero limits Name/FirstName/LastName/EmailAddress to 255 characters.
@@ -830,7 +900,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
     if (!$proceed) {
       return FALSE;
     }
-    // Flat array - pushViaApi() reads $mapped['Name'] directly, so don't wrap it in a batch.
+    // Flat array - pushBatchToXero() takes one mapped contact per entry and batches them itself.
     return $new_contact;
   }
 

@@ -30,8 +30,8 @@ class BankTransactionSdkPushTest extends TestCase implements HeadlessInterface, 
   }
 
   /**
-   * CRM_Civixero_BankTransaction no longer overrides pushToXero() after
-   * PR #215 - it inherits CRM_Civixero_Invoice::pushToXero(), which calls
+   * CRM_Civixero_BankTransaction no longer overrides pushBatchToXero() after
+   * PR #215 - it inherits CRM_Civixero_Invoice::pushBatchToXero(), which calls
    * $this->pushViaApi(). Invoice and BankTransaction each declared their own
    * *private* pushViaApi() - and private methods aren't virtual/overridable
    * in PHP, so $this->pushViaApi() called from code textually defined in
@@ -70,7 +70,7 @@ class BankTransactionSdkPushTest extends TestCase implements HeadlessInterface, 
       'BankAccount' => ['Code' => '090'],
     ]];
 
-    $result = $bankTransaction->callPushToXero($mapped, 0);
+    $result = $bankTransaction->callPushToXero($mapped);
 
     $urls = $this->getRequestUrls();
     $this->assertCount(1, $urls);
@@ -79,6 +79,38 @@ class BankTransactionSdkPushTest extends TestCase implements HeadlessInterface, 
       'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       $result['BankTransactions']['BankTransaction']['BankTransactionID']
     );
+  }
+
+  public function testBankTransactionBatchIsSentInOneRequest(): void {
+    $this->createMockHandler([
+      json_encode([
+        'BankTransactions' => [
+          ['BankTransactionID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000001', 'Reference' => 'First', 'Status' => 'AUTHORISED', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+          ['BankTransactionID' => 'aaaaaaaa-bbbb-cccc-dddd-000000000002', 'Reference' => 'Second', 'Status' => 'AUTHORISED', 'UpdatedDateUTC' => '2024-03-15T10:00:00'],
+        ],
+      ]),
+    ]);
+    $this->setUpClientWithHistoryContainer();
+    $bankTransaction = new BankTransactionSdkPushTestable([]);
+    $bankTransaction->mockClient = $this->getGuzzleClient();
+    $mapped = fn(string $reference) => [
+      [
+        'Type' => 'RECEIVE',
+        'Contact' => ['ContactNumber' => 55],
+        'Date' => '2024-03-15',
+        'Status' => 'AUTHORISED',
+        'Reference' => $reference,
+        'LineItems' => ['LineItem' => [['Description' => 'Donation', 'Quantity' => 1, 'UnitAmount' => 25, 'AccountCode' => '400']]],
+        'BankAccount' => ['Code' => '090'],
+      ],
+    ];
+
+    $results = $bankTransaction->callPushBatchToXero([$mapped('First'), $mapped('Second')]);
+
+    $this->assertCount(1, $this->getRequestUrls());
+    $this->assertSame(['First', 'Second'], array_column(json_decode($this->getRequestBodies()[0], TRUE)['BankTransactions'], 'Reference'));
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-000000000001', $results[0]['BankTransactions']['BankTransaction']['BankTransactionID']);
+    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-000000000002', $results[1]['BankTransactions']['BankTransaction']['BankTransactionID']);
   }
 
 }

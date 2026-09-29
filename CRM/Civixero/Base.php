@@ -298,6 +298,35 @@ class CRM_Civixero_Base {
   }
 
   /**
+   * Check Xero returned one record for each record sent, in the order sent.
+   *
+   * Push results are matched back to CiviCRM records by position, so a
+   * mismatch would link Xero records to the wrong CiviCRM ones.
+   *
+   * @param array $sent
+   *   The SDK models sent.
+   * @param array $returned
+   *   The SDK models Xero returned.
+   * @param string $getter
+   *   Getter for a field Xero echoes back, such as 'getContactNumber'. It is
+   *   compared wherever both sides have a value.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function assertReturnedInSentOrder(array $sent, array $returned, string $getter): void {
+    if (count($returned) !== count($sent)) {
+      throw new CRM_Core_Exception(sprintf('Xero returned %d records for the %d sent', count($returned), count($sent)));
+    }
+    foreach (array_values($returned) as $position => $model) {
+      $sentValue = (string) $sent[$position]->$getter();
+      $returnedValue = (string) $model->$getter();
+      if ($sentValue !== '' && $returnedValue !== '' && $sentValue !== $returnedValue) {
+        throw new CRM_Core_Exception(sprintf('Xero returned %s in the position of %s sent', $returnedValue, $sentValue));
+      }
+    }
+  }
+
+  /**
    * Run a paged pull loop against Xero, handling rate-limiting, auth
    * failures, and per-page errors uniformly.
    *

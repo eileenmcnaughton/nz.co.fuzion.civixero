@@ -9,6 +9,7 @@ use XeroAPI\XeroPHP\AccountingObjectSerializer;
 use XeroAPI\XeroPHP\Models\Accounting\Invoice;
 use XeroAPI\XeroPHP\Models\Accounting\Invoices;
 use XeroAPI\XeroPHP\Models\Accounting\LineItemTracking;
+use XeroAPI\XeroPHP\Models\Accounting\ModelInterface;
 
 /**
  * Class CRM_Civixero_Invoice.
@@ -19,6 +20,11 @@ use XeroAPI\XeroPHP\Models\Accounting\LineItemTracking;
  * civicrm_account_sync extension.
  */
 class CRM_Civixero_Invoice extends CRM_Civixero_Base {
+
+  /**
+   * Maximum number of records sent to Xero in one request.
+   */
+  protected const PUSH_BATCH_SIZE = 50;
 
   /**
    * Error codes for CRM_Core_Exceptions thrown by getMappedAccountInvoice()/mapToAccounts()
@@ -370,6 +376,7 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     $errors = [];
 
     $count = 0;
+    $toPush = [];
     try {
       foreach ($accountInvoices as $accountInvoice) {
         try {
@@ -411,26 +418,50 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
           }
           continue;
         }
+        $toPush[] = ['record' => $accountInvoice, 'mapped' => $mappedAccountInvoice];
+      }
+
+      // Every request counts against Xero's daily API call limit, so send
+      // the records together rather than one request each.
+      $batches = array_chunk($toPush, self::PUSH_BATCH_SIZE);
+      while ($batch = array_shift($batches)) {
         try {
-          $pushResult = $this->pushToXero($mappedAccountInvoice, $params['connector_id']);
-          $responseErrors = $this->savePushResponse($pushResult, $accountInvoice);
-          $count++;
+          $results = $this->pushBatchToXero(array_column($batch, 'mapped'));
         }
         catch (CRM_Core_Exception $e) {
-          $errorMessage = E::ts('Failed to push contributionID: %1', [1 => $accountInvoice['contribution_id']])
-            . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
-            . E::ts('%1 Push failed', [1 => $this->xero_entity]);
+          if (count($batch) > 1 && $e->getErrorCode() === 'xero_400') {
+            // Xero rejected the whole request. Push each record on its own
+            // so only the one it objects to fails.
+            array_unshift($batches, ...array_chunk($batch, 1));
+            continue;
+          }
+          $results = array_fill(0, count($batch), $e);
+        }
 
-          AccountInvoice::update(FALSE)
-            ->addWhere('id', '=', $accountInvoice['id'])
-            ->addValue('is_error_resolved', FALSE)
-            ->addValue('error_data', json_encode([
-              'error' => $e->getMessage(),
-              'error_data' => $accountInvoice['error_data'],
-            ]))
-            ->addValue('accounts_data', json_encode($accountInvoice))
-            ->execute();
-          $errors[] = $errorMessage;
+        foreach ($batch as $index => ['record' => $accountInvoice]) {
+          try {
+            if ($results[$index] instanceof \Exception) {
+              throw $results[$index];
+            }
+            $responseErrors = $this->savePushResponse($results[$index], $accountInvoice);
+            $count++;
+          }
+          catch (CRM_Core_Exception $e) {
+            $errorMessage = E::ts('Failed to push contributionID: %1', [1 => $accountInvoice['contribution_id']])
+              . E::ts('Error: ') . $e->getMessage() . print_r($responseErrors ?? [], TRUE)
+              . E::ts('%1 Push failed', [1 => $this->xero_entity]);
+
+            AccountInvoice::update(FALSE)
+              ->addWhere('id', '=', $accountInvoice['id'])
+              ->addValue('is_error_resolved', FALSE)
+              ->addValue('error_data', json_encode([
+                'error' => $e->getMessage(),
+                'error_data' => $accountInvoice['error_data'],
+              ]))
+              ->addValue('accounts_data', json_encode($accountInvoice))
+              ->execute();
+            $errors[] = $errorMessage;
+          }
         }
       }
     }
@@ -1095,32 +1126,53 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   }
 
   /**
-   * Push record to Xero.
+   * Push mapped records to Xero in one request.
    *
-   * @param array|false $accountsInvoice
+   * @param array $mappedRecords
+   *   Records as produced by mapToAccounts(), or FALSE for one with nothing
+   *   to push.
    *
-   * @param int $connector_id
-   *   ID of the connector (0 if nz.co.fuzion.connectors not installed.
+   * @return array
+   *   One entry per record, with the same keys: the legacy-shaped result that
+   *   savePushResponse() consumes (FALSE where there was nothing to push), or
+   *   the CRM_Core_Exception that record failed with.
    *
-   * @return array|false
+   * @throws \CRM_Civixero_Exception_XeroThrottle
    * @throws \CRM_Core_Exception
+   *   If Xero rejects the whole request.
    */
-  protected function pushToXero($accountsInvoice, $connector_id) {
-    if ($accountsInvoice === FALSE) {
-      return FALSE;
+  protected function pushBatchToXero(array $mappedRecords): array {
+    $results = $models = [];
+    foreach ($mappedRecords as $key => $accountsInvoice) {
+      if ($accountsInvoice === FALSE) {
+        $results[$key] = FALSE;
+        continue;
+      }
+      try {
+        $models[$key] = $this->mappedArrayToXeroModel($this->normalizeMappedInvoice($accountsInvoice));
+      }
+      catch (CRM_Core_Exception $e) {
+        // Fail a malformed record on its own rather than the whole request.
+        $results[$key] = $e;
+      }
     }
-    $mapped = $this->normalizeMappedInvoice($accountsInvoice);
-    try {
-      return $this->pushViaApi($mapped);
+    if ($models) {
+      try {
+        $returned = $this->pushViaApi(array_values($models));
+      }
+      catch (\XeroAPI\XeroPHP\ApiException $e) {
+        $this->throwIfRateLimited($e);
+        throw new CRM_Core_Exception(
+          'Synchronization error ' . $e->getMessage(),
+          'xero_' . $e->getCode(),
+          ['response' => $e->getResponseBody()]
+        );
+      }
+      foreach (array_keys($models) as $position => $key) {
+        $results[$key] = $returned[$position];
+      }
     }
-    catch (\XeroAPI\XeroPHP\ApiException $e) {
-      $this->throwIfRateLimited($e);
-      throw new CRM_Core_Exception(
-        'Synchronization error ' . $e->getMessage(),
-        'xero_' . $e->getCode(),
-        ['response' => $e->getResponseBody()]
-      );
-    }
+    return array_replace($mappedRecords, $results);
   }
 
   /**
@@ -1424,16 +1476,13 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
   }
 
   /**
-   * Push one invoice via AccountingApi::updateOrCreateInvoices.
+   * Convert a mapped invoice (from mapToAccounts()) to an SDK Invoice model.
    *
-   * @return array
-   *   Legacy-shaped result consumed by savePushResponse():
-   *   ['Invoices' => ['Invoice' => snapshot]] or ['ValidationErrors' => [...]].
+   * @return \XeroAPI\XeroPHP\Models\Accounting\Invoice
    *
-   * @throws \XeroAPI\XeroPHP\ApiException
    * @throws \CRM_Core_Exception
    */
-  protected function pushViaApi(array $mapped): array {
+  protected function mappedArrayToXeroModel(array $mapped): ModelInterface {
     $invoice = new Invoice();
     $invoice->setType($mapped['Type'] ?? 'ACCREC');
     if (!empty($mapped['InvoiceID'])) {
@@ -1466,35 +1515,52 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
       $invoice->setLineAmountTypes($mapped['LineAmountTypes']);
     }
     $invoice->setLineItems($this->buildSdkLineItems($mapped));
+    return $invoice;
+  }
 
+  /**
+   * Send invoices via AccountingApi::updateOrCreateInvoices.
+   *
+   * @param \XeroAPI\XeroPHP\Models\Accounting\Invoice[] $invoices
+   *
+   * @return array[]
+   *   One legacy-shaped result per invoice, in the order sent:
+   *   ['Invoices' => ['Invoice' => snapshot]] or ['ValidationErrors' => [...]].
+   *
+   * @throws \XeroAPI\XeroPHP\ApiException
+   * @throws \CRM_Core_Exception
+   */
+  protected function pushViaApi(array $invoices): array {
     $collection = new Invoices();
-    $collection->setInvoices([$invoice]);
+    $collection->setInvoices($invoices);
 
     // summarize_errors = FALSE: per-invoice validation errors come back on
-    // the invoice object instead of a blanket HTTP 400.
+    // each invoice instead of a blanket HTTP 400 for the whole request.
     $response = $this->getAccountingApiInstance()->updateOrCreateInvoices(
       $this->getTenantID(),
       $collection,
       FALSE,
       NULL,
-      $this->generateIdempotencyKey('invoice-' . ($mapped['InvoiceNumber'] ?? '0'), $mapped)
+      $this->generateIdempotencyKey('invoices', array_map(fn(Invoice $invoice) => $invoice->getInvoiceNumber(), $invoices))
     );
 
-    $returned = $response->getInvoices()[0] ?? NULL;
-    if ($returned === NULL) {
-      throw new CRM_Core_Exception('CWS CiviXero Plus: Xero returned no invoice from updateOrCreateInvoices');
+    $returnedInvoices = $response->getInvoices() ?? [];
+    $this->assertReturnedInSentOrder($invoices, $returnedInvoices, 'getInvoiceNumber');
+    $results = [];
+    foreach ($returnedInvoices as $returned) {
+      $validationErrors = $this->extractValidationErrors($returned);
+      if ($validationErrors !== []) {
+        $results[] = ['ValidationErrors' => $validationErrors];
+        continue;
+      }
+      $snapshot = json_decode((string) $returned, TRUE) ?: [];
+      $updated = $returned->getUpdatedDateUtcAsDate();
+      $snapshot['InvoiceID'] = $returned->getInvoiceId();
+      $snapshot['UpdatedDateUTC'] = $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s');
+      $snapshot['Status'] = $returned->getStatus();
+      $results[] = ['Invoices' => ['Invoice' => $snapshot]];
     }
-    $validationErrors = $this->extractValidationErrors($returned);
-    if ($validationErrors !== []) {
-      return ['ValidationErrors' => $validationErrors];
-    }
-
-    $snapshot = json_decode((string) $returned, TRUE) ?: [];
-    $updated = $returned->getUpdatedDateUtcAsDate();
-    $snapshot['InvoiceID'] = $returned->getInvoiceId();
-    $snapshot['UpdatedDateUTC'] = $updated ? $updated->format('Y-m-d H:i:s') : date('Y-m-d H:i:s');
-    $snapshot['Status'] = $returned->getStatus();
-    return ['Invoices' => ['Invoice' => $snapshot]];
+    return $results;
   }
 
 }
