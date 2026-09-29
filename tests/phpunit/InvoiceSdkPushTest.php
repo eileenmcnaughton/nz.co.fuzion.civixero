@@ -154,13 +154,9 @@ class InvoiceSdkPushTest extends TestCase implements HeadlessInterface, HookInte
   }
 
   /**
-   * Characterizes a gap introduced by PR #215: pushToXero()'s catch blocks
-   * catch \XeroAPI\XeroPHP\ApiException (the new SDK's HTTP-error exception,
-   * e.g. for a 429 rate-limit response) and translate a 429 into
-   * CRM_Civixero_Exception_XeroThrottle, same as the legacy path did via
-   * XeroThrottleException - so push()'s throttle-abort-and-backoff handling
-   * (see InvoicePushTest::testPushAbortsRemainingRecordsAndSetsRateLimitOnThrottle)
-   * keeps working once pushToXero() is switched to the SDK.
+   * pushToXero() translates the SDK's 429 ApiException into
+   * CRM_Civixero_Exception_XeroThrottle, which push() uses to abort and back
+   * off (see InvoicePushTest::testPushAbortsRemainingRecordsAndSetsRateLimitOnThrottle).
    */
   public function testPushToXeroTranslatesNewSdk429ResponseToThrottleException(): void {
     $this->createMockHandler([]);

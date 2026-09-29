@@ -431,10 +431,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       return $this->pushViaApi($accountsContact);
     }
     catch (\XeroAPI\XeroPHP\ApiException $e) {
-      if ($e->getCode() === 429) {
-        $retryAfterSeconds = (int) ($e->getResponseHeaders()['Retry-After'][0] ?? 0);
-        throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $retryAfterSeconds ? (time() + $retryAfterSeconds) : NULL);
-      }
+      $this->throwIfRateLimited($e);
       throw new CRM_Core_Exception(
         'Synchronization error ' . $e->getMessage(),
         'xero_' . $e->getCode(),
@@ -446,9 +443,8 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
   /**
    * Push a single mapped contact to Xero via the official SDK.
    *
-   * Replaces the legacy hand-rolled client (packages/Xero/Xero.php). Mirrors
-   * Invoice::pushViaApi()/BankTransaction::pushViaApi()'s shape-preserving
-   * adapter: returns the exact legacy-shaped array
+   * Mirrors Invoice::pushViaApi()/BankTransaction::pushViaApi()'s
+   * shape-preserving adapter: returns the exact legacy-shaped array
    * (['Contacts']['Contact'][...]] or ['ValidationErrors' => [...]]) that
    * push() already reads, so none of push()'s downstream field-extraction
    * or dedupe logic needs to change.

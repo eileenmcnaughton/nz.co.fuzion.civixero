@@ -1113,26 +1113,12 @@ class CRM_Civixero_Invoice extends CRM_Civixero_Base {
     try {
       return $this->pushViaApi($mapped);
     }
-    catch (XeroThrottleException $e) {
-      throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $e->getRetryAfter());
-    }
     catch (\XeroAPI\XeroPHP\ApiException $e) {
       $this->throwIfRateLimited($e);
       throw new CRM_Core_Exception(
         'Synchronization error ' . $e->getMessage(),
         'xero_' . $e->getCode(),
         ['response' => $e->getResponseBody()]
-      );
-    }
-    catch (XeroException $e) {
-      if (method_exists($e, 'getXML') && $e->getXML()) {
-        return ArrayToXML::toArray($e->getXML());
-      }
-      // if now \Civi::log('xero')->warning('Failed push with {xml}', ['xml' => $e->getXML()]]
-      throw new CRM_Core_Exception(
-        'Synchronization error ' . $e->getMessage(),
-        'xero_' . $e->getCode(),
-        ['xml' => (method_exists($e, 'getXML') ? $e->getXML() : '')]
       );
     }
   }
