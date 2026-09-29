@@ -431,10 +431,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       return $this->pushViaApi($accountsContact);
     }
     catch (\XeroAPI\XeroPHP\ApiException $e) {
-      if ($e->getCode() === 429) {
-        $retryAfterSeconds = (int) ($e->getResponseHeaders()['Retry-After'][0] ?? 0);
-        throw new CRM_Civixero_Exception_XeroThrottle($e->getMessage(), $e->getCode(), $e, $retryAfterSeconds ? (time() + $retryAfterSeconds) : NULL);
-      }
+      $this->throwIfRateLimited($e);
       throw new CRM_Core_Exception(
         'Synchronization error ' . $e->getMessage(),
         'xero_' . $e->getCode(),
