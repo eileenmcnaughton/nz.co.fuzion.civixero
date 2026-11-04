@@ -103,7 +103,7 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
     $this->getContactWithMockClient()->push(['connector_id' => 0]);
 
     $sent = json_decode($this->getRequestBodies()[0], TRUE)['Contacts'][0];
-    $this->assertSame('Example Organization', $sent['Name']);
+    $this->assertSame('Example Organization - ' . $contactID, $sent['Name']);
     $this->assertSame((string) $contactID, $sent['ContactNumber']);
   }
 

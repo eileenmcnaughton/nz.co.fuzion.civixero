@@ -783,7 +783,7 @@ class CRM_Civixero_Contact extends CRM_Civixero_Base {
       $email = '';
     }
     $new_contact = [
-      'Name' => \CRM_Utils_String::ellipsify((string) $contact['display_name'], 255, $nameSuffix),
+      'Name' => \CRM_Utils_String::ellipsify((string) $contact['display_name'], 255 - mb_strlen($nameSuffix)) . $nameSuffix,
       'FirstName' => \CRM_Utils_String::ellipsify($contact['first_name'] ?? '',255),
       'LastName' => \CRM_Utils_String::ellipsify($contact['last_name'] ?? '', 255),
       'EmailAddress' => $email,
