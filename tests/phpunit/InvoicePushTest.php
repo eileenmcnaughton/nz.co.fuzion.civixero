@@ -95,7 +95,7 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->callAPISuccess('AccountContact', 'create', $accountContactParams);
     $contribution = $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $contactID,
-      'financial_type_id' => 1,
+      'financial_type_id' => 'Donation',
       'total_amount' => 50,
       'receive_date' => '2024-03-15',
       'contribution_status_id' => 'Completed',
