@@ -75,7 +75,7 @@ class BankTransactionSdkPushTest extends TestCase implements HeadlessInterface, 
     $urls = $this->getRequestUrls();
     $this->assertCount(1, $urls);
     $this->assertStringContainsString('/BankTransactions', $urls[0]);
-    $this->assertEquals(
+    $this->assertSame(
       'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       $result['BankTransactions']['BankTransaction']['BankTransactionID']
     );

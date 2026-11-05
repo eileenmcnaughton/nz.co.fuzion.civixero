@@ -70,27 +70,27 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
 
     $this->assertCount(1, $result);
     $invoice = $result[0];
-    $this->assertEquals('ACCREC', $invoice['Type']);
+    $this->assertSame('ACCREC', $invoice['Type']);
     $this->assertEquals(['ContactID' => '11111111-1111-1111-1111-111111111111'], $invoice['Contact']);
-    $this->assertEquals('2024-03-15', $invoice['Date']);
-    $this->assertEquals('2024-03-15', $invoice['DueDate']);
-    $this->assertEquals('SUBMITTED', $invoice['Status']);
-    $this->assertEquals('CIVI123', $invoice['InvoiceNumber']);
-    $this->assertEquals('NZD', $invoice['CurrencyCode']);
-    $this->assertEquals('Jane Doe Event registration', $invoice['Reference']);
-    $this->assertEquals('Inclusive', $invoice['LineAmountTypes']);
+    $this->assertSame('2024-03-15', $invoice['Date']);
+    $this->assertSame('2024-03-15', $invoice['DueDate']);
+    $this->assertSame('SUBMITTED', $invoice['Status']);
+    $this->assertSame('CIVI123', $invoice['InvoiceNumber']);
+    $this->assertSame('NZD', $invoice['CurrencyCode']);
+    $this->assertSame('Jane Doe Event registration', $invoice['Reference']);
+    $this->assertSame('Inclusive', $invoice['LineAmountTypes']);
     $this->assertArrayNotHasKey('InvoiceID', $invoice);
 
     $lineItem = $invoice['LineItems']['LineItem'][0];
-    $this->assertEquals('Jane Doe General Admission', $lineItem['Description']);
-    $this->assertEquals(1, $lineItem['Quantity']);
-    $this->assertEquals(50, $lineItem['UnitAmount']);
-    $this->assertEquals('400', $lineItem['AccountCode']);
+    $this->assertSame('Jane Doe General Admission', $lineItem['Description']);
+    $this->assertSame(1, $lineItem['Quantity']);
+    $this->assertSame(50, $lineItem['UnitAmount']);
+    $this->assertSame('400', $lineItem['AccountCode']);
   }
 
   public function testMapToAccountsIncludesInvoiceIDWhenUUIDProvided(): void {
     $result = $this->getInvoice()->callMapToAccounts($this->getBasicInvoiceData(), 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $result[0]['InvoiceID']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $result[0]['InvoiceID']);
   }
 
   public function testMapToAccountsUsesDefaultAccountCodeWhenLineItemHasNone(): void {
@@ -98,7 +98,7 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
     unset($invoiceData['line_items'][0]['accounting_code']);
     $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
     // Default is the xero_default_revenue_account setting, which defaults to 200.
-    $this->assertEquals('200', (string) $result[0]['LineItems']['LineItem'][0]['AccountCode']);
+    $this->assertSame('200', (string) $result[0]['LineItems']['LineItem'][0]['AccountCode']);
   }
 
   public function testMapToAccountsNegativeTotalFlipsSignAndUsesAccpay(): void {
@@ -109,12 +109,12 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
     $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
     $invoice = $result[0];
 
-    $this->assertEquals('ACCPAY', $invoice['Type']);
+    $this->assertSame('ACCPAY', $invoice['Type']);
     $lineItem = $invoice['LineItems']['LineItem'][0];
     // Quantity is abs()'d, and UnitAmount is flipped back to positive because
     // the overall total is negative.
-    $this->assertEquals(1, $lineItem['Quantity']);
-    $this->assertEquals(10, $lineItem['UnitAmount']);
+    $this->assertSame(1, $lineItem['Quantity']);
+    $this->assertSame(10, $lineItem['UnitAmount']);
   }
 
   public function testMapToAccountsNonZeroTaxAmountSwitchesToExclusive(): void {
@@ -124,7 +124,7 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
     $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
     // Default xero_tax_mode setting is 'Inclusive', but a non-zero tax_amount
     // forces 'Exclusive' regardless of the setting.
-    $this->assertEquals('Exclusive', $result[0]['LineAmountTypes']);
+    $this->assertSame('Exclusive', $result[0]['LineAmountTypes']);
   }
 
   public function testMapToAccountsZeroTaxAmountStringDoesNotSwitchToExclusive(): void {
@@ -132,7 +132,7 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
     $invoiceData['line_items'][0]['tax_amount'] = '0.00';
 
     $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
-    $this->assertEquals('Inclusive', $result[0]['LineAmountTypes']);
+    $this->assertSame('Inclusive', $result[0]['LineAmountTypes']);
   }
 
   public function testMapToAccountsUsesContributionInvoiceNumberWhenSettingEnabled(): void {
@@ -141,7 +141,7 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
     $invoiceData['invoice_number'] = 'INV-2024-0042';
 
     $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
-    $this->assertEquals('INV-2024-0042', $result[0]['InvoiceNumber']);
+    $this->assertSame('INV-2024-0042', $result[0]['InvoiceNumber']);
   }
 
   public function testMapToAccountsIgnoresContributionInvoiceNumberWhenSettingDisabled(): void {
@@ -150,13 +150,13 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
     $invoiceData['invoice_number'] = 'INV-2024-0042';
 
     $result = $this->getInvoice()->callMapToAccounts($invoiceData, NULL);
-    $this->assertEquals('CIVI123', $result[0]['InvoiceNumber']);
+    $this->assertSame('CIVI123', $result[0]['InvoiceNumber']);
   }
 
   public function testMapToAccountsFallsBackToPrefixWhenNoContributionInvoiceNumber(): void {
     Civi::settings()->set('xero_use_contribution_invoice_number', TRUE);
     $result = $this->getInvoice()->callMapToAccounts($this->getBasicInvoiceData(), NULL);
-    $this->assertEquals('CIVI123', $result[0]['InvoiceNumber']);
+    $this->assertSame('CIVI123', $result[0]['InvoiceNumber']);
   }
 
   public function testMapCancelledWithoutUuid(): void {
@@ -164,19 +164,19 @@ class InvoiceMappingTest extends TestCase implements HeadlessInterface, HookInte
 
     $invoice = $result['Invoice'];
     $this->assertNull($invoice['InvoiceID']);
-    $this->assertEquals('CIVI456', $invoice['InvoiceNumber']);
-    $this->assertEquals('ACCREC', $invoice['Type']);
-    $this->assertEquals('Cancelled', $invoice['Reference']);
-    $this->assertEquals('DRAFT', $invoice['Status']);
-    $this->assertEquals('Exclusive', $invoice['LineAmountTypes']);
-    $this->assertEquals(0, $invoice['LineItems']['LineItem']['Quantity']);
-    $this->assertEquals(0, $invoice['LineItems']['LineItem']['UnitAmount']);
-    $this->assertEquals('200', (string) $invoice['LineItems']['LineItem']['AccountCode']);
+    $this->assertSame('CIVI456', $invoice['InvoiceNumber']);
+    $this->assertSame('ACCREC', $invoice['Type']);
+    $this->assertSame('Cancelled', $invoice['Reference']);
+    $this->assertSame('DRAFT', $invoice['Status']);
+    $this->assertSame('Exclusive', $invoice['LineAmountTypes']);
+    $this->assertSame(0, $invoice['LineItems']['LineItem']['Quantity']);
+    $this->assertSame(0, $invoice['LineItems']['LineItem']['UnitAmount']);
+    $this->assertSame('200', (string) $invoice['LineItems']['LineItem']['AccountCode']);
   }
 
   public function testMapCancelledWithUuid(): void {
     $result = $this->getInvoice()->callMapCancelled(456, 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $result['Invoice']['InvoiceID']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $result['Invoice']['InvoiceID']);
   }
 
 }

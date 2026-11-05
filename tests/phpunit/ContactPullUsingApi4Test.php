@@ -137,7 +137,7 @@ class ContactPullUsingApi4Test extends TestCase implements HeadlessInterface, Ho
       ->addWhere('accounts_contact_id', '=', 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff')
       ->execute()
       ->single();
-    $this->assertEquals('Clean Contact', $clean['accounts_display_name']);
+    $this->assertSame('Clean Contact', $clean['accounts_display_name']);
   }
 
   public function testCleanMultiPagePullDoesNotThrow(): void {

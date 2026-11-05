@@ -62,27 +62,27 @@ class BankTransactionMappingTest extends TestCase implements HeadlessInterface, 
 
     $this->assertCount(1, $result);
     $bankTransaction = $result[0];
-    $this->assertEquals('RECEIVE', $bankTransaction['Type']);
+    $this->assertSame('RECEIVE', $bankTransaction['Type']);
     // Note: unlike Invoice's mapToAccounts(), the contact is referenced by
     // ContactNumber (the CiviCRM contact ID), not a Xero ContactID.
     $this->assertEquals(['ContactNumber' => 55], $bankTransaction['Contact']);
-    $this->assertEquals('2024-03-15', $bankTransaction['Date']);
-    $this->assertEquals('AUTHORISED', $bankTransaction['Status']);
-    $this->assertEquals('Jane Doe Donation', $bankTransaction['Reference']);
-    $this->assertEquals('Inclusive', $bankTransaction['LineAmountTypes']);
+    $this->assertSame('2024-03-15', $bankTransaction['Date']);
+    $this->assertSame('AUTHORISED', $bankTransaction['Status']);
+    $this->assertSame('Jane Doe Donation', $bankTransaction['Reference']);
+    $this->assertSame('Inclusive', $bankTransaction['LineAmountTypes']);
     $this->assertEquals(['Code' => '090'], $bankTransaction['BankAccount']);
     $this->assertArrayNotHasKey('BankTransactionID', $bankTransaction);
 
     $lineItem = $bankTransaction['LineItems']['LineItem'][0];
-    $this->assertEquals('Jane Doe General Donation', $lineItem['Description']);
-    $this->assertEquals(1, $lineItem['Quantity']);
-    $this->assertEquals(25, $lineItem['UnitAmount']);
-    $this->assertEquals('400', $lineItem['AccountCode']);
+    $this->assertSame('Jane Doe General Donation', $lineItem['Description']);
+    $this->assertSame(1, $lineItem['Quantity']);
+    $this->assertSame(25, $lineItem['UnitAmount']);
+    $this->assertSame('400', $lineItem['AccountCode']);
   }
 
   public function testMapToAccountsIncludesBankTransactionIDWhenUUIDProvided(): void {
     $result = $this->getBankTransaction()->callMapToAccounts($this->getBasicInvoiceData(), 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $result[0]['BankTransactionID']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $result[0]['BankTransactionID']);
   }
 
   public function testMapToAccountsUsesDefaultAccountCodeWhenLineItemHasNone(): void {
@@ -90,7 +90,7 @@ class BankTransactionMappingTest extends TestCase implements HeadlessInterface, 
     unset($invoiceData['line_items'][0]['accounting_code']);
     $result = $this->getBankTransaction()->callMapToAccounts($invoiceData, NULL);
     // Default is the xero_default_revenue_account setting, which defaults to 200.
-    $this->assertEquals('200', (string) $result[0]['LineItems']['LineItem'][0]['AccountCode']);
+    $this->assertSame('200', (string) $result[0]['LineItems']['LineItem'][0]['AccountCode']);
   }
 
   public function testGetNotUpdateCandidateResponsesReconciledMessage(): void {

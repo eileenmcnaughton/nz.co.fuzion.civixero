@@ -71,7 +71,7 @@ class InvoiceSdkPullTest extends TestCase implements HeadlessInterface, HookInte
       $this->fail('Expected ApiException to be thrown');
     }
     catch (\XeroAPI\XeroPHP\ApiException $e) {
-      $this->assertEquals(403, $e->getCode());
+      $this->assertSame(403, $e->getCode());
     }
   }
 

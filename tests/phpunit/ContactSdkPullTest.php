@@ -65,9 +65,9 @@ class ContactSdkPullTest extends TestCase implements HeadlessInterface, HookInte
 
     $this->assertArrayHasKey('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $result);
     $mapped = $result['aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'];
-    $this->assertEquals('Jane Doe', $mapped['name']);
-    $this->assertEquals('123', $mapped['contact_number']);
-    $this->assertEquals('2024-03-15 10:00:00', $mapped['updated_date_utc']);
+    $this->assertSame('Jane Doe', $mapped['name']);
+    $this->assertSame('123', $mapped['contact_number']);
+    $this->assertSame('2024-03-15 10:00:00', $mapped['updated_date_utc']);
   }
 
   public function testPullFromXeroReturnsEmptyArrayWhenXeroHasNoContacts(): void {
@@ -116,7 +116,7 @@ class ContactSdkPullTest extends TestCase implements HeadlessInterface, HookInte
       $this->fail('Expected ApiException to be thrown');
     }
     catch (\XeroAPI\XeroPHP\ApiException $e) {
-      $this->assertEquals(403, $e->getCode());
+      $this->assertSame(403, $e->getCode());
     }
   }
 

@@ -91,9 +91,9 @@ class ContactPullTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('accounts_contact_id', '=', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')
       ->execute()
       ->single();
-    $this->assertEquals('Jane Doe', $saved['accounts_display_name']);
-    $this->assertEquals('2024-03-15 10:00:00', $saved['accounts_modified_date']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('Jane Doe', $saved['accounts_display_name']);
+    $this->assertSame('2024-03-15 10:00:00', $saved['accounts_modified_date']);
+    $this->assertFalse($saved['accounts_needs_update']);
   }
 
   public function testProcessPullSkipsUpdateWhenNoTrackedFieldChanged(): void {
@@ -123,7 +123,7 @@ class ContactPullTest extends TestCase implements HeadlessInterface, HookInterfa
     // (MySQL CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) proves it,
     // since only a real UPDATE statement would bump it off the backdated
     // value.
-    $this->assertEquals('2020-01-01 00:00:00', $this->getLastSyncDate($existing['id']));
+    $this->assertSame('2020-01-01 00:00:00', $this->getLastSyncDate($existing['id']));
   }
 
   public function testProcessPullUpdatesExistingRowWhenATrackedFieldChanges(): void {
@@ -153,7 +153,7 @@ class ContactPullTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('id', '=', $existing['id'])
       ->execute()
       ->single();
-    $this->assertEquals('Jane Doe', $saved['accounts_display_name']);
+    $this->assertSame('Jane Doe', $saved['accounts_display_name']);
     $this->assertNotEquals('2020-01-01 00:00:00', $this->getLastSyncDate($existing['id']));
   }
 
@@ -187,7 +187,7 @@ class ContactPullTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('id', '=', $existing['id'])
       ->execute()
       ->single();
-    $this->assertEquals('2024-03-16 09:00:00', $saved['accounts_modified_date']);
+    $this->assertSame('2024-03-16 09:00:00', $saved['accounts_modified_date']);
     $this->assertTrue($saved['accounts_needs_update']);
   }
 
@@ -219,7 +219,7 @@ class ContactPullTest extends TestCase implements HeadlessInterface, HookInterfa
       ->execute()
       ->single();
     $this->assertTrue($saved['accounts_needs_update']);
-    $this->assertEquals('2020-01-01 00:00:00', $this->getLastSyncDate($existing['id']));
+    $this->assertSame('2020-01-01 00:00:00', $this->getLastSyncDate($existing['id']));
   }
 
   public function testProcessPullMapsValidContactNumberToContactId(): void {
@@ -319,7 +319,7 @@ class ContactPullTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('accounts_contact_id', '=', 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff')
       ->execute();
     $this->assertCount(1, $clean);
-    $this->assertEquals('Clean Contact', $clean->first()['accounts_display_name']);
+    $this->assertSame('Clean Contact', $clean->first()['accounts_display_name']);
   }
 
   public function testProcessPullHookVetoSkipsContact(): void {
@@ -344,7 +344,7 @@ class ContactPullTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('accounts_contact_id', '=', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')
       ->execute()
       ->single();
-    $this->assertEquals('Overridden by hook', $saved['accounts_display_name']);
+    $this->assertSame('Overridden by hook', $saved['accounts_display_name']);
   }
 
 }
