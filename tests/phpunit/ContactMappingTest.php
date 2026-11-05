@@ -73,12 +73,12 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $this->assertIsArray($mapped);
     // Flat array (not wrapped in a batch) - pushViaApi() reads $mapped['Name'] directly.
     $this->assertArrayNotHasKey(0, $mapped);
-    $this->assertEquals('Jane Doe - 123', $mapped['Name']);
-    $this->assertEquals('Jane', $mapped['FirstName']);
-    $this->assertEquals('Doe', $mapped['LastName']);
-    $this->assertEquals(123, $mapped['ContactNumber']);
+    $this->assertSame('Jane Doe - 123', $mapped['Name']);
+    $this->assertSame('Jane', $mapped['FirstName']);
+    $this->assertSame('Doe', $mapped['LastName']);
+    $this->assertSame(123, $mapped['ContactNumber']);
     $this->assertArrayNotHasKey('ContactID', $mapped);
-    $this->assertEquals('', $mapped['EmailAddress']);
+    $this->assertSame('', $mapped['EmailAddress']);
   }
 
   public function testSetsContactIdOnlyWhenXeroUuidPassed(): void {
@@ -88,7 +88,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $this->assertArrayNotHasKey('ContactID', $withoutUuid);
 
     $withUuid = $contact->callMapToAccounts($this->getBaseContact(), 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $withUuid['ContactID']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $withUuid['ContactID']);
   }
 
   public function testTruncatesLongDisplayNamePreservingIdSuffix(): void {
@@ -107,7 +107,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
   public function testValidEmailIsPassedThrough(): void {
     $contact = new ContactMappingTestable([]);
     $mapped = $contact->callMapToAccounts($this->getBaseContact(['email' => 'jane@example.com']), NULL);
-    $this->assertEquals('jane@example.com', $mapped['EmailAddress']);
+    $this->assertSame('jane@example.com', $mapped['EmailAddress']);
   }
 
   public function testInvalidEmailIsDroppedNotVetoed(): void {
@@ -115,7 +115,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $mapped = $contact->callMapToAccounts($this->getBaseContact(['email' => 'not-an-email']), NULL);
     // Invalid email doesn't stop the push - it's logged and pushed without one.
     $this->assertNotFalse($mapped);
-    $this->assertEquals('', $mapped['EmailAddress']);
+    $this->assertSame('', $mapped['EmailAddress']);
   }
 
   public function testPhoneOnlyIncludedWhenSet(): void {
@@ -125,8 +125,8 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $this->assertArrayNotHasKey('Phones', $withoutPhone);
 
     $withPhone = $contact->callMapToAccounts($this->getBaseContact(['phone' => '0123456789']), NULL);
-    $this->assertEquals('0123456789', $withPhone['Phones']['Phone']['PhoneNumber']);
-    $this->assertEquals('DEFAULT', $withPhone['Phones']['Phone']['PhoneType']);
+    $this->assertSame('0123456789', $withPhone['Phones']['Phone']['PhoneNumber']);
+    $this->assertSame('DEFAULT', $withPhone['Phones']['Phone']['PhoneType']);
   }
 
   public function testAddressOnlyIncludedWhenAnAddressFieldIsSet(): void {
@@ -143,12 +143,12 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
       'state_province_name' => 'Wellington',
     ]), NULL);
     $address = $withAddress['Addresses']['Address'][0];
-    $this->assertEquals('123 Main St', $address['AddressLine1']);
-    $this->assertEquals('Wellington', $address['City']);
-    $this->assertEquals('6011', $address['PostalCode']);
-    $this->assertEquals('New Zealand', $address['Country']);
-    $this->assertEquals('Wellington', $address['Region']);
-    $this->assertEquals('POBOX', $address['AddressType']);
+    $this->assertSame('123 Main St', $address['AddressLine1']);
+    $this->assertSame('Wellington', $address['City']);
+    $this->assertSame('6011', $address['PostalCode']);
+    $this->assertSame('New Zealand', $address['Country']);
+    $this->assertSame('Wellington', $address['Region']);
+    $this->assertSame('POBOX', $address['AddressType']);
   }
 
   public function testHookVetoReturnsFalse(): void {
@@ -162,7 +162,7 @@ class ContactMappingTest extends TestCase implements HeadlessInterface, HookInte
     $this->mutateViaHook = TRUE;
     $contact = new ContactMappingTestable([]);
     $mapped = $contact->callMapToAccounts($this->getBaseContact(), NULL);
-    $this->assertEquals('added by hook', $mapped['Custom']);
+    $this->assertSame('added by hook', $mapped['Custom']);
   }
 
 }

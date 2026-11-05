@@ -68,7 +68,7 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
 
     $this->assertEquals([], $errors);
     $saved = $this->getAccountInvoice($record['id']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('0', $saved['accounts_needs_update']);
   }
 
   public function testSavePushResponseInvoiceSuccessShapeUpdatesRecord(): void {
@@ -89,9 +89,9 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
 
     $this->assertEquals([], $errors);
     $saved = $this->getAccountInvoice($record['id']);
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $saved['accounts_invoice_id']);
-    $this->assertEquals('2024-03-15 10:00:00', $saved['accounts_modified_date']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $saved['accounts_invoice_id']);
+    $this->assertSame('2024-03-15 10:00:00', $saved['accounts_modified_date']);
+    $this->assertSame('0', $saved['accounts_needs_update']);
     // savePushResponse() sets error_data to the *string* 'null' - but API3's
     // "magic null string" convention (any field value literally 'null' means
     // "set this to SQL NULL") means it's actually stored/returned as NULL,
@@ -119,9 +119,9 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
 
     $this->assertEquals([], $errors);
     $saved = $this->getAccountInvoice($record['id']);
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $saved['accounts_invoice_id']);
-    $this->assertEquals('2024-03-15 10:00:00', $saved['accounts_modified_date']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $saved['accounts_invoice_id']);
+    $this->assertSame('2024-03-15 10:00:00', $saved['accounts_modified_date']);
+    $this->assertSame('0', $saved['accounts_needs_update']);
   }
 
   public function testSavePushResponseLegacyValidationErrorShapeIsRecordedAsError(): void {
@@ -141,7 +141,7 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
     $this->assertEquals(['Something else is wrong'], $errors);
     $saved = $this->getAccountInvoice($record['id']);
     // Not a "not update candidate" message, so still queued for retry.
-    $this->assertEquals(1, $saved['accounts_needs_update']);
+    $this->assertSame('1', $saved['accounts_needs_update']);
     $this->assertEquals(json_encode($errors), $saved['error_data']);
   }
 
@@ -163,7 +163,7 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
 
     $this->assertEquals(['Account code must be specified'], $errors);
     $saved = $this->getAccountInvoice($record['id']);
-    $this->assertEquals(1, $saved['accounts_needs_update']);
+    $this->assertSame('1', $saved['accounts_needs_update']);
     $this->assertEquals(json_encode($errors), $saved['error_data']);
   }
 
@@ -184,8 +184,8 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
     $this->getInvoice()->callSavePushResponse($result, $record);
 
     $saved = $this->getAccountInvoice($record['id']);
-    $this->assertEquals(0, $saved['is_error_resolved']);
-    $this->assertEquals(1, $saved['accounts_needs_update']);
+    $this->assertSame('0', $saved['is_error_resolved']);
+    $this->assertSame('1', $saved['accounts_needs_update']);
     $this->assertEquals([], $this->getInvoice()->callGetAccountInvoicesToPush(['connector_id' => 0], 25));
   }
 
@@ -205,7 +205,7 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
 
     $saved = $this->getAccountInvoice($record['id']);
     // We can't ever update this one in Xero, so stop retrying it.
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('0', $saved['accounts_needs_update']);
   }
 
   public function testValidateResponseAccountCodeMandatoryShortCircuits(): void {
@@ -253,7 +253,7 @@ class InvoiceResponseHandlingTest extends TestCase implements HeadlessInterface,
       $this->fail('Expected a CRM_Civixero_Exception_XeroThrottle to be thrown');
     }
     catch (CRM_Civixero_Exception_XeroThrottle $e) {
-      $this->assertEquals('rate_limit_exceeded', $e->getMessage());
+      $this->assertSame('rate_limit_exceeded', $e->getMessage());
     }
 
     $this->assertNotEmpty(Civi::settings()->get('xero_oauth_rate_exceeded'));

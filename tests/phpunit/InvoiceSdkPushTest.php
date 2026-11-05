@@ -85,12 +85,12 @@ class InvoiceSdkPushTest extends TestCase implements HeadlessInterface, HookInte
 
     $result = $invoice->callPushToXero($this->getMappedInvoice(), 0);
 
-    $this->assertEquals(
+    $this->assertSame(
       'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       $result['Invoices']['Invoice']['InvoiceID']
     );
-    $this->assertEquals('AUTHORISED', $result['Invoices']['Invoice']['Status']);
-    $this->assertEquals('2024-03-15 10:00:00', $result['Invoices']['Invoice']['UpdatedDateUTC']);
+    $this->assertSame('AUTHORISED', $result['Invoices']['Invoice']['Status']);
+    $this->assertSame('2024-03-15 10:00:00', $result['Invoices']['Invoice']['UpdatedDateUTC']);
   }
 
   public function testPushToXeroSendsIdempotencyKeyUnderXeroLimit(): void {

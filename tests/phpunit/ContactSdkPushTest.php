@@ -70,12 +70,12 @@ class ContactSdkPushTest extends TestCase implements HeadlessInterface, HookInte
 
     $result = $contact->callPushToXero($this->getMappedContact(), 0);
 
-    $this->assertEquals(
+    $this->assertSame(
       'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       $result['Contacts']['Contact']['ContactID']
     );
-    $this->assertEquals('Jane Doe - 123', $result['Contacts']['Contact']['Name']);
-    $this->assertEquals('2024-03-15 10:00:00', $result['Contacts']['Contact']['UpdatedDateUTC']);
+    $this->assertSame('Jane Doe - 123', $result['Contacts']['Contact']['Name']);
+    $this->assertSame('2024-03-15 10:00:00', $result['Contacts']['Contact']['UpdatedDateUTC']);
   }
 
   public function testPushSendsTheMappedContact(): void {

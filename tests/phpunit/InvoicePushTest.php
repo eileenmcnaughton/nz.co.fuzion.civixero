@@ -95,7 +95,7 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->callAPISuccess('AccountContact', 'create', $accountContactParams);
     $contribution = $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $contactID,
-      'financial_type_id' => 1,
+      'financial_type_id' => 'Donation',
       'total_amount' => 50,
       'receive_date' => '2024-03-15',
       'contribution_status_id' => 'Completed',
@@ -143,17 +143,17 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
 
     $count = $invoice->push(['connector_id' => 0], 10);
 
-    $this->assertEquals(1, $count);
+    $this->assertSame(1, $count);
     $this->assertCount(1, $invoice->pushToXeroCalls);
     $saved = $this->callAPISuccessGetSingle('AccountInvoice', ['id' => $fixture['account_invoice_id']]);
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $saved['accounts_invoice_id']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $saved['accounts_invoice_id']);
+    $this->assertSame('0', $saved['accounts_needs_update']);
   }
 
   public function testPushWithNoQueuedInvoicesReturnsZeroWithoutCallingPushToXero(): void {
     $invoice = new InvoicePushTestable([]);
     $count = $invoice->push(['connector_id' => 0], 10);
-    $this->assertEquals(0, $count);
+    $this->assertSame(0, $count);
     $this->assertCount(0, $invoice->pushToXeroCalls);
   }
 
@@ -198,7 +198,7 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
     $failed = reset($withError);
     $this->assertStringContainsString('Xero rejected the invoice', $failed['error_data']);
     // Still queued for retry - a generic CRM_Core_Exception isn't a permanent failure.
-    $this->assertEquals(1, $failed['accounts_needs_update']);
+    $this->assertSame('1', $failed['accounts_needs_update']);
   }
 
   public function testPushAbortsRemainingRecordsAndSetsRateLimitOnThrottle(): void {
@@ -235,13 +235,13 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
     // Pushing would fail Xero-side (can't apply our default, non-Completed
     // status to an invoice that already has payments allocated), so it's
     // skipped before pushToXero() is ever called.
-    $this->assertEquals(0, $count);
+    $this->assertSame(0, $count);
     $this->assertCount(0, $invoice->pushToXeroCalls);
     $saved = $this->callAPISuccessGetSingle('AccountInvoice', ['id' => $fixture['account_invoice_id']]);
     $this->assertStringContainsString('already completed in Xero', $saved['error_data']);
     // Not a real error - nothing to do - so it shouldn't show up in error reports.
-    $this->assertEquals(1, $saved['is_error_resolved']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('1', $saved['is_error_resolved']);
+    $this->assertSame('0', $saved['accounts_needs_update']);
   }
 
   public function testPushStillPushesWhenExistingXeroInvoiceIsNotYetCompleted(): void {
@@ -270,10 +270,10 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
 
     $count = $invoice->push(['connector_id' => 0], 10);
 
-    $this->assertEquals(1, $count);
+    $this->assertSame(1, $count);
     $this->assertCount(1, $invoice->pushToXeroCalls);
     // mapToAccounts() returns [$new_invoice] (a single-element list, not wrapped in an 'Invoice' key).
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $invoice->pushToXeroCalls[0][0]['InvoiceID']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $invoice->pushToXeroCalls[0][0]['InvoiceID']);
   }
 
   public function testPushSkipsAndMarksResolvedWhenHookVetoesTheMapping(): void {
@@ -283,13 +283,13 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
 
     $count = $invoice->push(['connector_id' => 0], 10);
 
-    $this->assertEquals(0, $count);
+    $this->assertSame(0, $count);
     $this->assertCount(0, $invoice->pushToXeroCalls);
     $saved = $this->callAPISuccessGetSingle('AccountInvoice', ['id' => $fixture['account_invoice_id']]);
     $this->assertStringContainsString('Ignored via accountPushAlterMapped hook', $saved['error_data']);
     // The hook explicitly chose to exclude this invoice - not a real error.
-    $this->assertEquals(1, $saved['is_error_resolved']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('1', $saved['is_error_resolved']);
+    $this->assertSame('0', $saved['accounts_needs_update']);
   }
 
   public function testPushRecordsUnresolvedErrorWhenAccountInvoiceHasNoContributionId(): void {
@@ -317,8 +317,8 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertCount(0, $invoice->pushToXeroCalls);
     $saved = $this->callAPISuccessGetSingle('AccountInvoice', ['id' => $accountInvoice['id']]);
     $this->assertStringContainsString('no Contribution ID', $saved['error_data']);
-    $this->assertEquals(0, $saved['is_error_resolved']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('0', $saved['is_error_resolved']);
+    $this->assertSame('0', $saved['accounts_needs_update']);
   }
 
   /**
@@ -337,12 +337,12 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->unsyncFixtureContact($fixture['contribution_id'], ['accounts_needs_update' => TRUE]);
     $invoice = new InvoicePushTestable([]);
 
-    $this->assertEquals(0, $invoice->push(['connector_id' => 0], 10));
+    $this->assertSame(0, $invoice->push(['connector_id' => 0], 10));
 
     $this->assertCount(0, $invoice->pushToXeroCalls);
     $saved = $this->callAPISuccessGetSingle('AccountInvoice', ['id' => $fixture['account_invoice_id']]);
     $this->assertArrayNotHasKey('error_data', $saved);
-    $this->assertEquals(1, $saved['accounts_needs_update']);
+    $this->assertSame('1', $saved['accounts_needs_update']);
   }
 
   /**
@@ -369,9 +369,9 @@ class InvoicePushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertCount(0, $invoice->pushToXeroCalls);
     $saved = $this->callAPISuccessGetSingle('AccountInvoice', ['id' => $fixture['account_invoice_id']]);
     $this->assertStringContainsString('Contact can not be synced to Xero', $saved['error_data']);
-    $this->assertEquals(0, $saved['is_error_resolved']);
+    $this->assertSame('0', $saved['is_error_resolved']);
     // Still queued, so resolving the error retries the push.
-    $this->assertEquals(1, $saved['accounts_needs_update']);
+    $this->assertSame('1', $saved['accounts_needs_update']);
   }
 
   public function testPushRecordsErrorWhenContactIsMarkedDoNotSync(): void {

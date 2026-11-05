@@ -183,9 +183,9 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()
       ->single();
-    $this->assertEquals('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $saved['accounts_contact_id']);
-    $this->assertEquals('Test Contact', $saved['accounts_display_name']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertSame('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $saved['accounts_contact_id']);
+    $this->assertSame('Test Contact', $saved['accounts_display_name']);
+    $this->assertFalse($saved['accounts_needs_update']);
   }
 
   public function testPushWithNoQueuedContactsReturnsTrueWithoutCallingPushToXero(): void {
@@ -211,7 +211,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()
       ->single();
-    $this->assertEquals(1, $saved['do_not_sync']);
+    $this->assertTrue($saved['do_not_sync']);
   }
 
   /**
@@ -239,8 +239,8 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()
       ->single();
-    $this->assertEquals(1, $saved['do_not_sync']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertTrue($saved['do_not_sync']);
+    $this->assertFalse($saved['accounts_needs_update']);
   }
 
   /**
@@ -267,8 +267,8 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       ->addWhere('id', '=', $fixture['account_contact_id'])
       ->execute()
       ->single();
-    $this->assertEquals(1, $saved['do_not_sync']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertTrue($saved['do_not_sync']);
+    $this->assertFalse($saved['accounts_needs_update']);
   }
 
   public function testPushThrowsWhenXeroContactAlreadyLinkedToDifferentLiveContact(): void {
@@ -339,7 +339,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $repaired = $remaining->first();
     $this->assertEquals($staleRow['id'], $repaired['id']);
     $this->assertEquals($fixtureA['contact_id'], $repaired['contact_id']);
-    $this->assertEquals(0, $repaired['do_not_sync']);
+    $this->assertFalse($repaired['do_not_sync']);
     $this->assertEquals($xeroContactID, $repaired['accounts_contact_id']);
   }
 
@@ -375,7 +375,7 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
     $this->assertStringContainsString('Xero rejected the contact', $failed['error_data']);
     // Still queued for retry - a generic CRM_Core_Exception isn't a
     // permanent failure (accounts_needs_update is never cleared on this path).
-    $this->assertEquals(1, $failed['accounts_needs_update']);
+    $this->assertTrue($failed['accounts_needs_update']);
   }
 
   public function testPushAbortsRemainingRecordsAndSetsRateLimitOnThrottle(): void {
@@ -413,8 +413,8 @@ class ContactPushTest extends TestCase implements HeadlessInterface, HookInterfa
       ->single();
     $this->assertStringContainsString('Ignored via accountPushAlterMapped hook', $saved['error_data']);
     // The hook explicitly chose to exclude this contact - not a real error.
-    $this->assertEquals(1, $saved['is_error_resolved']);
-    $this->assertEquals(0, $saved['accounts_needs_update']);
+    $this->assertTrue($saved['is_error_resolved']);
+    $this->assertFalse($saved['accounts_needs_update']);
   }
 
 }
